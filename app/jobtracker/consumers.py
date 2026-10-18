@@ -14,6 +14,7 @@ from .utils import (
     viewable_schedule_user_pks,
 )
 from .schedule_history import filter_delta_for_users
+from chaotica_utils.realtime import user_group
 
 
 class ScheduleConsumer(AsyncJsonWebsocketConsumer):
@@ -36,11 +37,19 @@ class ScheduleConsumer(AsyncJsonWebsocketConsumer):
 
         self.group_name = group
         await self.channel_layer.group_add(self.group_name, self.channel_name)
+        # Also on the user's own group, so revoking their access closes it.
+        self.user_group = user_group(user.pk)
+        await self.channel_layer.group_add(self.user_group, self.channel_name)
         await self.accept()
 
     async def disconnect(self, code):
         if self.group_name:
             await self.channel_layer.group_discard(self.group_name, self.channel_name)
+        if getattr(self, "user_group", None):
+            await self.channel_layer.group_discard(self.user_group, self.channel_name)
+
+    async def force_disconnect(self, event):
+        await _force_disconnect(self, event)
 
     @database_sync_to_async
     def _resolve_group(self, user):
@@ -74,3 +83,44 @@ class ScheduleConsumer(AsyncJsonWebsocketConsumer):
     async def schedule_delta(self, event):
         delta = filter_delta_for_users(event["delta"], self.viewable_user_pks)
         await self.send_json({"type": "delta", "delta": delta})
+
+
+class MeConsumer(AsyncJsonWebsocketConsumer):
+    """``ws/me/``: the signed-in user's own live channel. Sends
+    ``{"type": "unread", "count": N}`` on connect and whenever their
+    notifications change."""
+
+    async def connect(self):
+        user = self.scope.get("user")
+        if user is None or not user.is_authenticated:
+            await self.close()
+            return
+        self.group_name = user_group(user.pk)
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.accept()
+        await self._send_unread()
+
+    async def disconnect(self, code):
+        if getattr(self, "group_name", None):
+            await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
+    @database_sync_to_async
+    def _unread(self):
+        from notifications.selectors import unread_count
+
+        return unread_count(self.scope["user"])
+
+    async def _send_unread(self):
+        await self.send_json({"type": "unread", "count": await self._unread()})
+
+    async def unread_changed(self, event):
+        await self._send_unread()
+
+    async def force_disconnect(self, event):
+        await _force_disconnect(self, event)
+
+
+async def _force_disconnect(consumer, event):
+    if event.get("ticket_only") and not consumer.scope.get("ws_ticket"):
+        return
+    await consumer.close(code=4401)

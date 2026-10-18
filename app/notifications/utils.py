@@ -132,7 +132,9 @@ def send_notifications(notification, specific_users=None, extra_recipients=None)
     )
 
     # Create in-app notifications
+    notified = []
     for user in recipients:
+        notified.append(user.pk)
         _ = Notification.objects.create(
             user=user,
             notification_type=notification.notification_type,
@@ -153,6 +155,15 @@ def send_notifications(notification, specific_users=None, extra_recipients=None)
                 target=user.email_address(),
             ),
         )
+
+    if notified:
+        # Live badge update on each recipient's ws/me/ socket, once the rows
+        # are committed (a client re-fetching too early would miss them).
+        from django.db import transaction
+
+        from chaotica_utils.realtime import push_unread_changed
+
+        transaction.on_commit(lambda: push_unread_changed(notified))
 
 
 def auto_subscribe_users(notification_type, entity):
