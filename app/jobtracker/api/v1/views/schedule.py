@@ -18,6 +18,7 @@ from ....forms import SchedulerFilter
 from ....models import TimeSlot, TimeSlotComment, TimeSlotType
 from ....selectors.schedule import schedule_history
 from ....utils import (
+    SchedulerFocus,
     _filter_users_on_query,
     scheduler_member_rows,
     viewable_schedule_user_pks,
@@ -33,6 +34,7 @@ from ..schedule import (
 )
 from ..serializers import (
     ScheduleActionSerializer,
+    ScheduleBoundsSerializer,
     ScheduleDeltasSerializer,
     ScheduleResourcesSerializer,
     ScheduleSerializer,
@@ -108,14 +110,17 @@ def _has_filter_params(params):
     return any(params.get(name) for name in SchedulerFilter.base_fields)
 
 
-def filtered_schedule_users(request):
+def filtered_schedule_users(request, with_focus=False):
     """Users for the scheduler: everyone the caller may see, narrowed by the
-    scheduler page's filter fields when given (same code as the page)."""
+    scheduler page's filter fields when given (same code as the page). With
+    ``with_focus`` also returns the filter's ``SchedulerFocus`` (or None)."""
     params = request.query_params
+    focus = None
     if _has_filter_params(params):
         form = SchedulerFilter(params)
         cleaned = form.clean() if form.is_valid() else None
         users = _filter_users_on_query(SimpleNamespace(user=request.user), cleaned)
+        focus = SchedulerFocus(cleaned)
     else:
         users = User.objects.filter(pk__in=viewable_schedule_user_pks(request.user))
     unit_id = parse_int_param(request, "unit")
@@ -128,7 +133,45 @@ def filtered_schedule_users(request):
         users = users.filter(pk=user_id)
     # A plain queryset: the filter query carries distinct/order/prefetch the
     # utilisation engine doesn't want.
-    return User.objects.filter(pk__in=users.values("pk"))
+    users = User.objects.filter(pk__in=users.values("pk"))
+    return (users, focus) if with_focus else users
+
+
+def scoped_schedule(request, policy):
+    """The job / phase / project a request's ``job`` / ``phase`` / ``project``
+    param names, authorised, as ``(kind, obj)``; ``(None, None)`` if none."""
+    from rest_framework.exceptions import NotFound, PermissionDenied
+
+    from ....models import Job, Phase, Project
+
+    for kind, model in (("phase", Phase), ("job", Job), ("project", Project)):
+        pk = parse_int_param(request, kind)
+        if pk is None:
+            continue
+        obj = model.objects.filter(pk=pk).first()
+        if kind == "project":
+            if obj is None or not request.user.has_perm("jobtracker.view_project"):
+                raise NotFound()
+            return kind, obj
+        job = obj.job if kind == "phase" and obj else obj
+        if obj is None or not policy.can("job.view", job):
+            raise NotFound()
+        if not policy.can("job.view_schedule", job):
+            raise PermissionDenied("You can't view this job's schedule.")
+        return kind, obj
+    return None, None
+
+
+def scoped_schedule_users(request, kind, obj):
+    """The people a job / phase / project schedule shows (its team, plus any
+    ``include_user`` the caller may see)."""
+    from ....utils import merge_include_users
+    from ....views.project import _project_scheduled_users
+
+    if kind == "project":
+        return _project_scheduled_users(obj)
+    team = obj.team_scheduled() if kind == "job" else obj.team()
+    return merge_include_users(request._request, team)
 
 
 class ScheduleViewSet(ApiV1Mixin, viewsets.ViewSet):
@@ -161,8 +204,10 @@ class ScheduleViewSet(ApiV1Mixin, viewsets.ViewSet):
     )
     def list(self, request):
         start, end = parse_schedule_window(request)
-        users = filtered_schedule_users(request)
-        return Response(build_schedule_payload(users, start, end, request=request))
+        users, focus = filtered_schedule_users(request, with_focus=True)
+        return Response(
+            build_schedule_payload(users, start, end, request=request, focus=focus)
+        )
 
     @extend_schema(
         summary="Scheduler rows",
@@ -183,7 +228,20 @@ class ScheduleViewSet(ApiV1Mixin, viewsets.ViewSet):
     )
     @action(detail=False, methods=["get"])
     def resources(self, request):
-        rows = scheduler_member_rows(request._request, include_html=False)
+        kind, obj = scoped_schedule(request, self.policy)
+        if kind is None:
+            rows = scheduler_member_rows(request._request, include_html=False)
+        else:
+            rows = scheduler_member_rows(
+                request._request,
+                filtered_users=scoped_schedule_users(request, kind, obj),
+                use_filter_form=False,
+                role_job=(
+                    None if kind == "project" else (obj if kind == "job" else obj.job)
+                ),
+                role_phase=obj if kind == "phase" else None,
+                include_html=False,
+            )
         users = {u.pk: u for u in User.objects.filter(pk__in=[r["id"] for r in rows])}
         out = []
         for row in rows:
@@ -198,9 +256,38 @@ class ScheduleViewSet(ApiV1Mixin, viewsets.ViewSet):
                     "roles": row["roles"],
                     "availability": row["availability"],
                     "utilisation": row["util"],
+                    "business_hours": row["businessHours"],
                 }
             )
         return Response({"users": out})
+
+    @extend_schema(
+        summary="Date extent of the schedule's slots",
+        description="Earliest start and latest end among the slots a schedule "
+        "would show (for zoom-to-fit). Takes the same filters, or "
+        "``job`` / ``phase`` / ``project``.",
+        parameters=SCOPE_PARAMS + [OpenApiParameter("project", int)] + FILTER_PARAMS,
+        responses=ScheduleBoundsSerializer,
+    )
+    @action(detail=False, methods=["get"])
+    def bounds(self, request):
+        from django.db.models import Max, Min
+
+        kind, obj = scoped_schedule(request, self.policy)
+        if kind is None:
+            slots = TimeSlot.objects.filter(user__in=filtered_schedule_users(request))
+        else:
+            slots = TimeSlot.objects.filter(
+                user__in=scoped_schedule_users(request, kind, obj)
+            )
+            if kind == "project":
+                slots = slots.filter(project=obj)
+            elif kind == "phase":
+                slots = slots.filter(phase=obj)
+            else:
+                slots = slots.filter(phase__job=obj)
+        agg = slots.aggregate(start=Min("start"), end=Max("end"))
+        return Response(ScheduleBoundsSerializer(agg).data)
 
     @extend_schema(
         summary="Schedule change history",

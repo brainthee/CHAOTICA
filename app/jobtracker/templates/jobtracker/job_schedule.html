@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load menu %}
+{% load scheduler_tags %}
 {% load static %}
 {% load crispy_forms_tags %}
 {% load index %}
@@ -91,6 +92,7 @@
   <script>
     window.SCHEDULER_CONFIG = {
       scope: 'job',
+      v1: {% scheduler_v1_config "job" job %},
       readonly: {{ sched_readonly|yesno:'true,false' }},
       embedded: false,
       membersUrl: "{% url 'view_job_schedule_members' job.slug %}",

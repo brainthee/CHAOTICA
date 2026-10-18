@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load menu %}{% load static %}
+{% load scheduler_tags %}
 
 {% block pageTitle %}Phase{% endblock pageTitle %}
 {% block head_title %}{{ phase }}{% endblock head_title %}
@@ -196,6 +197,7 @@ $("#scopePhaseForm").dirty({preventLeaving: true});
 <script>
   window.SCHEDULER_CONFIG = {
     scope: 'phase',
+    v1: {% scheduler_v1_config "phase" phase %},
     readonly: true,
     membersUrl: "{% url 'view_phase_schedule_members' phase.job.slug phase.slug %}",
     slotsUrl: "{% url 'view_phase_schedule_slots' phase.job.slug phase.slug %}",

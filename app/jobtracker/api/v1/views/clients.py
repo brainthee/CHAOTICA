@@ -33,7 +33,7 @@ class ClientViewSet(BaseReadOnlyAPIViewSet):
         qs = Client.objects.prefetch_related(
             "account_managers", "tech_account_managers"
         )
-        if self.action == "list":
+        if self.action == "list" and not getattr(self, "swagger_fake_view", False):
             # Only jobs / projects the caller can see count.
             jobs = self.policy.scope("job.view", Job.objects.all()).values("pk")
             projects = self.policy.scope("project.view", Project.objects.all()).values(

@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load menu %}
+{% load scheduler_tags %}
 {% load static %}
 {% load index %}
 {% load crispy_forms_tags %}
@@ -97,6 +98,7 @@
   <script>
     window.SCHEDULER_CONFIG = {
       scope: 'global',
+      v1: {% scheduler_v1_config "global" %},
       readonly: {{ sched_readonly|yesno:'true,false' }},
       embedded: false,
       membersUrl: "{% url 'view_scheduler_members' %}",

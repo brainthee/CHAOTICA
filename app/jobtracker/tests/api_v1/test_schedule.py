@@ -214,3 +214,57 @@ class HistoryTests(ScheduleBase):
             [s["id"] for s in by_action[self.visible.pk]["timeslots"]], [self.slot.pk]
         )
         self.assertNotIn(self.hidden.pk, by_action)
+
+
+class SchedulerOnV1Tests(ScheduleBase):
+    """What the vis-timeline scheduler reads from v1 (A9)."""
+
+    def test_display_block_matches_page_feed(self):
+        body = self.api.get("/api/v1/schedule/", self.window).json()
+        slot = next(t for t in body["timeslots"] if t["id"] == self.slot.pk)
+        legacy = self.slot.get_schedule_json()
+        self.assertEqual(slot["display"]["colour"], legacy["backgroundColor"])
+        self.assertEqual(slot["display"]["title"], legacy["title"])
+        self.assertEqual(slot["display"]["edit_url"], legacy["edit_url"])
+        self.assertFalse(slot["out_of_scope"])
+        self.assertIn("country", body["users"][0])
+
+    def test_filter_focus_flags_other_work(self):
+        other_job = self.make_job()
+        other_phase = self.make_phase(other_job)
+        start = self.slot.start
+        foreign = TimeSlot.objects.create(
+            user=self.crew,
+            phase=other_phase,
+            slot_type=TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.DELIVERY),
+            deliveryRole=TimeSlotDeliveryRole.DELIVERY,
+            start=start + timedelta(days=1),
+            end=start + timedelta(days=1, hours=8),
+        )
+        body = self.api.get(
+            "/api/v1/schedule/", {**self.window, "jobs": self.job.pk}
+        ).json()
+        flags = {t["id"]: t["out_of_scope"] for t in body["timeslots"]}
+        self.assertFalse(flags[self.slot.pk])
+        self.assertTrue(flags[foreign.pk])
+
+    def test_scoped_resources_and_bounds(self):
+        body = self.api.get("/api/v1/schedule/resources/", {"job": self.job.pk}).json()
+        row = next(u for u in body["users"] if u["id"] == self.crew.pk)
+        self.assertIn("business_hours", row)
+        bounds = self.api.get("/api/v1/schedule/bounds/", {"job": self.job.pk}).json()
+        self.assertEqual(bounds["start"][:10], self.slot.start.date().isoformat())
+        outsider = User.objects.create_user(email="o@example.com", password="pw")
+        resp = self.as_user(outsider).get(
+            "/api/v1/schedule/resources/", {"job": self.job.pk}
+        )
+        self.assertEqual(resp.status_code, 404)
+
+    def test_pages_use_v1_feeds(self):
+        self.client.force_login(self.superuser)
+        page = self.client.get(reverse("view_scheduler")).content.decode()
+        self.assertIn('"schedule": "/api/v1/schedule/"', page)
+        page = self.client.get(
+            reverse("job_schedule", args=[self.job.slug])
+        ).content.decode()
+        self.assertIn(f'"schedule": "/api/v1/jobs/{self.job.pk}/schedule/"', page)
