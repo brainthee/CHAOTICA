@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404, redirect, render
+from ..workflow import can_reach
 from ..selectors.phases import concurrent_phases, phase_missing_billing_code
 from django.urls import reverse
 from django.http import HttpResponseRedirect, HttpResponseBadRequest, JsonResponse
@@ -1017,52 +1018,9 @@ def phases_bulk_workflow_modal(request, job_slug, new_state):
     ineligible_phases = []
     
     for phase in phases:
-        can_proceed = False
-        reason = None
-        
-        # Check eligibility based on the new state using can_proceed_to_* methods
-        # These don't trigger messages, unlike can_to_* methods
-        if new_state == PhaseStatuses.PENDING_SCHED:
-            can_proceed = phase.can_proceed_to_pending_sched()
-        elif new_state == PhaseStatuses.SCHEDULED_TENTATIVE:
-            can_proceed = phase.can_proceed_to_sched_tentative()
-        elif new_state == PhaseStatuses.SCHEDULED_CONFIRMED:
-            can_proceed = phase.can_proceed_to_sched_confirmed()
-        elif new_state == PhaseStatuses.PRE_CHECKS:
-            can_proceed = phase.can_proceed_to_pre_checks()
-        elif new_state == PhaseStatuses.CLIENT_NOT_READY:
-            can_proceed = phase.can_proceed_to_not_ready()
-        elif new_state == PhaseStatuses.READY_TO_BEGIN:
-            can_proceed = phase.can_proceed_to_ready()
-        elif new_state == PhaseStatuses.IN_PROGRESS:
-            can_proceed = phase.can_proceed_to_in_progress()
-        elif new_state == PhaseStatuses.PENDING_TQA:
-            can_proceed = phase.can_proceed_to_pending_tech_qa()
-        elif new_state == PhaseStatuses.QA_TECH:
-            can_proceed = phase.can_proceed_to_tech_qa()
-        elif new_state == PhaseStatuses.QA_TECH_AUTHOR_UPDATES:
-            can_proceed = phase.can_proceed_to_tech_qa_updates()
-        elif new_state == PhaseStatuses.PENDING_PQA:
-            can_proceed = phase.can_proceed_to_pending_pres_qa()
-        elif new_state == PhaseStatuses.QA_PRES:
-            can_proceed = phase.can_proceed_to_pres_qa()
-        elif new_state == PhaseStatuses.QA_PRES_AUTHOR_UPDATES:
-            can_proceed = phase.can_proceed_to_pres_qa_updates()
-        elif new_state == PhaseStatuses.COMPLETED:
-            can_proceed = phase.can_proceed_to_completed()
-        elif new_state == PhaseStatuses.DELIVERED:
-            can_proceed = phase.can_proceed_to_delivered()
-        elif new_state == PhaseStatuses.CANCELLED:
-            can_proceed = phase.can_proceed_to_cancelled()
-        elif new_state == PhaseStatuses.POSTPONED:
-            can_proceed = phase.can_proceed_to_postponed()
-        elif new_state == PhaseStatuses.DELETED:
-            can_proceed = phase.can_proceed_to_deleted()
-        elif new_state == PhaseStatuses.ARCHIVED:
-            can_proceed = phase.can_proceed_to_archived()
-        else:
-            return HttpResponseBadRequest()
-        
+        # FSM-level check only (no messages), the same for every status.
+        can_proceed = can_reach(phase, new_state)
+
         if can_proceed:
             eligible_phases.append(phase)
         else:

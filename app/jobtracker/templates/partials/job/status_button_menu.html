@@ -11,16 +11,13 @@
   <li>
     <button data-url="{% url 'assign_job_billingcodes' job.slug %}" class="dropdown-item js-load-modal-form">Assign Billing Codes</button>
   </li>
-  {% if job.can_proceed_to_lost %}
+  {% load workflow_tags %}
+  {% workflow_transitions job as transitions %}
+  {% for t in transitions %}{% if t.menu %}
     <li>
-      <button data-url="{% url 'job_update_workflow' job.slug 9 %}" class="dropdown-item js-update-job-workflow text-warning" data-status="Lost" data-status-id="9">Close as Lost</button>
+      <button data-url="{{ t.url }}" class="dropdown-item js-update-job-workflow text-{{ t.style }}" data-status="{{ t.label }}" data-status-id="{{ t.target }}">{{ t.label }}</button>
     </li>
-  {% endif %}
-  {% if job.can_proceed_to_delete %}
-    <li>
-      <button data-url="{% url 'job_update_workflow' job.slug 10 %}" class="dropdown-item js-update-job-workflow text-danger" data-status="Deleted" data-status-id="10">Delete Job</button>
-    </li>
-  {% endif %}
+  {% endif %}{% endfor %}
 
   {% if request.user.is_superuser %}
     <li>

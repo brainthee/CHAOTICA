@@ -129,6 +129,7 @@ class WorkflowTransitionSerializer(serializers.Serializer):
     target = serializers.IntegerField()
     label = serializers.CharField()
     style = serializers.CharField()
+    icon = serializers.CharField(allow_blank=True)
     menu = serializers.BooleanField()
     needs_reason = serializers.BooleanField()
     ready = serializers.BooleanField()
