@@ -93,6 +93,11 @@ class ApiV1TestCase(APITestCase):
         got = {row["id"] for row in resp.json()["results"]}
         self.assertEqual(got, set(queryset.values_list("pk", flat=True)))
 
+    def as_bearer(self, access_token):
+        client = APIClient(HTTP_HOST="testserver")
+        client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
+        return client
+
     def token_client(self, user, **extra):
         token, _ = Token.objects.get_or_create(user=user)
         client = APIClient(HTTP_HOST="testserver", **extra)

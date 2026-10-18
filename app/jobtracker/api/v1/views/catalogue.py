@@ -32,7 +32,9 @@ from ..serializers import (
     QualificationDetailSerializer,
     QualificationRecordSerializer,
     QualificationSerializer,
+    ServiceCoverageSerializer,
     ServiceListSerializer,
+    SkillMatrixSerializer,
     ServiceSerializer,
     SkillCategorySerializer,
     SkillDetailSerializer,
@@ -112,7 +114,7 @@ class SkillViewSet(BaseReadOnlyAPIViewSet):
             OpenApiParameter("category", str, description="Skill category slug."),
             OpenApiParameter("role", int, description="Unit role id."),
         ],
-        responses=OpenApiTypes.OBJECT,
+        responses=SkillMatrixSerializer,
         summary="Skills matrix",
         description=(
             "``{categories[{category, skills[Ref]}], rows[{user, ratings{skill_id: "
@@ -295,7 +297,7 @@ class ServiceViewSet(BaseReadOnlyAPIViewSet):
         )
 
     @extend_schema(
-        responses=OpenApiTypes.OBJECT,
+        responses=ServiceCoverageSerializer,
         summary="Who can deliver this service",
         description=(
             "Counts of people by competency for the required skills, desired-"

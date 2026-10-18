@@ -5,13 +5,22 @@ from rest_framework import serializers
 from ..fields import RefField, RefSerializer, WebUrlField
 
 
+class MetaOAuthSerializer(serializers.Serializer):
+    authorize_url = serializers.CharField()
+    token_url = serializers.CharField()
+    revoke_url = serializers.CharField()
+    scopes = serializers.ListField(child=serializers.CharField())
+    pkce = serializers.CharField()
+    client_id = serializers.CharField(allow_null=True)
+
+
 class MetaAuthSerializer(serializers.Serializer):
     session = serializers.BooleanField()
     local_login = serializers.BooleanField()
     sso = serializers.BooleanField()
     login_url = serializers.CharField()
     token_url = serializers.CharField(allow_null=True)
-    oauth = serializers.DictField(allow_null=True)
+    oauth = MetaOAuthSerializer(allow_null=True)
 
 
 class MetaBrandingSerializer(serializers.Serializer):
@@ -81,6 +90,12 @@ class PreferencesSerializer(serializers.Serializer):
 
     def get_tz(self, user) -> str:
         return user.pref_timezone or "UTC"
+
+
+class RealtimeTicketSerializer(serializers.Serializer):
+    ticket = serializers.CharField()
+    expires_in = serializers.IntegerField(help_text="Seconds.")
+    ws_url = serializers.CharField()
 
 
 class SearchGroupSerializer(serializers.Serializer):
