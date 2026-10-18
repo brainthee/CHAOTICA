@@ -73,6 +73,12 @@
                   <span class="text-sm">API Token</span>
                 </a>
              </li>
+             <li class="nav-item pt-2">
+                <a class="nav-link text-body-emphasis d-flex" data-scroll="" href="#connected-apps">
+                  <span class="fa fa-plug me-sm-2 fs-7"></span>
+                  <span class="text-sm">Connected Apps</span>
+                </a>
+             </li>
              {% endif %}
           </ul>
        </div>
@@ -324,6 +330,30 @@
                </form>
             </div>
             {% endif %}
+         </div>
+      </div>
+
+      <div class="card mt-4" id="connected-apps">
+         <div class="card-header d-flex">
+            <h5>Connected Apps</h5>
+         </div>
+         <div class="card-body">
+            <p class="text-sm text-body-secondary">
+               Apps you've signed in to with your CHAOTICA account. Each acts as you, with
+               your permissions. Disconnecting one ends its access immediately.
+            </p>
+            {% for app in connected_apps %}
+            <div class="d-flex align-items-center justify-content-between border-top border-translucent py-2">
+               <div>
+                  <p class="mb-0 fw-semibold">{{ app.application__name }}</p>
+                  <span class="fs-10 text-body-tertiary">Signed in until {{ app.last_expires }} (renews while you use it)</span>
+               </div>
+               <button class="btn btn-sm btn-phoenix-danger mb-0 js-load-modal-form"
+                  data-url="{% url 'revoke_own_connected_app' app.application_id %}" type="button">Disconnect</button>
+            </div>
+            {% empty %}
+            <p class="text-body-secondary my-auto">No apps are connected to your account.</p>
+            {% endfor %}
          </div>
       </div>
       {% endif %}

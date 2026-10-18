@@ -175,7 +175,10 @@ def app_settings(request):
         api_key = str(api_key_obj.key)
         api_key_last_used = api_key_obj.last_used
 
+    from .connected_apps import connected_apps
+
     context = {
+        "connected_apps": connected_apps(),
         "settings_form": settings_form,
         "import_form": import_form,
         "dbrestore_form": dbrestore_form,

@@ -103,6 +103,12 @@
                 </a>
               </li>
               <li class="nav-item">
+                <a class="nav-link d-flex align-items-center py-2 px-3" data-scroll href="#connected-apps">
+                  <span class="fa-solid fa-plug me-2 text-body-tertiary"></span>
+                  <span class="fs-9">Connected Apps</span>
+                </a>
+              </li>
+              <li class="nav-item">
                 <a class="nav-link d-flex align-items-center py-2 px-3" data-scroll href="#health-api-key">
                   <span class="fa-solid fa-key me-2 text-body-tertiary"></span>
                   <span class="fs-9">Health Check API Key</span>
@@ -528,6 +534,58 @@
                   }
               });
           </script>
+        </div>
+      </div>
+
+      {# ── Connected Apps (OAuth2 clients) ── #}
+      <div class="card shadow-none border border-translucent mb-4" id="connected-apps">
+        <div class="card-header border-bottom border-translucent d-flex align-items-center gap-3">
+          <div class="d-flex align-items-center justify-content-center bg-info-subtle text-info rounded-3 flex-shrink-0" style="width:2.5rem;height:2.5rem;">
+            <span class="fa-solid fa-plug"></span>
+          </div>
+          <div class="flex-1">
+            <h4 class="mb-0">Connected Apps</h4>
+            <p class="mb-0 text-body-secondary fs-9">Apps that may sign people in with OAuth2 to use the API{% if not config.API_OAUTH2_ENABLED %} &mdash; <strong>off</strong> until <em>Access &rarr; Authentication &rarr; API OAuth2 enabled</em> is on{% endif %}.</p>
+          </div>
+          <button class="btn btn-sm btn-phoenix-primary js-load-modal-form" type="button"
+            data-url="{% url 'connected_app_create' %}">
+            <span class="fa-solid fa-plus me-1"></span> Register app
+          </button>
+        </div>
+        <div class="card-body">
+          {% if connected_apps %}
+          <div class="table-responsive scrollbar">
+            <table class="table fs-9 mb-0">
+              <thead>
+                <tr>
+                  <th class="ps-0">App</th>
+                  <th>Client ID</th>
+                  <th>Redirect URIs</th>
+                  <th class="text-end">Signed in</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for app in connected_apps %}
+                <tr>
+                  <td class="ps-0 fw-semibold">{{ app.name }}{% if app.skip_authorization %} <span class="badge badge-phoenix badge-phoenix-info ms-1">trusted</span>{% endif %}</td>
+                  <td class="font-monospace text-break">{{ app.client_id }}</td>
+                  <td class="text-break">{{ app.redirect_uris|linebreaksbr }}</td>
+                  <td class="text-end">{{ app.active_tokens }}</td>
+                  <td class="text-end text-nowrap">
+                    <button class="btn btn-sm btn-phoenix-secondary js-load-modal-form" type="button"
+                      data-url="{% url 'connected_app_edit' app.pk %}">Edit</button>
+                    <button class="btn btn-sm btn-phoenix-danger js-load-modal-form" type="button"
+                      data-url="{% url 'connected_app_delete' app.pk %}">Remove</button>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <p class="text-body-secondary mb-0">No apps registered.</p>
+          {% endif %}
         </div>
       </div>
 

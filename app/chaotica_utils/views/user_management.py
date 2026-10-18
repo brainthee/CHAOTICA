@@ -691,6 +691,9 @@ def update_profile(request, email):
         from rest_framework.authtoken.models import Token
 
         context["api_token"] = Token.objects.filter(user=usr).first()
+        from .connected_apps import own_connected_apps
+
+        context["connected_apps"] = own_connected_apps(usr)
 
     context["profileForm"] = form
     template = loader.get_template("update_profile.html")
