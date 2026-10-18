@@ -33,11 +33,21 @@ strict and the gap is listed here. To be cleaned up as pages move onto the API.
   errors; contacts are only reachable through their edit modal. API contact
   refs link to the client page instead (A6).
 
-## Logic still in template views
-- Workflow buttons: four status-button templates, two workflow views and the
-  bulk modal each map statuses to transitions by hand, with hard-coded ids
-  (some mismatched). `jobtracker/workflow.py` is the shared description that
-  the templates should render from (A9).
+## Main UI on /api/v1/ (A9)
+- On v1:
+  - the notifications widget, which also gets a live `ws/me/` badge;
+  - header search and the ID jump;
+  - the job and client lists;
+  - the vis-timeline scheduler's reads (rows, slots, extent, history, polled deltas).
+- Still on page endpoints:
+  - scheduler writes and its WebSocket (writes are out of scope);
+  - the dashboard tab partials (server-rendered HTML; same selectors as `/me/dashboard/`).
+- The old scheduler read feeds (`view_*_schedule_members|slots`,
+  `view_scheduler_slots_since`, `schedule_action_history`) are no longer
+  called by the pages. They're kept only because older tests exercise them;
+  remove them with those tests.
+- Workflow buttons render from `jobtracker/workflow.py`, the same table the
+  API uses.
 
 ## Scheduler (A5)
 - Utilisation: `/schedule/` uses `calculate_bulk_utilization` (via
@@ -63,3 +73,6 @@ strict and the gap is listed here. To be cleaned up as pages move onto the API.
 - The service page's Performance tab covered every phase (and listed their
   clients); it now covers the phases the viewer can see, like its Jobs tab.
 - Skill page Edit/Delete buttons checked `perms.chaotica.*` and never showed.
+- Header search never listed qualifications (the template read the wrong
+  context name). It does now, via the API.
+- Notification titles were inserted into the page unescaped (stored XSS).

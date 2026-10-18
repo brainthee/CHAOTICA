@@ -557,42 +557,68 @@ $(function() {
     }
 
 
-    var search = function(str) {
-        setRequestHeader();
-        $.ajax({
-            url: "{% url 'search' %}",
-            type: 'POST',
-            dataType: 'json',
-            data: {
-                "q": str,
-            },
-            params: { // extra parameters that will be passed to ajax
-                contentType: "application/json; charset=utf-8",
-            },
-            success: function(data) {
-                $("#searchResultContainer").html(data.html_form);
-            }
-        });
+    // Header search runs on /api/v1/search/ (rendered here, escaped).
+    const SEARCH_ICONS = {
+        jobs: 'fa-briefcase', phases: 'fa-list-check', projects: 'fa-diagram-project',
+        clients: 'fa-handshake', billing_codes: 'fa-money-bill', users: 'fa-user',
+        services: 'fa-laptop-code', skills: 'fa-graduation-cap',
+        qualifications: 'fa-certificate',
     };
-        
+
+    function searchHeader(text) {
+        return '<h6 class="dropdown-header text-1000 fs-9 py-2">' + v1Escape(text) + '</h6>';
+    }
+
+    function renderSearchResult(group, r) {
+        const badge = r.status_display
+            ? `<div class="flex-1 text-end"><span class="badge text-wrap badge-phoenix badge-phoenix-${v1Escape(r.status_colour)}">${v1Escape(r.status_display)}</span></div>`
+            : '';
+        const lead = r.image_url
+            ? `<div class="avatar avatar-l me-2 text-900"><img class="rounded-circle" src="${v1Escape(r.image_url)}" alt="" /></div>`
+            : `<span class="fa-solid ${SEARCH_ICONS[group.type] || 'fa-circle'} text-900 me-2"></span>`;
+        const sub = r.subtitle ? `<p class="fs-10 mb-0 d-flex text-700">${v1Escape(r.subtitle)}</p>` : '';
+        const href = /^(\/(?!\/)|https?:\/\/)/i.test(r.web_url || '') ? r.web_url : '#';
+        return `<a class="dropdown-item py-2 d-flex align-items-center" href="${v1Escape(href)}">` +
+            lead + `<div class="flex-1"><h6 class="mb-0 text-1000 text-wrap title">${v1Escape(r.display)}</h6>${sub}</div>` +
+            badge + '</a>';
+    }
+
+    function renderSearch(q, body) {
+        const groups = (body && body.groups) || [];
+        if (!q) return searchHeader('Start typing to search...');
+        if (q.length < 3) return searchHeader('Type more than 2 characters');
+        const total = groups.reduce((n, g) => n + g.results.length, 0);
+        if (!total) return searchHeader('No results found');
+        let html = '<div class="list py-0"><h6 class="dropdown-header text-1000 fs-10 py-2">';
+        if (total >= 50) {
+            html += '<div class="alert alert-phoenix-warning py-1 text-wrap" role="alert">' +
+                'Lots of results. Please be more specific to avoid truncated results.</div>';
+        }
+        html += `<div class="alert alert-phoenix-info p-0 mb-0 border-0" role="alert">${total} <span class="text-500">results</span></div></h6>`;
+        groups.forEach(g => {
+            html += '<hr class="text-200 my-0" />' +
+                `<h6 class="dropdown-header text-1000 fs-9 border-bottom border-200 py-2 lh-sm">${v1Escape(g.label)}</h6>` +
+                '<div class="py-2">' + g.results.map(r => renderSearchResult(g, r)).join('') + '</div>';
+        });
+        return html + '</div>';
+    }
+
+    var search = function(str) {
+        const q = (str || '').trim();
+        if (q.length < 3) {
+            $("#searchResultContainer").html(renderSearch(q, null));
+            return;
+        }
+        $.getJSON("{% url 'api_v1:search' %}", { q: q, limit: 25 })
+            .done(body => $("#searchResultContainer").html(renderSearch(q, body)));
+    };
+
     // Resolve a typed Job ID / Phase ID straight to its page. On a hit we
     // navigate there; on a miss we do nothing and leave the normal search
     // results dropdown in place.
     var searchGoto = function(str) {
-        setRequestHeader();
-        $.ajax({
-            url: "{% url 'search_goto' %}",
-            type: 'GET',
-            dataType: 'json',
-            data: {
-                "q": str,
-            },
-            success: function(data) {
-                if (data.url) {
-                    window.location = data.url;
-                }
-            }
-        });
+        $.getJSON("{% url 'api_v1:search-goto' %}", { id: str })
+            .done(ref => { if (ref && ref.web_url) window.location = ref.web_url; });
     };
 
     // Job IDs are plain digits ("1234"); Phase IDs are "1234-1".

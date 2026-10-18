@@ -51,11 +51,36 @@ SEARCH_GROUPS = (
     ("phases", "Phases"),
     ("projects", "Projects"),
     ("clients", "Clients"),
+    ("billing_codes", "Billing Codes"),
     ("users", "People"),
     ("services", "Services"),
     ("skills", "Skills"),
     ("qualifications", "Qualifications"),
 )
+
+
+def search_result(obj, request):
+    """A ref plus what a results list shows under it."""
+    from chaotica_utils.models import User as UserModel
+
+    from ....models import Job, Phase
+
+    out = {
+        **make_ref(obj, request),
+        "subtitle": None,
+        "status_display": None,
+        "status_colour": None,
+        "image_url": None,
+    }
+    if isinstance(obj, (Job, Phase)):
+        client = obj.client if isinstance(obj, Job) else obj.job.client
+        out["subtitle"] = str(client)
+        out["status_display"] = obj.get_status_display()
+        out["status_colour"] = obj.status_bs_colour
+    elif isinstance(obj, UserModel):
+        out["subtitle"] = obj.job_title or None
+        out["image_url"] = request.build_absolute_uri(obj.get_avatar_url())
+    return out
 
 
 class MetaView(ApiView):
@@ -176,7 +201,7 @@ class SearchView(ApiView):
             {
                 "type": key,
                 "label": label,
-                "results": [make_ref(o, request) for o in found[key]],
+                "results": [search_result(o, request) for o in found[key]],
             }
             for key, label in SEARCH_GROUPS
             if found.get(key)

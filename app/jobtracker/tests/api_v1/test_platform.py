@@ -117,25 +117,43 @@ class SearchTests(ApiV1TestCase):
         self.assertEqual(groups["jobs"], {j.pk for j in expected["jobs"]})
 
     def test_users_are_identity_refs(self):
-        body = (
-            self.as_user(self.viewer).get("/api/v1/search/", {"q": "daystrom"}).json()
-        )
+        body = self.as_user(self.viewer).get("/api/v1/search/", {"q": "daystrom"}).json()
         people = next(g for g in body["groups"] if g["type"] == "users")
         self.assertEqual(
-            set(people["results"][0]), {"id", "type", "display", "url", "web_url"}
-        )
+            set(people["results"][0]),
+            {"id", "type", "display", "url", "web_url", "subtitle",
+             "status_display", "status_colour", "image_url"},
+        )  # identity only: no email or contact details
 
     def test_short_query_returns_nothing(self):
         body = self.as_user(self.viewer).get("/api/v1/search/", {"q": "da"}).json()
         self.assertEqual(body["groups"], [])
 
-    def test_no_billing_codes_group(self):
-        body = (
+    def test_billing_codes_need_permission(self):
+        from jobtracker.models import BillingCode
+
+        BillingCode.objects.create(code="DAYSTROM-1", client=self.job.client)
+        su = (
             self.as_user(self.superuser)
             .get("/api/v1/search/", {"q": "daystrom"})
             .json()
         )
-        self.assertNotIn("billing_codes", {g["type"] for g in body["groups"]})
+        codes = next(g for g in su["groups"] if g["type"] == "billing_codes")
+        self.assertIsNone(codes["results"][0]["url"])  # no API resource
+        viewer = (
+            self.as_user(self.viewer).get("/api/v1/search/", {"q": "daystrom"}).json()
+        )
+        self.assertNotIn("billing_codes", {g["type"] for g in viewer["groups"]})
+
+    def test_results_carry_list_details(self):
+        body = (
+            self.as_user(self.viewer).get("/api/v1/search/", {"q": "daystrom"}).json()
+        )
+        job = next(g for g in body["groups"] if g["type"] == "jobs")["results"][0]
+        self.assertEqual(job["subtitle"], str(self.job.client))
+        self.assertTrue(job["status_display"])
+        person = next(g for g in body["groups"] if g["type"] == "users")["results"][0]
+        self.assertTrue(person["image_url"].startswith("http://testserver/"))
 
     def test_goto(self):
         client = self.as_user(self.viewer)
@@ -148,11 +166,8 @@ class SearchTests(ApiV1TestCase):
         self.assertEqual(resp.status_code, 404)
         self.assertEqual(resp.json()["error"]["code"], "not_found")
 
-    def test_header_search_still_renders(self):
+    def test_header_search_uses_v1(self):
         self.client.force_login(self.viewer)
-        resp = self.client.post(
-            reverse("search"), {"q": "daystrom"}, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
-        )
-        self.assertEqual(resp.status_code, 200, resp.content[:200])
-        self.assertIn("Daystrom Pentest", resp.json()["html_form"])
-        self.assertNotIn("Daystrom Secret", resp.json()["html_form"])
+        page = self.client.get(reverse("dashboard")).content.decode()
+        self.assertIn(reverse("api_v1:search"), page)
+        self.assertIn(reverse("api_v1:search-goto"), page)
