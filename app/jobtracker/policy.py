@@ -203,29 +203,41 @@ _CAN = {
 
 
 def _scope_jobs(p, qs):
-    # JobPermissionRequiredMixin: unit can_view_jobs OR the job-team bypass.
-    # jobs_for_user is distinct and jobs_with_unit_permission isn't, so union
-    # pks rather than combining the querysets with |.
-    from .models import Job
+    # As the job pages (JobPermissionRequiredMixin): can_view_jobs on the
+    # job's unit, or on the team (people booked on it or holding a role) —
+    # at any status but deleted. (This used the dashboard managers, which
+    # only cover live statuses, so completed / lost jobs were unreachable.)
+    from .enums import JobStatuses
+    from .selectors.involvement import job_involvement_q
 
-    ids = set(
-        Job.objects.jobs_with_unit_permission(
-            p.user, "jobtracker.can_view_jobs"
-        ).values_list("pk", flat=True)
+    u = p.user
+    visible = Q(unit__in=p.units("jobtracker.can_view_jobs")) | job_involvement_q(u)
+    visible |= Q(created_by=u)
+    # ...or view_job granted on the job itself (as phases_visible_to).
+    visible |= Q(
+        pk__in=get_objects_for_user(
+            u, "jobtracker.view_job", klass=qs.model, accept_global_perms=False
+        ).values("pk")
     )
-    ids.update(Job.objects.jobs_for_user(p.user).values_list("pk", flat=True))
+    ids = (
+        qs.model.objects.filter(visible)
+        .exclude(status=JobStatuses.DELETED)
+        .values("pk")
+    )
     return qs.filter(pk__in=ids)
 
 
 def _scope_phases(p, qs):
-    from .models import Phase
+    from .enums import JobStatuses, PhaseStatuses
+    from .models import Job, Phase
 
-    ids = set(
-        Phase.objects.phases_with_unit_permission(
-            p.user, "jobtracker.can_view_jobs"
-        ).values_list("pk", flat=True)
+    jobs = _scope_jobs(p, Job.objects.all()).values("pk")
+    ids = (
+        Phase.objects.filter(job__in=jobs)
+        .exclude(status=PhaseStatuses.DELETED)
+        .exclude(job__status=JobStatuses.DELETED)
+        .values("pk")
     )
-    ids.update(Phase.objects.phases_for_user(p.user).values_list("pk", flat=True))
     return qs.filter(pk__in=ids)
 
 

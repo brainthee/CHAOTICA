@@ -24,17 +24,24 @@ class PolicyContextTests(ApiV1TestCase):
             policy.unit_ids("can_view_jobs")  # same perm, either spelling
             policy.units("jobtracker.can_view_jobs")
 
-    def test_job_scope_matches_legacy_union(self):
-        job = self.make_job(account_manager=self.normal)
-        self.make_job()
-        scoped = PolicyContext(self.normal).scope("job.view", Job.objects.all())
-        expected = set(
-            Job.objects.jobs_with_unit_permission(
-                self.normal, "jobtracker.can_view_jobs"
-            ).values_list("pk", flat=True)
-        ) | set(Job.objects.jobs_for_user(self.normal).values_list("pk", flat=True))
-        self.assertEqual(set(scoped.values_list("pk", flat=True)), expected)
-        self.assertIn(job.pk, expected)
+    def test_job_scope_matches_the_pages(self):
+        """Every status but deleted, by unit permission or team membership —
+        including completed / lost jobs the old (live-only) scope dropped."""
+        from jobtracker.utils import can_view_job
+
+        team_job = self.make_job(account_manager=self.normal)
+        done = self.make_job(account_manager=self.normal, status=JobStatuses.COMPLETED)
+        gone = self.make_job(account_manager=self.normal, status=JobStatuses.DELETED)
+        self.make_job()  # someone else's
+        scoped = set(
+            PolicyContext(self.normal)
+            .scope("job.view", Job.objects.all())
+            .values_list("pk", flat=True)
+        )
+        self.assertEqual(scoped, {team_job.pk, done.pk})
+        self.assertNotIn(gone.pk, scoped)
+        for job in (team_job, done):
+            self.assertTrue(can_view_job(self.normal, job))
 
     def test_unknown_action_raises(self):
         with self.assertRaises(KeyError):

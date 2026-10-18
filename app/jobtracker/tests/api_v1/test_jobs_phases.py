@@ -78,7 +78,7 @@ class JobDetailTests(JobPhaseBase):
 
     def test_detail_query_budget(self):
         self.su.get(f"/api/v1/jobs/{self.job.pk}/")
-        with self.assertNumQueries(12):
+        with self.assertNumQueries(10):
             self.su.get(f"/api/v1/jobs/{self.job.pk}/")
 
     def test_capabilities_follow_unit_role(self):
