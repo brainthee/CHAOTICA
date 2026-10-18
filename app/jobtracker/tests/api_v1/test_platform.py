@@ -21,6 +21,14 @@ class MetaTests(ApiV1TestCase):
         self.assertIn("entropy_meter", body["features"])
         self.assertTrue(body["auth"]["login_url"].startswith("http://testserver/"))
 
+    def test_readable_from_any_origin(self):
+        resp = self.client.get("/api/v1/meta/", HTTP_ORIGIN="https://anywhere.example")
+        self.assertEqual(resp["Access-Control-Allow-Origin"], "*")
+        self.assertIsNone(resp.get("Access-Control-Allow-Credentials"))
+        # Other endpoints stay locked to registered origins.
+        resp = self.client.get("/api/v1/me/", HTTP_ORIGIN="https://anywhere.example")
+        self.assertIsNone(resp.get("Access-Control-Allow-Origin"))
+
     def test_version_for_signed_in(self):
         body = self.as_user(self.normal).get("/api/v1/meta/").json()
         self.assertEqual(body["version"], settings.DJANGO_VERSION)

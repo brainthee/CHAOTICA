@@ -64,6 +64,14 @@ class MetaView(ApiView):
 
     permission_classes = [permissions.AllowAny]
 
+    def finalize_response(self, request, response, *args, **kwargs):
+        # Public discovery: any site may read it (no credentials, so a
+        # cross-origin read is always the anonymous view), letting a client
+        # check an instance before its origin is registered.
+        response = super().finalize_response(request, response, *args, **kwargs)
+        response.setdefault("Access-Control-Allow-Origin", "*")
+        return response
+
     @extend_schema(responses=MetaSerializer, summary="Instance metadata")
     def get(self, request):
         absolute = request.build_absolute_uri
