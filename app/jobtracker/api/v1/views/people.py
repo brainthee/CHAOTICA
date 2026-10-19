@@ -322,7 +322,7 @@ class UserViewSet(BaseReadOnlyAPIViewSet):
         # A queryset, not an instance — the utilisation engine needs .values_list.
         users = User.objects.filter(pk=pk)
         start, end = parse_schedule_window(request)
-        return Response(build_schedule_payload(users, start, end))
+        return Response(build_schedule_payload(users, start, end, request=request))
 
 
 class OrganisationalUnitViewSet(BaseReadOnlyAPIViewSet):

@@ -2,6 +2,7 @@
 
 from types import SimpleNamespace
 
+from django.core.exceptions import SuspiciousOperation
 from django.utils import timezone
 from drf_spectacular.openapi import AutoSchema
 from drf_spectacular.types import OpenApiTypes
@@ -122,7 +123,10 @@ def filtered_schedule_users(request, with_focus=False):
         users = _filter_users_on_query(SimpleNamespace(user=request.user), cleaned)
         focus = SchedulerFocus(cleaned)
     else:
-        users = User.objects.filter(pk__in=viewable_schedule_user_pks(request.user))
+        # As the page's unfiltered rows: leavers only on request.
+        users = User.objects.filter(
+            pk__in=viewable_schedule_user_pks(request.user), is_active=True
+        )
     unit_id = parse_int_param(request, "unit")
     if unit_id is not None:
         users = users.filter(
@@ -223,12 +227,23 @@ class ScheduleViewSet(ApiV1Mixin, viewsets.ViewSet):
             ),
             OpenApiParameter("end", OpenApiTypes.DATE, description="For utilisation."),
         ]
+        + SCOPE_PARAMS
+        + [OpenApiParameter("project", int)]
         + FILTER_PARAMS,
         responses=ScheduleResourcesSerializer,
     )
     @action(detail=False, methods=["get"])
     def resources(self, request):
         kind, obj = scoped_schedule(request, self.policy)
+        params = request.query_params
+        if params.get("start") or params.get("end"):
+            # Validate as every v1 window (400 envelope) and hand the row
+            # builder whole days: a date-only end would otherwise mean its
+            # midnight and drop that day from utilisation.
+            start, end = parse_schedule_window(request)
+            query = request._request.GET.copy()
+            query["start"], query["end"] = start.isoformat(), end.isoformat()
+            request._request.GET = query
         if kind is None:
             rows = scheduler_member_rows(request._request, include_html=False)
         else:
@@ -325,48 +340,100 @@ class ScheduleViewSet(ApiV1Mixin, viewsets.ViewSet):
     )
     @action(detail=False, methods=["get"])
     def deltas(self, request):
-        since = clean_datetime(request.query_params.get("since"))
+        try:
+            since = clean_datetime(request.query_params.get("since"))
+        except SuspiciousOperation:
+            since = None
         if since is None:
             raise ValidationError({"since": ["Expected an ISO 8601 datetime."]})
         job_id = parse_int_param(request, "job")
         phase_id = parse_int_param(request, "phase")
+        # Taken before reading, so nothing committed meanwhile is skipped.
+        now = timezone.now()
+        limit = 200
         history = schedule_history(
             request.user,
             job_id=job_id,
             phase_id=phase_id,
-            limit=200,
+            limit=limit,
             scan=2000,
             since=since,
         )
-        viewable = (
-            None if (job_id or phase_id) else viewable_schedule_user_pks(request.user)
-        )
-        deltas = [_api_delta(a, viewable) for a in reversed(history)]
+        if len(history) >= limit:
+            now = history[0].created  # a full page: resume after its last
+        # Slots are reloaded in their current state, which may have moved
+        # since: only send those of people this view may show.
+        from ....models import Job, Phase
+
+        viewable = set(viewable_schedule_user_pks(request.user))
+        if phase_id:
+            phase = Phase.objects.filter(pk=phase_id).first()
+            if phase is not None:
+                viewable |= set(phase.team().values_list("pk", flat=True))
+        elif job_id:
+            job = Job.objects.filter(pk=job_id).first()
+            if job is not None:
+                viewable |= set(job.team_scheduled().values_list("pk", flat=True))
+        deltas = _api_deltas(list(reversed(history)), viewable)
         return Response(
-            ScheduleDeltasSerializer({"deltas": deltas, "now": timezone.now()}).data
+            ScheduleDeltasSerializer({"deltas": deltas, "now": now}).data
         )
 
 
-def _api_delta(action, viewable):
-    slot_ids, comment_ids, removed_slots, removed_comments = [], [], [], []
-    for item in action.payload or []:
-        is_comment = item["model"] == "timeslotcomment"
-        if item["after"] is None:
-            (removed_comments if is_comment else removed_slots).append(item["pk"])
-        else:
-            (comment_ids if is_comment else slot_ids).append(item["pk"])
-    slots = TimeSlot.objects.filter(pk__in=slot_ids).select_related("slot_type")
-    comments = TimeSlotComment.objects.filter(pk__in=comment_ids)
-    if viewable is not None:
-        slots = slots.filter(user_id__in=viewable)
-        comments = comments.filter(user_id__in=viewable)
-    return {
-        "action_id": action.pk,
-        "created": action.created,
-        "actor_id": action.actor_id,
-        "action_type": action.action_type,
-        "timeslots": slots,
-        "comments": comments,
-        "removed_timeslots": removed_slots,
-        "removed_comments": removed_comments,
+def _api_deltas(actions, viewable):
+    """The deltas for ``actions`` (oldest first), with every slot and comment
+    they touch loaded in one query each (was a pair per action plus lazy
+    relations per slot)."""
+    parsed = []
+    slot_ids, comment_ids = set(), set()
+    for action in actions:
+        upserted_slots, upserted_comments, removed_slots, removed_comments = (
+            [], [], [], []
+        )
+        for item in action.payload or []:
+            is_comment = item["model"] == "timeslotcomment"
+            if item["after"] is None:
+                (removed_comments if is_comment else removed_slots).append(item["pk"])
+            else:
+                (upserted_comments if is_comment else upserted_slots).append(
+                    item["pk"]
+                )
+        slot_ids.update(upserted_slots)
+        comment_ids.update(upserted_comments)
+        parsed.append(
+            (action, upserted_slots, upserted_comments, removed_slots, removed_comments)
+        )
+    slots = {
+        s.pk: s
+        for s in TimeSlot.objects.filter(
+            pk__in=slot_ids, user_id__in=viewable
+        ).prefetch_related(
+            "phase",
+            "phase__job",
+            "phase__job__client",
+            "project",
+            "slot_type",
+            "user",
+            "leaverequest",
+            "rm_inbound__record",
+        )
     }
+    comments = {
+        c.pk: c
+        for c in TimeSlotComment.objects.filter(
+            pk__in=comment_ids, user_id__in=viewable
+        ).select_related("user")
+    }
+    return [
+        {
+            "action_id": action.pk,
+            "created": action.created,
+            "actor_id": action.actor_id,
+            "action_type": action.action_type,
+            "timeslots": [slots[pk] for pk in up_s if pk in slots],
+            "comments": [comments[pk] for pk in up_c if pk in comments],
+            "removed_timeslots": rm_s,
+            "removed_comments": rm_c,
+        }
+        for action, up_s, up_c, rm_s, rm_c in parsed
+    ]

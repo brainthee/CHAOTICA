@@ -14,11 +14,26 @@ def unread_count(user):
 def set_read(user, ids, read=True):
     """Mark the user's own notifications ``ids`` read (or unread). Returns the
     number changed; ids belonging to anyone else are ignored."""
-    return Notification.objects.filter(user=user, pk__in=ids).update(read=read)
+    updated = Notification.objects.filter(user=user, pk__in=ids).update(read=read)
+    if updated:
+        _push(user)
+    return updated
 
 
 def mark_all_read(user):
-    return Notification.objects.filter(user=user, read=False).update(read=True)
+    updated = Notification.objects.filter(user=user, read=False).update(read=True)
+    if updated:
+        _push(user)
+    return updated
+
+
+def _push(user):
+    """Refresh the user's badge in their other open tabs (ws/me/)."""
+    from django.db import transaction
+
+    from chaotica_utils.realtime import push_unread_changed
+
+    transaction.on_commit(lambda: push_unread_changed([user.pk]))
 
 
 def serialize_notification(n):

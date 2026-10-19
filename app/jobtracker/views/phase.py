@@ -45,37 +45,6 @@ from chaotica_utils.utils import (
 logger = logging.getLogger(__name__)
 
 
-@job_permission_required_or_403("jobtracker.view_job_schedule", (Phase, "slug", "slug"))
-def view_phase_schedule_slots(request, job_slug, slug):
-    # Delegate to the shared vis-timeline builder, hard-scoped to this phase.
-    from ..utils import get_scheduler_slots, merge_include_users
-
-    job = get_object_or_404(Job, slug=job_slug)
-    phase = get_object_or_404(Phase, job=job, slug=slug)
-    return get_scheduler_slots(
-        request,
-        filtered_users=merge_include_users(request, phase.team()),
-        use_filter_form=False,
-        scope_phases=[phase],
-        hard_scope=False,   # show other commitments faded for context
-    )
-
-
-@job_permission_required_or_403("jobtracker.view_job_schedule", (Phase, "slug", "slug"))
-def view_phase_schedule_members(request, job_slug, slug):
-    from ..utils import get_scheduler_members, merge_include_users
-
-    job = get_object_or_404(Job, slug=job_slug)
-    phase = get_object_or_404(Phase, job=job, slug=slug)
-    return get_scheduler_members(
-        request,
-        filtered_users=merge_include_users(request, phase.team()),
-        use_filter_form=False,
-        role_job=job,
-        role_phase=phase,
-    )
-
-
 @job_permission_required_or_403(
     "jobtracker.can_update_job", (Phase, "slug", "slug")
 )
@@ -407,7 +376,7 @@ class PhaseScheduleView(UnitPermissionRequiredMixin, PhaseBaseView, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(PhaseScheduleView, self).get_context_data(**kwargs)
-        context["userSelect"] = AssignUserField()
+        context["userSelect"] = AssignUserField(viewer=self.request.user)
         context["TimeSlotDeliveryRoles"] = TimeSlotDeliveryRole.CHOICES
         context["earliest_scheduled_date"] = context["phase"].earliest_scheduled_date()
 

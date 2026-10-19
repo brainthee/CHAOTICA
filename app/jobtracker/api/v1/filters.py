@@ -29,14 +29,17 @@ class AliasOrderingFilter(OrderingFilter):
 
     def get_ordering(self, request, queryset, view):
         ordering = super().get_ordering(request, queryset, view)
-        aliases = getattr(view, "ordering_aliases", {})
-        if not ordering or not aliases:
+        if not ordering:
             return ordering
+        aliases = getattr(view, "ordering_aliases", {})
         out = []
         for term in ordering:
             desc = term.startswith("-")
             name = aliases.get(term.lstrip("-"), term.lstrip("-"))
             out.append(("-" if desc else "") + name)
+        # A unique tiebreak, so pages of equal sort keys don't overlap.
+        if not {"pk", "-pk"} & set(out):
+            out.append("pk")
         return out
 
 
@@ -181,8 +184,10 @@ class LeaveRequestFilter(django_filters.FilterSet):
     reports_of = MeFilter(
         predicate=lambda u: Q(user__manager=u) | Q(user__acting_manager=u)
     )
-    start = django_filters.DateFilter(field_name="end_date", lookup_expr="gte")
-    end = django_filters.DateFilter(field_name="start_date", lookup_expr="lte")
+    # Whole days (the fields are datetimes): leave starting at 09:00 on
+    # ``end`` still counts.
+    start = django_filters.DateFilter(field_name="end_date", lookup_expr="date__gte")
+    end = django_filters.DateFilter(field_name="start_date", lookup_expr="date__lte")
 
     class Meta:
         model = LeaveRequest

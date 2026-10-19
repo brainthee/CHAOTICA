@@ -494,7 +494,10 @@ class Service(models.Model):
         import calendar
 
         base = phases if phases is not None else self.phases.all()
-        cache_key = f"performance_metrics_{self.id}_{cache_scope}_{base.count()}"
+        # Shares the usage version, so clear_usage_cache() (phase saves,
+        # clear_cache) invalidates every viewer's copy.
+        version = cache.get(self._usage_version_key(self.id)) or "0"
+        cache_key = f"performance_metrics_{self.id}_{version}_{cache_scope}_{base.count()}"
         cached_result = cache.get(cache_key)
         if cached_result:
             return cached_result
@@ -644,12 +647,10 @@ class Service(models.Model):
         from django.core.cache import cache
         # Clear service readiness cache
         cache.delete(f"service_readiness_{self.id}_{self.skillsRequired.count()}_{self.skillsDesired.count()}")
-        # Clear analytics cache
+        # Clear analytics + performance metrics caches (versioned)
         Service.clear_usage_cache(self.id)
         # Clear skills coverage cache
         cache.delete(f"skills_coverage_{self.id}_{self.skillsRequired.count()}_{self.skillsDesired.count()}")
-        # Clear performance metrics cache
-        cache.delete(f"performance_metrics_{self.id}_{self.phases.count()}")
 
     def save(self, *args, **kwargs):
         if not self.slug:

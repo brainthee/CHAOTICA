@@ -10,6 +10,14 @@ from ..models import TimeSlot
 from ..utils import assigned_role_map, phase_assigned_role_map
 
 
+def _team_slots(qs):
+    """Slots with what the breakdowns read. ``prefetch_related("user")`` (not
+    ``select_related``) gives each person ONE User instance, so the per-user
+    business-hours memo on it is shared by all their slots instead of a
+    membership query per slot."""
+    return qs.select_related("phase", "slot_type").prefetch_related("user")
+
+
 def get_user_schedule_breakdown(job, phase=None):
     """Build a per-user, per-role hour breakdown for a job or phase.
 
@@ -18,10 +26,10 @@ def get_user_schedule_breakdown(job, phase=None):
     """
 
     if phase:
-        slots = TimeSlot.objects.filter(phase=phase).select_related("user", "phase")
+        slots = _team_slots(TimeSlot.objects.filter(phase=phase))
         hours_in_day = phase.get_hours_in_day()
     else:
-        slots = TimeSlot.objects.filter(phase__job=job).select_related("user", "phase")
+        slots = _team_slots(TimeSlot.objects.filter(phase__job=job))
         hours_in_day = job.get_hours_in_day()
 
     role_names = dict(TimeSlotDeliveryRole.CHOICES)
@@ -140,7 +148,7 @@ def get_user_phase_breakdown(job):
     expand each member on the job-level Team tab into their per-phase allocation.
     """
 
-    slots = TimeSlot.objects.filter(phase__job=job).select_related("user", "phase")
+    slots = _team_slots(TimeSlot.objects.filter(phase__job=job))
     hours_in_day = job.get_hours_in_day()
     role_names = dict(TimeSlotDeliveryRole.CHOICES)
 
@@ -345,22 +353,27 @@ def schedule_history(
         "-created"
     )
     if since is not None:
-        qs = qs.filter(created__gt=since)
+        # Changes after ``since`` are read oldest first, so a capped page
+        # holds the earliest ones and the caller can resume from its last.
+        qs = qs.filter(created__gt=since).order_by("created")
     if phase_id:
         phase = Phase.objects.select_related("job__unit").filter(pk=phase_id).first()
         if not phase or not can_view_job_schedule(user, phase.job):
             return []
-        return list(qs.filter(phase_id=phase_id)[:limit])
-    if job_id:
+        out = list(qs.filter(phase_id=phase_id)[:limit])
+    elif job_id:
         job = Job.objects.select_related("unit").filter(pk=job_id).first()
         if not job or not can_view_job_schedule(user, job):
             return []
-        return list(qs.filter(job_id=job_id)[:limit])
-    viewable = viewable_schedule_user_pks(user)
-    out = []
-    for action in qs[:scan]:
-        if action._affected_user_ids() & viewable:
-            out.append(action)
-            if len(out) >= limit:
-                break
+        out = list(qs.filter(job_id=job_id)[:limit])
+    else:
+        viewable = viewable_schedule_user_pks(user)
+        out = []
+        for action in qs[:scan]:
+            if action._affected_user_ids() & viewable:
+                out.append(action)
+                if len(out) >= limit:
+                    break
+    if since is not None:
+        out.reverse()  # newest first, as without ``since``
     return out

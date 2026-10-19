@@ -70,34 +70,6 @@ logger = logging.getLogger(__name__)
 # by adding them permissions directly to the job
 
 
-@job_permission_required_or_403("jobtracker.view_job_schedule", (Job, "slug", "slug"))
-def view_job_schedule_slots(request, slug):
-    # Delegate to the shared vis-timeline builder, hard-scoped to this job.
-    from ..utils import get_scheduler_slots, merge_include_users
-
-    job = get_object_or_404(Job, slug=slug)
-    return get_scheduler_slots(
-        request,
-        filtered_users=merge_include_users(request, job.team_scheduled()),
-        use_filter_form=False,
-        scope_phases=job.phases.all(),
-        hard_scope=False,   # show other commitments faded for context
-    )
-
-
-@job_permission_required_or_403("jobtracker.view_job_schedule", (Job, "slug", "slug"))
-def view_job_schedule_members(request, slug):
-    from ..utils import get_scheduler_members, merge_include_users
-
-    job = get_object_or_404(Job, slug=slug)
-    return get_scheduler_members(
-        request,
-        filtered_users=merge_include_users(request, job.team_scheduled()),
-        use_filter_form=False,
-        role_job=job,
-    )
-
-
 @job_permission_required_or_403(
     "jobtracker.can_manage_framework_job", (Job, "slug", "slug")
 )
@@ -1040,7 +1012,7 @@ class JobScheduleView(UnitPermissionRequiredMixin, JobBaseView, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(JobScheduleView, self).get_context_data(**kwargs)
-        context["userSelect"] = AssignUserField()
+        context["userSelect"] = AssignUserField(viewer=self.request.user)
         context["TimeSlotDeliveryRoles"] = TimeSlotDeliveryRole.CHOICES
 
         types_in_use = context["job"].get_all_total_scheduled_by_type()

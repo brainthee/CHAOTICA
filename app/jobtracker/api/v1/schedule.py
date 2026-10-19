@@ -113,6 +113,7 @@ def build_schedule_payload(
     hard_scope=True,
     request=None,
     focus=None,
+    policy=None,
 ):
     """Assemble the composite schedule window for ``users`` in ``[start, end]``.
 
@@ -134,11 +135,34 @@ def build_schedule_payload(
     # start_date/end_date are DateTimeFields — filter with the aware datetimes
     # (not .date()) so leave overlapping the window is caught without coercing a
     # naive datetime.
+    # Everyone who may see a schedule sees its approved leave (the scheduler
+    # draws it); pending/declined/cancelled requests and their notes only
+    # within the viewer's Manage Leave visibility.
     leave = LeaveRequest.objects.filter(
         user__in=users,
         start_date__lte=end,
         end_date__gte=start,
     ).select_related("user", "authorised_by", "timeslot")
+    if policy is None and request is not None:
+        from .base import get_policy
+
+        policy = get_policy(request)
+    full_leave = set()
+    if policy is not None:
+        full_leave = set(
+            policy.scope("leave.view", leave.order_by()).values_list("pk", flat=True)
+        )
+    leave = [
+        lr
+        for lr in leave
+        if lr.pk in full_leave
+        or (lr.authorised and not lr.cancelled and not lr.declined)
+    ]
+    for lr in leave:
+        if lr.pk not in full_leave:
+            lr.notes = ""
+            lr.authorised_by = None
+            lr.authorised_on = None
 
     # The in-scope users' countries' holidays plus global (country-less) ones.
     countries = {c for c in users.values_list("country", flat=True) if c}

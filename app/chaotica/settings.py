@@ -22,13 +22,16 @@ DJANGO_VERSION = os.environ.get("DJANGO_VERSION", default="bleeding-edge")
 SENTRY_BACKEND_DSN = os.environ.get("SENTRY_BACKEND_DSN", default=None)
 SENTRY_FRONTEND_DSN = os.environ.get("SENTRY_FRONTEND_DSN", default=None)
 
-# Parsed as a real bool: a raw env string makes "false"/"0" truthy.
-DEMO_ENV = str(os.environ.get("DEMO_ENV", "")).strip().lower() in (
-    "1",
-    "true",
-    "yes",
-    "on",
-)
+def env_bool(name, default=False):
+    """A boolean env var: "1"/"true"/"yes"/"on" (any case) are True, anything
+    else set is False. (``bool()`` of the raw string makes "false" truthy.)"""
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in ("1", "true", "yes", "on")
+
+
+DEMO_ENV = env_bool("DEMO_ENV")
 DEMO_USER = os.environ.get("DEMO_USER", default=None)
 DEMO_PASS = os.environ.get("DEMO_PASS", default=None)
 DEMO_RESET_TIME = os.environ.get("DEMO_RESET_TIME", default="00:00")
@@ -82,12 +85,12 @@ SITE_PROTO = os.environ.get("SITE_PROTO", default="http")
 
 # These 4 options should not be set in dev envs
 if DJANGO_ENV != "Dev":
-    CSRF_COOKIE_SECURE = bool(os.environ.get("CSRF_COOKIE_SECURE", default=True))
+    CSRF_COOKIE_SECURE = env_bool("CSRF_COOKIE_SECURE", default=True)
     CSRF_COOKIE_SAMESITE = os.environ.get("CSRF_COOKIE_SAMESITE", default="None")
     SESSION_COOKIE_SAMESITE = os.environ.get("SESSION_COOKIE_SAMESITE", default="None")
-    SESSION_COOKIE_SECURE = bool(os.environ.get("SESSION_COOKIE_SECURE", default=True))
-SESSION_EXPIRE_AT_BROWSER_CLOSE = bool(
-    os.environ.get("SESSION_EXPIRE_AT_BROWSER_CLOSE", default=True)
+    SESSION_COOKIE_SECURE = env_bool("SESSION_COOKIE_SECURE", default=True)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = env_bool(
+    "SESSION_EXPIRE_AT_BROWSER_CLOSE", default=True
 )
 SESSION_COOKIE_AGE = int(os.environ.get("SESSION_COOKIE_AGE", default=60 * 60 * 12))
 
@@ -836,8 +839,8 @@ IMPERSONATE = {
 
 # Additional security settings
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")  # If behind HTTPS proxy
-USE_X_FORWARDED_HOST = bool(os.environ.get("USE_X_FORWARDED_HOST", default=True))
-USE_X_FORWARDED_PORT = bool(os.environ.get("USE_X_FORWARDED_PORT", default=True))
+USE_X_FORWARDED_HOST = env_bool("USE_X_FORWARDED_HOST", default=True)
+USE_X_FORWARDED_PORT = env_bool("USE_X_FORWARDED_PORT", default=True)
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", default="* web").split(" ")
 # Space-separated full origins, e.g. "https://demo.chaotica.app". Optional: without
 # it CSRF relies on the proxy passing X-Forwarded-Proto: https through untouched.

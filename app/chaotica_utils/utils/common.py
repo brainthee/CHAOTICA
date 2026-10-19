@@ -304,6 +304,8 @@ def clean_datetime(value):
         return None
     try:
         ret = parse_datetime(value)
+        if ret is None:  # not a datetime at all (parse_datetime doesn't raise)
+            raise SuspiciousOperation()
         if not is_aware(ret):
             ret = make_aware(ret)
         return ret
