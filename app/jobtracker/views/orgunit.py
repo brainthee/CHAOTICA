@@ -49,7 +49,6 @@ from ..forms import (
     SupportProfileForm,
 )
 from ..mixins import PrefetchRelatedMixin
-from ..utils import get_scheduler_members, get_scheduler_slots
 import logging
 from django.contrib import messages
 from django.utils import timezone

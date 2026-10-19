@@ -142,21 +142,6 @@ class ScopedScheduleTests(ScheduleBase):
         ).json()
         self.assertIn(self.viewer.pk, {u["user"] for u in body["users"]})
 
-    def test_legacy_job_feed_include_user_clamped(self):
-        self.client.force_login(self.viewer)
-        resp = self.client.get(
-            reverse("view_job_schedule_slots", kwargs={"slug": self.job.slug}),
-            {
-                "start": self.slot.start.isoformat(),
-                "end": self.slot.end.isoformat(),
-                "include_user": self.stranger.pk,
-            },
-        )
-        self.assertEqual(resp.status_code, 200)
-        ids = {item.get("id") for item in resp.json()}
-        self.assertNotIn(f"slot-{self.stranger_slot.pk}", ids)
-        self.assertNotIn(self.stranger_slot.pk, ids)
-
 
 class HistoryTests(ScheduleBase):
     def setUp(self):
@@ -195,9 +180,6 @@ class HistoryTests(ScheduleBase):
         ids = {a["id"] for a in self.api.get("/api/v1/schedule/actions/").json()}
         self.assertIn(self.visible.pk, ids)
         self.assertNotIn(self.hidden.pk, ids)
-        self.client.force_login(self.viewer)
-        legacy = self.client.get(reverse("schedule_action_history")).json()["actions"]
-        self.assertNotIn(self.hidden.pk, {a["id"] for a in legacy})
 
     def test_job_history(self):
         rows = self.api.get("/api/v1/schedule/actions/", {"job": self.job.pk}).json()

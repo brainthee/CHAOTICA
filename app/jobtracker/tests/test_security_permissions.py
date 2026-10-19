@@ -10,7 +10,9 @@ import json
 from datetime import timedelta
 from django.core.exceptions import PermissionDenied
 from django.test import RequestFactory, override_settings
+from django.utils import timezone
 from guardian.shortcuts import assign_perm, remove_perm
+from rest_framework.test import APIClient
 
 from chaotica_utils.models import User
 from jobtracker import schedule_history
@@ -26,7 +28,8 @@ def _reload(user):
 
 
 @override_settings(
-    CHANNEL_LAYERS={"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
+    CHANNEL_LAYERS={"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}},
+    ALLOWED_HOSTS=["testserver"],
 )
 class SchedulerPermissionTests(ScheduleHistoryBase):
     def setUp(self):
@@ -49,6 +52,15 @@ class SchedulerPermissionTests(ScheduleHistoryBase):
         req.user = user
         return view(req)
 
+    def _api(self, path, params, user):
+        """History and deltas are read from /api/v1/ now."""
+        client = APIClient(HTTP_HOST="testserver")
+        client.force_authenticate(user)
+        return client.get(path, params).json()
+
+    def _since(self):
+        return (timezone.now() - timedelta(minutes=5)).isoformat()
+
     def _post(self, view, path, data, user):
         req = self.rf.post(path, data)
         req.user = user
@@ -58,30 +70,30 @@ class SchedulerPermissionTests(ScheduleHistoryBase):
 
     def test_history_denied_scope_returns_empty(self):
         schedule_history.record_creates(self.actor, [self._delivery_slot()])
-        resp = self._get(
-            sched_views.schedule_action_history,
-            "/scheduler/history", {"job": self.job.pk}, self.outsider,
+        actions = self._api(
+            "/api/v1/schedule/actions/", {"job": self.job.pk}, self.outsider
         )
-        self.assertEqual(json.loads(resp.content)["actions"], [])
+        self.assertEqual(actions, [])
 
     def test_since_denied_scope_returns_no_deltas(self):
         schedule_history.record_creates(self.actor, [self._delivery_slot()])
-        resp = self._get(
-            sched_views.view_scheduler_slots_since,
-            "/scheduler/timeslots/since", {"job": self.job.pk}, self.outsider,
+        data = self._api(
+            "/api/v1/schedule/deltas/",
+            {"job": self.job.pk, "since": self._since()},
+            self.outsider,
         )
-        self.assertEqual(json.loads(resp.content)["deltas"], [])
+        self.assertEqual(data["deltas"], [])
 
     def test_since_allowed_scope_returns_deltas(self):
         slot = self._delivery_slot()
         schedule_history.record_creates(self.actor, [slot])
-        resp = self._get(
-            sched_views.view_scheduler_slots_since,
-            "/scheduler/timeslots/since", {"job": self.job.pk}, self.scheduler,
-        )
-        deltas = json.loads(resp.content)["deltas"]
+        deltas = self._api(
+            "/api/v1/schedule/deltas/",
+            {"job": self.job.pk, "since": self._since()},
+            self.scheduler,
+        )["deltas"]
         self.assertEqual(len(deltas), 1)
-        self.assertEqual(deltas[0]["upserts"][0]["id"], slot.pk)
+        self.assertEqual(deltas[0]["timeslots"][0]["id"], slot.pk)
 
     def test_global_deltas_filtered_to_viewable_users(self):
         # A comment slot for the (unrelated) actor. The outsider shares no unit
@@ -91,15 +103,14 @@ class SchedulerPermissionTests(ScheduleHistoryBase):
             user=self.actor, comment="x", start=self.start, end=self.end
         )
         schedule_history.record_creates(self.actor, [comment])
-        resp = self._get(
-            sched_views.view_scheduler_slots_since,
-            "/scheduler/timeslots/since", {}, self.outsider,
-        )
-        deltas = json.loads(resp.content)["deltas"]
+        deltas = self._api(
+            "/api/v1/schedule/deltas/", {"since": self._since()}, self.outsider
+        )["deltas"]
         # The action is global-scoped; its only upsert is for a user the outsider
-        # can't see, so upserts must be filtered out.
+        # can't see, so it must be filtered out.
         for delta in deltas:
-            self.assertEqual(delta["upserts"], [])
+            self.assertEqual(delta["comments"], [])
+            self.assertEqual(delta["timeslots"], [])
 
     # ---- F6: undo/revert must re-check scheduling perm on the target ----
 

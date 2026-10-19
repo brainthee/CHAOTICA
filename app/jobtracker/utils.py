@@ -211,8 +211,8 @@ def get_unit_40x_or_None(
 def _filter_users_on_query(request, cleaned_data=None):
     query = Q()
 
-    # cleaned_data is None when the SchedulerFilter form failed validation (see
-    # get_scheduler_slots/get_scheduler_members). Treat that as "no filters" so a
+    # cleaned_data is None when the SchedulerFilter form failed validation.
+    # Treat that as "no filters" so a
     # malformed query string degrades to defaults instead of 500ing here — every
     # access below is a .get() with a sensible default.
     if cleaned_data is None:
@@ -518,8 +518,8 @@ def collect_schedule_slots(
 
     Single source of truth for *what is on the schedule* — the TimeSlots,
     Holidays and TimeSlotComments for ``users`` between ``start`` and ``end`` —
-    shared by the vis-timeline feed views (:func:`get_scheduler_slots`) and the
-    ``/api/v1/`` schedule endpoints. Rendering (vis-timeline item shape / colours
+    shared by the ``/api/v1/`` schedule endpoints (which feed the vis-timeline
+    scheduler) and the scheduler export. Rendering (vis-timeline item shape / colours
     vs. clean REST serialisers) stays with each caller; only data selection and
     scoping live here so the two surfaces cannot drift.
 
@@ -607,27 +607,6 @@ def collect_schedule_members(users, start, end):
             }
         )
     return members
-
-
-def get_scheduler_members(
-    request,
-    filtered_users=None,
-    start=None,
-    end=None,
-    use_filter_form=True,
-    role_job=None,
-    role_phase=None,
-):
-    data = scheduler_member_rows(
-        request,
-        filtered_users=filtered_users,
-        start=start,
-        end=end,
-        use_filter_form=use_filter_form,
-        role_job=role_job,
-        role_phase=role_phase,
-    )
-    return JsonResponse(data, safe=False)
 
 
 def scheduler_member_rows(
@@ -905,136 +884,3 @@ class SchedulerFocus:
         return True  # internal time, leave, etc.
 
 
-def get_scheduler_slots(
-    request,
-    filtered_users=None,
-    start=None,
-    end=None,
-    use_filter_form=True,
-    scope_phases=None,
-    scope_projects=None,
-    hard_scope=True,
-):
-    data = []
-    cleaned_data = None
-
-    if use_filter_form:
-        filter_form = SchedulerFilter(request.GET)
-        if filter_form.is_valid():
-            cleaned_data = filter_form.clean()
-    focus = SchedulerFocus(cleaned_data)
-
-    if filtered_users is None:
-        filtered_users = _filter_users_on_query(request, cleaned_data).prefetch_related(
-            "unit_memberships", "unit_memberships__unit", "job_level_history__job_level"
-        )
-
-    # "bounds" mode: return the real min/max extent of the relevant slots so the
-    # UI's Fit control can zoom to the DATA AVAILABLE (not just the loaded buffer,
-    # which makes repeated Fit creep outward).
-    if request.GET.get("bounds"):
-        from django.db.models import Min, Max
-
-        bqs = TimeSlot.objects.filter(user__in=filtered_users)
-        if scope_projects is not None:
-            bqs = bqs.filter(project_id__in=[p.pk for p in scope_projects])
-        elif scope_phases is not None:
-            bqs = bqs.filter(phase_id__in=[p.pk for p in scope_phases])
-        agg = bqs.aggregate(lo=Min("start"), hi=Max("end"))
-        return JsonResponse(
-            {
-                "start": agg["lo"].isoformat() if agg["lo"] else None,
-                "end": agg["hi"].isoformat() if agg["hi"] else None,
-            }
-        )
-
-    # Change FullCalendar format to DateTime
-    if not start:
-        start = clean_fullcalendar_datetime(request.GET.get("start", None))
-    if not end:
-        end = clean_fullcalendar_datetime(request.GET.get("end", None))
-
-    colours = schedule_colours()
-
-    compressed_view = (
-        cleaned_data.get("compressed_view", False) if cleaned_data else False
-    )
-
-    # Gather the raw schedule data via the shared core so the vis-timeline feed
-    # and the /api/v1/ schedule endpoints select the same slots/holidays/comments.
-    dataset = collect_schedule_slots(
-        filtered_users,
-        start,
-        end,
-        scope_phases=scope_phases,
-        scope_projects=scope_projects,
-        hard_scope=hard_scope,
-    )
-    scope_phase_ids = dataset["scope_phase_ids"]
-
-    # Load the timeslots
-    for slot in dataset["timeslots"]:
-        slot_json = slot.get_schedule_json(
-            schedule_colours=colours, compressed_view=compressed_view
-        )
-        # Not part of the filtered jobs/phases/clients/projects: faded, and
-        # hideable client-side via the "Other slots" toggle.
-        if focus.is_unfocused(slot):
-            slot_json["out_of_scope"] = True
-        # Soft-scope: keep the member's other commitments visible but faded so
-        # it's clear which blocks belong to this job/phase (vs. context).
-        if (
-            scope_phase_ids is not None
-            and not hard_scope
-            and slot.phase_id not in scope_phase_ids
-        ):
-            slot_json["out_of_scope"] = True
-        data.append(slot_json)
-
-    # Add the holidays: the user's country's, plus global (country-less) ones —
-    # the same rule as availability shading and the API.
-    for user in filtered_users:
-        for hol in dataset["holidays"]:
-            if not hol.country or user.country == hol.country:
-                data.append(
-                    {
-                        "title": str(hol),
-                        "start": hol.date,
-                        "end": hol.date,
-                        "allDay": True,
-                        "display": "background",
-                        "id": hol.pk,
-                        "resourceId": user.pk,
-                    }
-                )
-
-    # Shade each member's AVAILABLE days (a working day for them, not a public
-    # holiday, and with no non-working/leave slot) with the configured colour.
-    # Emitted per-user as `display: background` runs — mirroring the holiday
-    # bands above — so vis-timeline draws them behind the booked slots.
-    if config.SCHEDULE_SHADE_AVAILABLE and start and end:
-        from datetime import timedelta
-
-        from .selectors.schedule import availability_runs
-
-        available_colour = str(config.SCHEDULE_COLOR_AVAILABLE)
-
-        runs = availability_runs(filtered_users, start, end, dataset["holidays"])
-        for user in filtered_users:
-            for run_start, run_end in runs.get(user.pk, []):
-                data.append(
-                    {
-                        "id": "avail-%d-%s" % (user.pk, run_start.isoformat()),
-                        "title": "",
-                        "start": run_start,
-                        "end": run_end + timedelta(days=1),
-                        "display": "background",
-                        "backgroundColor": available_colour,
-                        "resourceId": user.pk,
-                    }
-                )
-
-    # Add the comments
-    for comment in dataset["comments"]:
-        data.append(comment.get_schedule_json(schedule_colours=colours))
-    return JsonResponse(data, safe=False)

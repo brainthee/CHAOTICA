@@ -1,6 +1,10 @@
 import json
+from datetime import timedelta
+
 from django.test import RequestFactory, override_settings
+from django.utils import timezone
 from guardian.shortcuts import assign_perm
+from rest_framework.test import APIClient
 
 from jobtracker import schedule_history
 from jobtracker.models import TimeSlot
@@ -9,7 +13,8 @@ from .test_schedule_history import ScheduleHistoryBase
 
 
 @override_settings(
-    CHANNEL_LAYERS={"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
+    CHANNEL_LAYERS={"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}},
+    ALLOWED_HOSTS=["testserver"],
 )
 class HistoryViewTests(ScheduleHistoryBase):
     def setUp(self):
@@ -20,6 +25,12 @@ class HistoryViewTests(ScheduleHistoryBase):
         req = self.rf.get(path, params)
         req.user = user
         return view(req)
+
+    def _api(self, path, params, user):
+        """The scheduler's history/deltas feeds are /api/v1/ now."""
+        client = APIClient(HTTP_HOST="testserver")
+        client.force_authenticate(user)
+        return client.get(path, params)
 
     def _post(self, view, path, data, user):
         req = self.rf.post(path, data)
@@ -34,13 +45,11 @@ class HistoryViewTests(ScheduleHistoryBase):
         self.actor = type(self.actor).objects.get(pk=self.actor.pk)  # reset perm cache
         slot = self._delivery_slot()
         schedule_history.record_creates(self.actor, [slot])
-        resp = self._get(
-            sched_views.schedule_action_history,
-            "/scheduler/history", {"job": self.job.pk}, self.actor,
-        )
-        data = json.loads(resp.content)
-        self.assertEqual(len(data["actions"]), 1)
-        self.assertTrue(data["actions"][0]["can_revert"])
+        actions = self._api(
+            "/api/v1/schedule/actions/", {"job": self.job.pk}, self.actor
+        ).json()
+        self.assertEqual(len(actions), 1)
+        self.assertTrue(actions[0]["can_revert"])
 
     def test_history_hides_revert_for_other_user(self):
         # A user who may VIEW the job's schedule (but isn't the actor and lacks
@@ -49,12 +58,10 @@ class HistoryViewTests(ScheduleHistoryBase):
         self.other = type(self.other).objects.get(pk=self.other.pk)  # reset perm cache
         slot = self._delivery_slot()
         schedule_history.record_creates(self.actor, [slot])
-        resp = self._get(
-            sched_views.schedule_action_history,
-            "/scheduler/history", {"job": self.job.pk}, self.other,
-        )
-        data = json.loads(resp.content)
-        self.assertFalse(data["actions"][0]["can_revert"])
+        actions = self._api(
+            "/api/v1/schedule/actions/", {"job": self.job.pk}, self.other
+        ).json()
+        self.assertFalse(actions[0]["can_revert"])
 
     def test_revert_endpoint(self):
         slot = self._internal_slot()
@@ -101,11 +108,12 @@ class HistoryViewTests(ScheduleHistoryBase):
     def test_since_endpoint_returns_deltas(self):
         slot = self._delivery_slot()
         schedule_history.record_creates(self.actor, [slot])
-        resp = self._get(
-            sched_views.view_scheduler_slots_since,
-            "/scheduler/timeslots/since", {"job": self.job.pk}, self.actor,
-        )
-        data = json.loads(resp.content)
+        since = (timezone.now() - timedelta(minutes=5)).isoformat()
+        data = self._api(
+            "/api/v1/schedule/deltas/",
+            {"job": self.job.pk, "since": since},
+            self.actor,
+        ).json()
         self.assertEqual(len(data["deltas"]), 1)
-        self.assertEqual(data["deltas"][0]["upserts"][0]["id"], slot.pk)
+        self.assertEqual(data["deltas"][0]["timeslots"][0]["id"], slot.pk)
         self.assertIn("now", data)

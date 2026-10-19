@@ -2,7 +2,6 @@
 // the same code serves the global, job-scoped and phase-scoped surfaces.
 //   SCHEDULER_CONFIG = {
 //     scope: 'global'|'job'|'phase',
-//     membersUrl, slotsUrl,
 //     changeDateUrl, changeCommentDateUrl,
 //     createUrls: {assign_phase, assign_project, assign_internal, add_comment, clear},
 //     createExtraParams: '',            // e.g. '&job=5&phase=12'
@@ -13,8 +12,6 @@
 //   }
 (function () {
   var CFG = window.SCHEDULER_CONFIG || {};
-  var membersUrl = CFG.membersUrl;
-  var slotsUrl   = CFG.slotsUrl;
   var createUrls = CFG.createUrls || {};
   var createExtraParams = CFG.createExtraParams || '';
   var readonly = !!CFG.readonly;   // no edit tools (detail tabs, or no scheduling rights)
@@ -61,7 +58,7 @@
   // The scheduler reads its rows, slots, extent, history and polled changes
   // from /api/v1/ (the same data any API client gets). These adapters turn
   // the REST shapes into the event / row shapes the rest of this file uses.
-  var V1 = CFG.v1 || null;
+  var V1 = CFG.v1;   // the /api/v1/ feeds (required)
 
   function v1Url(base, extra) {
     var parts = [];
@@ -586,11 +583,10 @@
     loading(true);
     var w = timeline.getWindow();
     $.ajax({
-      url: V1 ? v1Url(V1.resources, v1Window(w.start, w.end))
-              : buildUrl(membersUrl, w.start.toISOString(), w.end.toISOString()),
+      url: v1Url(V1.resources, v1Window(w.start, w.end)),
       method: 'GET',
       success: function (data) {
-        if (V1) data = (data.users || []).map(v1Row);
+        data = (data.users || []).map(v1Row);
         var g = data.map(function (r, idx) {
           return {
             id: r.id, content: buildGroupContent(r), order: idx, util: r.util,
@@ -769,10 +765,7 @@
     var span = w.end - w.start;
     var s = new Date(w.start.getTime() - span);
     var en = new Date(w.end.getTime() + span);
-    var request = V1 ? v1Schedule(s, en) : $.ajax({
-      url: buildUrl(slotsUrl, s.toISOString(), en.toISOString()),
-      method: 'GET'
-    });
+    var request = v1Schedule(s, en);
     request.then(function (data) {
         // Optionally drop out-of-scope ("other") slots so the view isn't noisy.
         var rows = showOthers ? data : data.filter(function (e) { return !e.out_of_scope; });
@@ -1207,8 +1200,7 @@
   // to the buffer makes repeated Fit creep outward as more data streams in.
   function fitToData() {
     loading(true);
-    var url = V1 ? v1Url(V1.bounds)
-      : slotsUrl + (slotsUrl.indexOf('?') >= 0 ? '&' : '?') + 'bounds=1' + (filterParams ? '&' + filterParams : '');
+    var url = v1Url(V1.bounds);
     $.ajax({
       url: url, method: 'GET',
       success: function (b) {
@@ -1476,10 +1468,10 @@
   //   and apply it to the vis DataSet by pk — no full reload for observers.
   // =====================================================================
   var HIST = {
-    listUrl: V1 ? V1.actions : CFG.historyUrl,
+    listUrl: V1.actions,
     revertUrl: CFG.revertUrl,
     undoUrl: CFG.undoUrl,
-    sinceUrl: V1 ? V1.deltas : CFG.sinceUrl
+    sinceUrl: V1.deltas
   };
 
   // Scope identifiers passed to the history/since endpoints & revert/undo bodies.
@@ -1544,7 +1536,7 @@
     if (!HIST.listUrl) return;
     var q = scopeQuery();
     $.get(HIST.listUrl + (q ? '?' + q : ''), function (data) {
-      renderHistory(V1 ? (data || []).map(v1Action) : ((data && data.actions) || []));
+      renderHistory((data || []).map(v1Action));
     });
   }
 
@@ -1643,7 +1635,7 @@
       $.get(HIST.sinceUrl + '?since=' + encodeURIComponent(lastPoll) + (q ? '&' + q : ''),
         function (data) {
           if (!data) return;
-          (data.deltas || []).map(V1 ? v1Delta : function (d) { return d; }).forEach(applyDelta);
+          (data.deltas || []).map(v1Delta).forEach(applyDelta);
           if (data.now) lastPoll = data.now;
         });
     }, 5000);

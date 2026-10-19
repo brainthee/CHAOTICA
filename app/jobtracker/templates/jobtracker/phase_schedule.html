@@ -88,8 +88,6 @@
       v1: {% scheduler_v1_config "phase" phase %},
       readonly: {{ sched_readonly|yesno:'true,false' }},
       embedded: false,
-      membersUrl: "{% url 'view_phase_schedule_members' phase.job.slug phase.slug %}",
-      slotsUrl: "{% url 'view_phase_schedule_slots' phase.job.slug phase.slug %}",
       changeDateUrl: "{% url 'change_scheduler_slot_date' %}",
       changeCommentDateUrl: "{% url 'change_scheduler_slot_comment_date' %}",
       createUrls: {
@@ -102,10 +100,8 @@
       createExtraParams: "&job={{ phase.job.pk }}&phase={{ phase.pk }}",
       clearUrl: "{% url 'phase_schedule_clear' phase.job.slug phase.slug %}",
       scopeId: {{ phase.pk }},
-      historyUrl: "{% url 'schedule_action_history' %}",
       revertUrl: "{% url 'schedule_action_revert' %}",
       undoUrl: "{% url 'schedule_action_undo' %}",
-      sinceUrl: "{% url 'view_scheduler_slots_since' %}",
       wsUrl: "/ws/schedule/phase/{{ phase.pk }}/",
       cards: {
         util: "{% url 'view_phase_schedule_util' phase.job.slug phase.slug %}",

@@ -300,13 +300,9 @@
     scope: 'project',
     v1: {% scheduler_v1_config "project" project %},
     readonly: true,
-    membersUrl: "{% url 'view_project_schedule_members' project.slug %}",
-    slotsUrl: "{% url 'view_project_schedule_slots' project.slug %}",
     createUrls: {},
     scopeId: {{ project.pk }},
-    historyUrl: "{% url 'schedule_action_history' %}",
     revertUrl: "{% url 'schedule_action_revert' %}",
-    sinceUrl: "{% url 'view_scheduler_slots_since' %}",
     wsUrl: null,
     cards: null
   };

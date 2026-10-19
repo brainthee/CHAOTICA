@@ -84,12 +84,6 @@ urlpatterns = [
         name="view_own_schedule_holidays",
     ),
     path("scheduler/", views.view_scheduler, name="view_scheduler"),
-    path(
-        "scheduler/members", views.view_scheduler_members, name="view_scheduler_members"
-    ),
-    path(
-        "scheduler/timeslots", views.view_scheduler_slots, name="view_scheduler_slots"
-    ),
     path("scheduler/export", views.export_scheduler_view, name="export_scheduler_view"),
     path(
         "scheduler/filter/default/set",
@@ -103,11 +97,6 @@ urlpatterns = [
     ),
     # Schedule version-control / history
     path(
-        "scheduler/history",
-        views.schedule_action_history,
-        name="schedule_action_history",
-    ),
-    path(
         "scheduler/action/revert",
         views.schedule_action_revert,
         name="schedule_action_revert",
@@ -116,11 +105,6 @@ urlpatterns = [
         "scheduler/action/undo",
         views.schedule_action_undo,
         name="schedule_action_undo",
-    ),
-    path(
-        "scheduler/timeslots/since",
-        views.view_scheduler_slots_since,
-        name="view_scheduler_slots_since",
     ),
     # Create paths
     path(
@@ -212,16 +196,6 @@ urlpatterns = [
         "project/<uuid:slug>/update/",
         views.ProjectUpdateView.as_view(),
         name="project_update",
-    ),
-    path(
-        "project/<uuid:slug>/schedule/slots",
-        views.view_project_schedule_slots,
-        name="view_project_schedule_slots",
-    ),
-    path(
-        "project/<uuid:slug>/schedule/members",
-        views.view_project_schedule_members,
-        name="view_project_schedule_members",
     ),
     path(
         "project/<uuid:slug>/stats/",
@@ -319,16 +293,6 @@ urlpatterns = [
         "job/<str:slug>/scheduling-assistant",
         views.job_scheduling_assistant,
         name="job_scheduling_assistant",
-    ),
-    path(
-        "job/<str:slug>/schedule/members",
-        views.view_job_schedule_members,
-        name="view_job_schedule_members",
-    ),
-    path(
-        "job/<str:slug>/schedule/slots",
-        views.view_job_schedule_slots,
-        name="view_job_schedule_slots",
     ),
     path(
         "job/<str:slug>/schedule/util",
@@ -549,16 +513,6 @@ urlpatterns = [
         "job/<str:job_slug>/phase/<str:slug>/schedule/assistant/plan",
         views.phase_scheduling_assistant_plan,
         name="phase_scheduling_assistant_plan",
-    ),
-    path(
-        "job/<str:job_slug>/phase/<str:slug>/schedule/slots",
-        views.view_phase_schedule_slots,
-        name="view_phase_schedule_slots",
-    ),
-    path(
-        "job/<str:job_slug>/phase/<str:slug>/schedule/members",
-        views.view_phase_schedule_members,
-        name="view_phase_schedule_members",
     ),
     path(
         "job/<str:job_slug>/phase/<str:slug>/schedule/user-breakdown",

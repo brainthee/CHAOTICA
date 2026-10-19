@@ -217,13 +217,9 @@ $("#scopeForm").dirty({preventLeaving: true});
     scope: 'job',
     v1: {% scheduler_v1_config "job" job %},
     readonly: true,
-    membersUrl: "{% url 'view_job_schedule_members' job.slug %}",
-    slotsUrl: "{% url 'view_job_schedule_slots' job.slug %}",
     createUrls: {},
     scopeId: {{ job.pk }},
-    historyUrl: "{% url 'schedule_action_history' %}",
     revertUrl: "{% url 'schedule_action_revert' %}",
-    sinceUrl: "{% url 'view_scheduler_slots_since' %}",
     wsUrl: "/ws/schedule/job/{{ job.pk }}/",
     cards: null
   };

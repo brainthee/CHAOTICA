@@ -40,8 +40,6 @@ from ..enums import UserSkillRatings, TimeSlotDeliveryRole, PhaseStatuses, Defau
 from ..models import ScheduleAction, ScheduleActionType
 from ..models.timeslot import RM_MANAGED_MESSAGE
 from ..utils import (
-    get_scheduler_slots,
-    get_scheduler_members,
     assigned_role_map,
     job_assigned_role_map,
     phase_assigned_role_map,
@@ -311,16 +309,6 @@ def view_scheduler(request):
     return HttpResponse(template.render(context, request))
 
 
-@login_required
-def view_scheduler_slots(request):
-    return get_scheduler_slots(request)
-
-
-@login_required
-def view_scheduler_members(request):
-    return get_scheduler_members(request)
-
-
 def _describe_scheduler_filter(form):
     """Human-readable summary of the applied SchedulerFilter, for the export cover."""
     if not form.is_valid():
@@ -497,36 +485,6 @@ def _scope_history_qs(request, source):
 
 
 @login_required
-def schedule_action_history(request):
-    """History panel data: the ScheduleAction log for the current scope, newest
-    first, with a per-action ``can_revert`` computed for the requesting user."""
-    from ..selectors.schedule import schedule_history
-
-    actions = []
-    for a in schedule_history(
-        request.user,
-        job_id=clean_int(request.GET.get("job")),
-        phase_id=clean_int(request.GET.get("phase")),
-    ):
-        actions.append(
-            {
-                "id": a.pk,
-                "actor": a.actor.get_full_name() if a.actor else "System",
-                "actor_id": a.actor_id,
-                "created": a.created.isoformat(),
-                "action_type": a.action_type,
-                "summary": a.summary,
-                "forced": a.forced,
-                "override_reason": a.override_reason,
-                "reverted": a.reverted,
-                "is_revert": a.action_type == ScheduleActionType.REVERT,
-                "can_revert": a.can_revert(request.user),
-            }
-        )
-    return JsonResponse({"actions": actions})
-
-
-@login_required
 def schedule_action_revert(request):
     """Revert a single ScheduleAction (pk in POST body)."""
     if request.method != "POST":
@@ -571,27 +529,6 @@ def schedule_action_undo(request):
     return JsonResponse(
         {"ok": True, "reverted": action.pk, "action_id": inverse.pk if inverse else None}
     )
-
-
-@login_required
-def view_scheduler_slots_since(request):
-    """Polling fallback for the live layer: return ScheduleAction deltas committed
-    to this scope since ``since`` (ISO), chronological, so a client without a live
-    WebSocket can still apply add/update/remove deltas instead of full reloads."""
-    from django.utils import timezone as _tz
-
-    since = clean_datetime(request.GET.get("since"))
-    qs, viewable = _scope_history_qs(request, request.GET)
-    if since:
-        qs = qs.filter(created__gt=since)
-    actions = list(qs[:200])
-    deltas = [
-        schedule_history.filter_delta_for_users(
-            schedule_history.build_delta(a), viewable
-        )
-        for a in reversed(actions)
-    ]
-    return JsonResponse({"deltas": deltas, "now": _tz.now().isoformat()})
 
 
 @login_required
