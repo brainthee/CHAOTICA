@@ -178,39 +178,55 @@ class Project(models.Model):
 
         if self.desired_start_date:
             return self.desired_start_date
-        else:
-            # Calculate start from first delivery slot. Timeslots link to a
-            # project directly (phase__job resolves to a Job, not a Project).
-            slots = TimeSlot.objects.filter(
+        if hasattr(self, "first_delivery_start"):  # annotated (API lists)
+            start = self.first_delivery_start
+            return start.date() if start else None
+        # Calculate start from the first delivery slot (this ordered by
+        # -start, i.e. took the last). Timeslots link to a project directly.
+        first = (
+            TimeSlot.objects.filter(
                 project=self, deliveryRole=TimeSlotDeliveryRole.DELIVERY
-            ).order_by("-start")
-            first = slots.first()
-            if first:
-                return first.start.date()
-            else:
-                # No slots - return None
-                return None
+            )
+            .order_by("start")
+            .first()
+        )
+        return first.start.date() if first else None
 
     def delivery_date(self):
         from ..models import TimeSlot
 
         if self.desired_delivery_date:
             return self.desired_delivery_date
+        if hasattr(self, "last_reporting_end"):  # annotated (API lists)
+            end = self.last_reporting_end
         else:
-            # Calculate delivery from last reporting slot. Timeslots link to a
-            # project directly (phase__job resolves to a Job, not a Project).
+            # A week after the last reporting slot (this took the first).
             slot = (
                 TimeSlot.objects.filter(
                     project=self, deliveryRole=TimeSlotDeliveryRole.REPORTING
                 )
-                .order_by("end")
+                .order_by("-end")
                 .first()
             )
-            if slot:
-                return slot.end.date() + timedelta(weeks=1)
-            else:
-                # No slots - return None
-                return None
+            end = slot.end if slot else None
+        return end.date() + timedelta(weeks=1) if end else None
+
+    @staticmethod
+    def schedule_date_annotations():
+        """Annotations that let :meth:`start_date` / :meth:`delivery_date`
+        answer without a query per project."""
+        from django.db.models import Max, Min, Q
+
+        return {
+            "first_delivery_start": Min(
+                "timeslots__start",
+                filter=Q(timeslots__deliveryRole=TimeSlotDeliveryRole.DELIVERY),
+            ),
+            "last_reporting_end": Max(
+                "timeslots__end",
+                filter=Q(timeslots__deliveryRole=TimeSlotDeliveryRole.REPORTING),
+            ),
+        }
 
     @property
     def status_bs_colour(self):

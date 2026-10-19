@@ -54,11 +54,12 @@ def can_view_loaded_costs(user, job):
     )
 
 
-def job_sales_summary(job):
+def job_sales_summary(job, include_costs=True):
     """Everything on the job Sales tab. Callers decide what to show: staff
-    cost / profit / support money are finance data (see the API)."""
+    cost / profit / support money are finance data (see the API). Without
+    ``include_costs`` the (costly) staff cost isn't computed and reads 0."""
     revenue = Decimal(job.revenue or 0)
-    staff_cost = Decimal(str(job.staff_cost() or 0))
+    staff_cost = Decimal(str(job.staff_cost() or 0)) if include_costs else Decimal(0)
     profit = revenue - staff_cost
     # Defensive: the model properties divide by revenue / scoped days.
     profit_perc = round(profit / revenue * 100, 1) if revenue else Decimal(0)

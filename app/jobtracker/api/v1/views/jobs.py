@@ -72,7 +72,8 @@ class JobViewSet(NotesActivityMixin, BaseReadOnlyAPIViewSet):
         "delivery_date",
     )
     ordering_aliases = {"start_date": "start_on", "delivery_date": "delivery_on"}
-    search_fields = ("title", "=id", "client__name")
+    ordering = ("-pk",)  # newest first, as the job list always was
+    search_fields = ("title", "=id", "client__name", "unit__name")
 
     def get_serializer_class(self):
         return JobDetailSerializer if self.action == "retrieve" else JobSerializer
@@ -165,7 +166,7 @@ class JobViewSet(NotesActivityMixin, BaseReadOnlyAPIViewSet):
     def sales(self, request, pk=None):
         job = self.get_object()
         finance = can_view_loaded_costs(request.user, job)
-        summary = job_sales_summary(job)
+        summary = job_sales_summary(job, include_costs=finance)
         if not finance:
             # The main UI shows staff cost and profit to every job viewer;
             # the API keeps cost-derived figures for finance (debt register).
@@ -208,7 +209,9 @@ class ProjectViewSet(BaseReadOnlyAPIViewSet):
     search_fields = ("title", "=id")
 
     def get_base_queryset(self):
-        return Project.objects.select_related("unit", "primary_poc", "created_by")
+        return Project.objects.select_related(
+            "unit", "primary_poc", "created_by"
+        ).annotate(**Project.schedule_date_annotations())
 
     @extend_schema(
         parameters=SCHEDULE_QUERY_PARAMS,
