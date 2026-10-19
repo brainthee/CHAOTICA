@@ -8331,11 +8331,52 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/Ref'
+            $ref: '#/components/schemas/SearchResult'
       required:
       - label
       - results
       - type
+    SearchResult:
+      type: object
+      description: |-
+        A reference to another object: its id, type and label, plus links to
+        its API resource (``url``) and main-UI page (``web_url``).
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        display:
+          type: string
+        url:
+          type: string
+          nullable: true
+        web_url:
+          type: string
+          nullable: true
+        subtitle:
+          type: string
+          nullable: true
+          description: Client, job title…
+        status_display:
+          type: string
+          nullable: true
+        status_colour:
+          type: string
+          nullable: true
+        image_url:
+          type: string
+          nullable: true
+      required:
+      - display
+      - id
+      - image_url
+      - status_colour
+      - status_display
+      - subtitle
+      - type
+      - url
+      - web_url
     SearchResults:
       type: object
       properties:
