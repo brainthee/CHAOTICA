@@ -15,7 +15,6 @@ from django.template import loader
 from django.http import JsonResponse
 from ..models import Project, TimeSlot
 from ..forms import ProjectForm
-from ..utils import get_scheduler_slots, get_scheduler_members
 import json
 import logging
 
@@ -41,31 +40,6 @@ def assign_project_billingcodes(request, slug):
         client=project.client,
         template="modals/assign_project_billingcodes.html",
         extra_context={"project": project},
-    )
-
-
-@permission_required_or_403("jobtracker.view_project")
-def view_project_schedule_slots(request, slug):
-    """Read-only vis-timeline slots feed scoped to a single project's timeslots."""
-    project = get_object_or_404(Project, slug=slug)
-    return get_scheduler_slots(
-        request,
-        filtered_users=_project_scheduled_users(project),
-        use_filter_form=False,
-        scope_projects=[project],
-        hard_scope=True,
-    )
-
-
-@permission_required_or_403("jobtracker.view_project")
-def view_project_schedule_members(request, slug):
-    """Members (groups) feed for a project's read-only schedule tab."""
-    project = get_object_or_404(Project, slug=slug)
-    return get_scheduler_members(
-        request,
-        filtered_users=_project_scheduled_users(project),
-        use_filter_form=False,
-        role_job=None,
     )
 
 

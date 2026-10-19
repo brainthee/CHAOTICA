@@ -191,10 +191,10 @@ class TimeSlot(models.Model):
         return False
 
     def is_delivery(self):
-        return self.slot_type.pk == DefaultTimeSlotTypes.DELIVERY
+        return self.slot_type_id == DefaultTimeSlotTypes.DELIVERY
 
     def is_project(self):
-        return self.slot_type.pk == DefaultTimeSlotTypes.INTERNAL_PROJECT
+        return self.slot_type_id == DefaultTimeSlotTypes.INTERNAL_PROJECT
 
     @staticmethod
     def rm_managed_q():
@@ -219,12 +219,12 @@ class TimeSlot(models.Model):
     def is_leave(self):
         # Annual leave is created & owned by a LeaveRequest, so it must be
         # managed there (not edited directly on the scheduler).
-        return self.slot_type.pk == DefaultTimeSlotTypes.LEAVE
+        return self.slot_type_id == DefaultTimeSlotTypes.LEAVE
 
     def is_internal(self):
         return (
-            self.slot_type.pk != DefaultTimeSlotTypes.DELIVERY
-            and self.slot_type.pk != DefaultTimeSlotTypes.INTERNAL_PROJECT
+            self.slot_type_id != DefaultTimeSlotTypes.DELIVERY
+            and self.slot_type_id != DefaultTimeSlotTypes.INTERNAL_PROJECT
         )
 
     def __str__(self):
@@ -259,7 +259,7 @@ class TimeSlot(models.Model):
             return "{}".format(
                 self.project.title,
             )
-        elif self.slot_type.pk == DefaultTimeSlotTypes.LEAVE:
+        elif self.slot_type_id == DefaultTimeSlotTypes.LEAVE:
             if self.leaverequest.first():
                 return "{}".format(
                     self.leaverequest.first().get_type_of_leave_display(),
@@ -554,18 +554,19 @@ class TimeSlot(models.Model):
 
         return slot_daily_hours(self)
 
-    def cost(self):
-        # Only support a single cost field at the moment... :(
-        if UserCost.objects.filter(user=self.user).exists():
-            cost = (
-                UserCost.objects.filter(user=self.user)
-                .filter(effective_from__lte=self.start)
-                .last()
-            )
-            # Now we have a cost, figure out hours and the cost of this slot...
-            if cost:
-                hours = Decimal(self.get_business_hours())
-                return round(Decimal(cost.cost_per_hour * hours), 2)
+    def cost(self, rates=None):
+        """This slot's staff cost: its hours at the rate in force on its start
+        date. ``rates`` is an optional preloaded ``[UserCost]`` for the slot's
+        user, newest first (UserCost's default ordering)."""
+        if rates is None:
+            rates = list(UserCost.objects.filter(user_id=self.user_id))
+        start = self.start.date() if hasattr(self.start, "date") else self.start
+        # Newest first, so the first one in force is the current rate. (This
+        # used .last(), which with that ordering picked the OLDEST rate.)
+        cost = next((r for r in rates if r.effective_from <= start), None)
+        if cost:
+            hours = Decimal(self.get_business_hours())
+            return round(Decimal(cost.cost_per_hour * hours), 2)
         return 0  # No cost assigned!
 
     def is_confirmed(self):

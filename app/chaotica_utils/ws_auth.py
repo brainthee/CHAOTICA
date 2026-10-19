@@ -57,10 +57,12 @@ def origin_allowed(scope):
     if not origin_host:
         return False
     # Compare hostnames only: nginx forwards ``$host``, which drops the port.
-    request_hosts = {
-        _hostname(_header(scope, b"host")),
-        _hostname(_header(scope, b"x-forwarded-host")),
-    } - {None}
+    request_hosts = {_hostname(_header(scope, b"host"))}
+    if getattr(settings, "USE_X_FORWARDED_HOST", False):
+        # Only trusted when Django is told a proxy sets it (and nginx
+        # overwrites any client value).
+        request_hosts.add(_hostname(_header(scope, b"x-forwarded-host")))
+    request_hosts -= {None}
     return origin_host in request_hosts
 
 

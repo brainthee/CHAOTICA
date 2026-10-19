@@ -3,34 +3,67 @@ app access (profile)."""
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Max
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template import loader
 from django.urls import reverse
 from guardian.decorators import permission_required_or_403
-from oauth2_provider.models import get_access_token_model, get_application_model
+from oauth2_provider.models import (
+    get_access_token_model,
+    get_application_model,
+    get_refresh_token_model,
+)
 
 from ..audit import record_audit
 from ..forms.connected_apps import ConnectedAppForm
 from ..models import AuditCategory, AuditVerb
-from ..oauth import revoke_user_tokens
+from ..oauth import application_holders, revoke_user_tokens
+from ..realtime import disconnect_user
 
 Application = get_application_model()
 AccessToken = get_access_token_model()
+RefreshToken = get_refresh_token_model()
 
 SETTINGS_ANCHOR = "#connected-apps"
 PROFILE_ANCHOR = "#connected-apps"
 
 
-def connected_apps():
-    """Registered apps for the Settings card, with active-token counts."""
-    from django.db.models import Count, Q
+def _live_sign_ins(**filters):
+    """``(application_id, user_id, until)`` for every sign-in that can still
+    reach the API: a live access token, or an unrevoked refresh token the app
+    can still redeem (which outlives the access token by weeks)."""
+    from datetime import timedelta
+
+    from django.conf import settings
     from django.utils import timezone
 
-    return Application.objects.annotate(
-        active_tokens=Count("accesstoken", filter=Q(accesstoken__expires__gt=timezone.now()))
-    ).order_by("name")
+    now = timezone.now()
+    lifetime = timedelta(seconds=settings.OAUTH2_PROVIDER["REFRESH_TOKEN_EXPIRE_SECONDS"])
+    rows = [
+        (a, u, exp)
+        for a, u, exp in AccessToken.objects.filter(
+            expires__gt=now, **filters
+        ).values_list("application_id", "user_id", "expires")
+    ]
+    rows += [
+        (a, u, created + lifetime)
+        for a, u, created in RefreshToken.objects.filter(
+            revoked__isnull=True, created__gt=now - lifetime, **filters
+        ).values_list("application_id", "user_id", "created")
+    ]
+    return rows
+
+
+def connected_apps():
+    """Registered apps for the Settings card, with how many people are signed
+    in to each."""
+    people = {}
+    for app_id, user_id, _until in _live_sign_ins():
+        people.setdefault(app_id, set()).add(user_id)
+    apps = list(Application.objects.order_by("name"))
+    for app in apps:
+        app.active_tokens = len(people.get(app.pk, ()))
+    return apps
 
 
 def _modal(request, template, context, data=None):
@@ -65,7 +98,10 @@ def connected_app_delete(request, pk):
     data = {"form_is_valid": False}
     if request.method == "POST" and request.POST.get("user_action") == "approve_action":
         name = app.name
+        holders = application_holders(app)
         app.delete()  # cascades its tokens and grants
+        for user_pk in holders:
+            disconnect_user(user_pk, ticket_only=True)
         messages.info(request, f"Connected app '{name}' removed; its sign-ins ended.")
         _done(data, reverse("app_settings") + SETTINGS_ANCHOR)
     return _modal(request, "modals/connected_app_delete.html", {"app": app}, data)
@@ -73,15 +109,23 @@ def connected_app_delete(request, pk):
 
 def own_connected_apps(user):
     """Apps the user has signed in to, with when their access lasts until."""
-    from django.utils import timezone
-
-    rows = (
-        AccessToken.objects.filter(user=user, expires__gt=timezone.now())
-        .values("application_id", "application__name")
-        .annotate(last_expires=Max("expires"))
-        .order_by("application__name")
+    until = {}
+    for app_id, _user_id, expires in _live_sign_ins(user=user):
+        until[app_id] = max(expires, until.get(app_id, expires))
+    names = dict(
+        Application.objects.filter(pk__in=until).values_list("pk", "name")
     )
-    return list(rows)
+    return sorted(
+        (
+            {
+                "application_id": app_id,
+                "application__name": names.get(app_id, ""),
+                "last_expires": expires,
+            }
+            for app_id, expires in until.items()
+        ),
+        key=lambda row: row["application__name"],
+    )
 
 
 @login_required

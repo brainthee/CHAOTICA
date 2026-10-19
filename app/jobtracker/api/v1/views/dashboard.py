@@ -12,6 +12,7 @@ from notifications import selectors as notes
 
 from ....selectors.dashboard import (
     DashboardScope,
+    alarm_counts,
     alarm_groups,
     dashboard_queues,
     dashboard_stats,
@@ -43,7 +44,7 @@ class MeDashboardView(ApiView):
             team = []  # utilisation is schedule data
         data = {
             "queues": dashboard_queues(scope),
-            "alarm_counts": alarm_groups(scope)["counts"],
+            "alarm_counts": alarm_counts(scope),
             "stats": dashboard_stats(request.user, today),
             "team_unit": unit,
             "team": team,

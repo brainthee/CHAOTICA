@@ -16,7 +16,7 @@ from django.conf import settings
 from django.utils import timezone
 from django.urls import reverse
 from simple_history.models import HistoricalRecords
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django.contrib.contenttypes.fields import GenericRelation
 from model_utils.fields import MonitorField
 from django.db.models import JSONField
@@ -63,15 +63,31 @@ class JobManager(models.Manager):
         # - Lead/Author of
         # - Scoped while before scoping approved
 
+        from .phase import Phase
+        from .timeslot import TimeSlot
+
+        # Exists, not joins: phases × timeslots × scoped_by fanned big jobs
+        # out into thousands of rows to DISTINCT away.
         matches = self.filter(
-            Q(phases__timeslots__user=user)  # Filter by scheduled
-            | Q(phases__report_author=user)  # Filter for report author
-            | Q(phases__project_lead=user)  # filter for lead
-            | Q(scoped_by__in=[user])  # filter for scoped
+            Q(Exists(TimeSlot.objects.filter(phase__job=OuterRef("pk"), user=user)))
+            | Q(
+                Exists(
+                    Phase.objects.filter(job=OuterRef("pk")).filter(
+                        Q(report_author=user) | Q(project_lead=user)
+                    )
+                )
+            )
+            | Q(
+                Exists(
+                    Job.scoped_by.through.objects.filter(
+                        job_id=OuterRef("pk"), user_id=user.pk
+                    )
+                )
+            )
             | Q(account_manager=user)  # filter for account_manager
             | Q(dep_account_manager=user),  # filter for dep_account_manager
             status__in=JobStatuses.ACTIVE_STATUSES,  # Include active job statuses only
-        ).distinct()
+        )
         return matches
 
 
@@ -223,14 +239,19 @@ class Job(models.Model):
         return BillingCode.objects.filter(assignments__job=self).distinct()
 
     def staff_cost(self):
-        total_cost = 0
-        # Ok, for each person... lets take their cost per hour and figure out staffing!
+        from chaotica_utils.models import UserCost
+
         from ..models import TimeSlot
 
-        for slot in TimeSlot.objects.filter(phase__job=self):
-            # lets add up the hours!
-            total_cost = total_cost + slot.cost()
-        return total_cost
+        # One rates query for everyone, and one User instance per person so
+        # the business-hours memo is shared (was ~4 queries per slot).
+        slots = list(
+            TimeSlot.objects.filter(phase__job=self).prefetch_related("user")
+        )
+        rates = {}
+        for rate in UserCost.objects.filter(user_id__in={s.user_id for s in slots}):
+            rates.setdefault(rate.user_id, []).append(rate)  # newest first
+        return sum((slot.cost(rates.get(slot.user_id, [])) for slot in slots), 0)
 
     @property
     def profit_perc(self):

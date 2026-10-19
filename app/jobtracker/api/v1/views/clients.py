@@ -3,7 +3,8 @@
 from drf_spectacular.utils import extend_schema
 from rest_framework.decorators import action
 
-from django.db.models import Count, Q
+from django.db.models import Count, IntegerField, OuterRef, Subquery
+from django.db.models.functions import Coalesce
 
 from ....models import Client, Contact, FrameworkAgreement, Job, Project
 from ..base import BaseReadOnlyAPIViewSet
@@ -17,10 +18,22 @@ from ..serializers import (
 )
 
 
+def _count_for_client(model, ids):
+    counted = (
+        model.objects.filter(client=OuterRef("pk"), pk__in=ids)
+        .order_by()
+        .values("client")
+        .annotate(n=Count("pk"))
+        .values("n")
+    )
+    return Coalesce(Subquery(counted, output_field=IntegerField()), 0)
+
+
 class ClientViewSet(BaseReadOnlyAPIViewSet):
     serializer_class = ClientSerializer
     policy_scope = "client.view"
     ordering_fields = ("name", "jobs_count", "projects_count")
+    ordering = ("name", "pk")
     search_fields = ("name",)
 
     def get_serializer_class(self):
@@ -34,16 +47,23 @@ class ClientViewSet(BaseReadOnlyAPIViewSet):
             "account_managers", "tech_account_managers"
         )
         if self.action == "list" and not getattr(self, "swagger_fake_view", False):
-            # Only jobs / projects the caller can see count.
-            jobs = self.policy.scope("job.view", Job.objects.all()).values("pk")
-            projects = self.policy.scope("project.view", Project.objects.all()).values(
-                "pk"
+            # Only jobs / projects the caller can see count. The visible ids
+            # are read once, then counted per client by a subquery each: a
+            # filtered Count over the scope subquery ran the scope once per
+            # client × job row (seconds for a consultant).
+            job_ids = list(
+                self.policy.scope("job.view", Job.objects.all()).values_list(
+                    "pk", flat=True
+                )
+            )
+            project_ids = list(
+                self.policy.scope("project.view", Project.objects.all()).values_list(
+                    "pk", flat=True
+                )
             )
             qs = qs.annotate(
-                jobs_count=Count("jobs", filter=Q(jobs__in=jobs), distinct=True),
-                projects_count=Count(
-                    "projects", filter=Q(projects__in=projects), distinct=True
-                ),
+                jobs_count=_count_for_client(Job, job_ids),
+                projects_count=_count_for_client(Project, project_ids),
             )
         if self.action == "retrieve":
             qs = qs.prefetch_related("contacts", "framework_agreements__client")

@@ -51,6 +51,11 @@ class ScheduleConsumer(AsyncJsonWebsocketConsumer):
     async def force_disconnect(self, event):
         await _force_disconnect(self, event)
 
+    async def unread_changed(self, event):
+        # Sent to the user group for ws/me/; nothing to do here, but a missing
+        # handler would raise and drop the socket.
+        pass
+
     @database_sync_to_async
     def _resolve_group(self, user):
         """Authorise the requested scope and return its broadcast group name, or

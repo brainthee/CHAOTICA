@@ -132,8 +132,14 @@ function initV1Tables() {
                 render: (value, type, row) => type === 'display' ? render(value, row) : value,
             };
         });
+        // Back to the first page on a length change: the API pages by
+        // page number, so an offset that isn't a multiple of the new length
+        // would be labelled with the wrong row numbers.
+        $(table).on('length.dt', function (e, settings) { settings._iDisplayStart = 0; });
         new DataTable(table, {
             {% include 'js/dtDefaultConfig.js' %}
+            // No "All": the API caps a page at V1_MAX_PAGE_SIZE.
+            "aLengthMenu": [[25, 50, 75, 200], [25, 50, 75, 200]],
             serverSide: true,
             processing: true,
             columns: columns,

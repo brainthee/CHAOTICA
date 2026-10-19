@@ -80,8 +80,7 @@
 <script>
   $(document).ready(function() {
     // The widget runs on /api/v1/ (session auth + CSRF). The unread badge is
-    // pushed live over ws/me/; polling is only the fallback while that
-    // socket is down.
+    // pushed live over ws/me/, with polling as the fallback.
     const API = '{% url "api_v1:notifications" %}';
     const csrf = () => $('[name=csrfmiddlewaretoken]').val();
     let pollTimer = null;
@@ -113,8 +112,12 @@
         .fail((xhr, status, error) => console.error('Error fetching notification count:', error));
     }
 
-    function startPolling() {
-      if (!pollTimer) pollTimer = setInterval(updateNotificationCounter, 60000);
+    // Every minute while the socket is down; every 5 while it's up, as a
+    // backstop for pushes that don't reach this socket (e.g. sent from
+    // another app instance).
+    function startPolling(everyMs) {
+      stopPolling();
+      pollTimer = setInterval(updateNotificationCounter, everyMs || 60000);
     }
 
     function stopPolling() {
@@ -127,7 +130,7 @@
       let ws;
       try { ws = new WebSocket(proto + location.host + '/ws/me/'); }
       catch (err) { startPolling(); return; }
-      ws.onopen = () => { stopPolling(); retryMs = 5000; };
+      ws.onopen = () => { startPolling(300000); retryMs = 5000; };
       ws.onmessage = ev => {
         try {
           const msg = JSON.parse(ev.data);

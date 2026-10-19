@@ -53,11 +53,11 @@ class Command(BaseCommand):
         job = Job.objects.filter(phases__isnull=False).first()
         phase = Phase.objects.filter(job=job).first() if job else None
 
-        date_range = {"start": "2026-01-01T00:00:00", "end": "2026-04-01T00:00:00"}
+        date_range = {"start": "2026-01-01", "end": "2026-04-01"}
 
         urls = [
-            ("scheduler/members", reverse("view_scheduler_members"), {}),
-            ("scheduler/timeslots", reverse("view_scheduler_slots"), date_range),
+            ("scheduler/rows", reverse("api_v1:schedule-resources"), date_range),
+            ("scheduler/slots", reverse("api_v1:schedule-list"), date_range),
             (
                 "profile/update",
                 reverse("update_profile", kwargs={"email": auth_user.email}),
@@ -68,12 +68,7 @@ class Command(BaseCommand):
                 reverse("update_skills", kwargs={"email": auth_user.email}),
                 {},
             ),
-            (
-                "search (q=test)",
-                reverse("search"),
-                {"q": "test"},
-                {"method": "post", "xhr": True},
-            ),
+            ("search (q=test)", reverse("api_v1:search"), {"q": "test"}),
         ]
 
         if job and phase:

@@ -3,7 +3,18 @@ and /api/v1/."""
 
 from datetime import timedelta
 
-from django.db.models import Case, Count, IntegerField, Prefetch, Q, When
+from django.db.models import (
+    Case,
+    Count,
+    IntegerField,
+    OuterRef,
+    Prefetch,
+    Q,
+    Subquery,
+    Value,
+    When,
+)
+from django.db.models.functions import Coalesce
 
 from chaotica_utils.models import User
 
@@ -100,19 +111,28 @@ def matrix_users():
 def service_list_with_risk():
     """Services annotated with specialist / skilled-people / active-phase
     counts and a 0 (critical) – 3 (low) risk score."""
+    from ..models import Phase
+
+    # One subquery per figure: three joined Counts multiplied required skills
+    # × their user ratings × phases before counting (a ~0.6s cross join).
+    def count(qs):
+        counted = qs.order_by().values("_g").annotate(n=Count("pk")).values("n")
+        return Coalesce(Subquery(counted, output_field=IntegerField()), 0)
+
+    required = UserSkill.objects.filter(
+        skill__services_skill_required=OuterRef("pk")
+    ).annotate(_g=Value(1, output_field=IntegerField()))
     return (
         Service.objects.prefetch_related("skillsRequired", "skillsDesired", "owners")
         .annotate(
-            specialist_count=Count(
-                "skillsRequired__users",
-                filter=Q(skillsRequired__users__rating=UserSkillRatings.SPECIALIST),
-                distinct=True,
+            specialist_count=count(
+                required.filter(rating=UserSkillRatings.SPECIALIST)
             ),
-            skilled_people_count=Count("skillsRequired__users", distinct=True),
-            active_phases_count=Count(
-                "phases",
-                filter=Q(phases__status__in=PhaseStatuses.SERVICE_ACTIVE),
-                distinct=True,
+            skilled_people_count=count(required),
+            active_phases_count=count(
+                Phase.objects.filter(
+                    service=OuterRef("pk"), status__in=PhaseStatuses.SERVICE_ACTIVE
+                ).annotate(_g=Value(1, output_field=IntegerField()))
             ),
             risk_score=Case(
                 When(specialist_count=0, then=0),

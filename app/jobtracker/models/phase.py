@@ -7,7 +7,7 @@ from django.utils import timezone
 from chaotica_utils.utils import unique_slug_generator
 from django.urls import reverse
 from simple_history.models import HistoricalRecords
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django.contrib.contenttypes.fields import GenericRelation
 from model_utils.fields import MonitorField
 from django.db.models import JSONField
@@ -74,13 +74,16 @@ class PhaseManager(models.Manager):
         # - Scheduled on
         # - Lead/Author of
         # - Scoped while before scoping approved
+        from .timeslot import TimeSlot
+
+        # Exists, not a timeslot join: no row fan-out to DISTINCT away.
         matches = self.filter(
-            Q(timeslots__user=user)  # Filter by scheduled
+            Q(Exists(TimeSlot.objects.filter(phase=OuterRef("pk"), user=user)))
             | Q(report_author=user)  # Filter for report author
             | Q(project_lead=user),  # filter for lead
             status__in=phase_statuses,  # Include active phase statuses only
             job__status__in=job_statuses,  # Include active job statuses only
-        ).distinct()
+        )
         return matches
 
 

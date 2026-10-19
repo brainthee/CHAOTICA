@@ -101,8 +101,6 @@
       v1: {% scheduler_v1_config "global" %},
       readonly: {{ sched_readonly|yesno:'true,false' }},
       embedded: false,
-      membersUrl: "{% url 'view_scheduler_members' %}",
-      slotsUrl: "{% url 'view_scheduler_slots' %}",
       exportUrl: "{% url 'export_scheduler_view' %}",
       changeDateUrl: "{% url 'change_scheduler_slot_date' %}",
       changeCommentDateUrl: "{% url 'change_scheduler_slot_comment_date' %}",
@@ -118,10 +116,8 @@
       setDefaultUrl: "{% url 'set_scheduler_filter_default' %}",
       clearDefaultUrl: "{% url 'clear_scheduler_filter_default' %}",
       scopeId: null,
-      historyUrl: "{% url 'schedule_action_history' %}",
       revertUrl: "{% url 'schedule_action_revert' %}",
       undoUrl: "{% url 'schedule_action_undo' %}",
-      sinceUrl: "{% url 'view_scheduler_slots_since' %}",
       wsUrl: "/ws/schedule/global/",
       cards: null
     };

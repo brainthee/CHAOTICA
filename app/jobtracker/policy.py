@@ -278,7 +278,7 @@ def _scope_users(p, qs):
         | Q(pk=u.pk)
         | Q(manager=u)
         | Q(acting_manager=u)
-    ).distinct()
+    )
 
 
 def _scope_timeslots(p, qs):
@@ -291,13 +291,20 @@ def _scope_timeslots(p, qs):
 
 def _scope_leave(p, qs):
     # The manage_leave visibility clause.
+    # (A subquery, not a membership join: the join needed DISTINCT over every
+    # column, a temp-table scan of all leave.)
+    from .models import OrganisationalUnitMember
+
     u = p.user
+    members = OrganisationalUnitMember.objects.filter(
+        unit__in=p.units("can_view_all_leave_requests")
+    ).values("member")
     return qs.filter(
-        Q(user__unit_memberships__unit__in=p.units("can_view_all_leave_requests"))
+        Q(user__in=members)
         | Q(user__manager=u)
         | Q(user__acting_manager=u)
         | Q(user=u)
-    ).distinct()
+    )
 
 
 def _scope_own_or_managed(global_perm):
@@ -307,7 +314,7 @@ def _scope_own_or_managed(global_perm):
             return qs
         return qs.filter(
             Q(user=u) | Q(user__manager=u) | Q(user__acting_manager=u)
-        ).distinct()
+        )
 
     return rule
 

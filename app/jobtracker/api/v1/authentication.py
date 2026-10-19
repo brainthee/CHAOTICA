@@ -15,7 +15,9 @@ class ActiveUserOAuth2Authentication(OAuth2Authentication):
         if not config.API_OAUTH2_ENABLED:
             return None
         result = super().authenticate(request)
-        if result is not None and not result[0].is_active:
+        # Tokens without a person (e.g. a client-credentials app made outside
+        # Connected Apps) can't act as anyone.
+        if result is not None and (result[0] is None or not result[0].is_active):
             raise AuthenticationFailed("User inactive or deleted.")
         return result
 

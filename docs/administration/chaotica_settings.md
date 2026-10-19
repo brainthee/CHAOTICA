@@ -114,6 +114,7 @@ Site-wide toggles for the iCal schedule feeds users can subscribe to. See [Calen
 | **ADFS_ENABLED** | `False` | Enables Azure AD / ADFS single sign-on. When enabled, a "Sign in with Microsoft" button appears on the login page. Requires a valid ADFS configuration in Django settings. |
 | **ADFS_AUTO_LOGIN** | `False` | When enabled (and ADFS_ENABLED is also true), unauthenticated users are automatically redirected to ADFS login instead of seeing the login form. |
 | **LOCAL_LOGIN_ENABLED** | `True` | Allows username/password authentication. When disabled, the email/password form is hidden and POST requests to the login endpoint are blocked. |
+| **API_OAUTH2_ENABLED** | `False` | Lets registered [Connected Apps](connected_apps.md) sign people in with OAuth2 (authorization code + PKCE) to use the API. When disabled, `/o/` returns 404 and bearer tokens are ignored. |
 | **EMAIL_ENABLED** | `False` | Master toggle for all outbound email. When disabled, the notification system skips email dispatch entirely. Notifications are still created in-app. |
 
 ---

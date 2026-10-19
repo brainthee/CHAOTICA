@@ -6,7 +6,7 @@ Shared by the dashboard page (``dashboard/views.py``) and the API
 
 from datetime import timedelta
 
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django.utils.functional import cached_property
@@ -14,7 +14,7 @@ from django.utils.functional import cached_property
 from chaotica_utils.utils import get_start_of_week
 
 from ..enums import JobStatuses, PhaseStatuses
-from ..models import Job, OrganisationalUnit, Phase
+from ..models import Job, OrganisationalUnit, Phase, TimeSlot
 from ..policy import PolicyContext
 from .involvement import job_involvement_q, phase_involvement_q
 
@@ -86,7 +86,7 @@ class DashboardScope:
             Q(job__unit__in=self._member("can_view_jobs")) | self.phase_involved,
             status__in=PhaseStatuses.ACTIVE_STATUSES,  # active phase statuses only
             job__status__in=JobStatuses.ACTIVE_STATUSES,  # active job statuses only
-        ).distinct()
+        )
 
     @cached_property
     def operational_base(self):
@@ -128,10 +128,14 @@ class DashboardScope:
         week_end = week_start + timedelta(days=6)
         return (
             self.operational_base.filter(
-                timeslots__end__date__gte=week_start,
-                timeslots__start__date__lte=week_end,
+                Exists(
+                    TimeSlot.objects.filter(
+                        phase=OuterRef("pk"),
+                        end__date__gte=week_start,
+                        start__date__lte=week_end,
+                    )
+                )
             )
-            .distinct()
             .select_related(
                 "service",
                 "project_lead",
@@ -175,7 +179,6 @@ class DashboardScope:
                 | Q(status=JobStatuses.SCOPING_ADDITIONAL_INFO_REQUIRED)
                 | Q(status=JobStatuses.SCOPING),
             )
-            .distinct()
             .select_related("unit", "client")
             .prefetch_related("phases", "scoped_by")
         )
@@ -186,7 +189,6 @@ class DashboardScope:
                 Q(unit__in=self._member("can_signoff_scopes")) | self.job_involved,
                 status=JobStatuses.PENDING_SCOPING_SIGNOFF,
             )
-            .distinct()
             .select_related("unit", "client")
             .prefetch_related("phases")
         )
@@ -235,7 +237,6 @@ class DashboardScope:
                 status=PhaseStatuses.COMPLETED,
                 job__status__in=JobStatuses.ACTIVE_STATUSES,  # not deleted/archived/lost
             )
-            .distinct()
             .select_related(
                 "project_lead",
                 "job__client",
@@ -444,6 +445,17 @@ _ALARM_PEOPLE = {
 def _value(obj, attr):
     value = getattr(obj, attr, None)
     return value() if callable(value) else value
+
+
+def alarm_counts(scope):
+    """The ``counts`` of :func:`alarm_groups` with COUNT queries only (for
+    badges; doesn't load the rows)."""
+    from ..alarms import STALE_KEYS
+
+    per_key = {key: qs.count() for key, qs in scope.alarm_querysets.items()}
+    stale = sum(n for key, n in per_key.items() if key in STALE_KEYS)
+    overdue = sum(per_key.values()) - stale
+    return {"overdue": overdue, "stale": stale, "total": overdue + stale}
 
 
 def alarm_groups(scope):

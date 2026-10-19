@@ -2620,6 +2620,11 @@ paths:
           type: string
         description: Scheduler filter (as the scheduler page's filter form).
       - in: query
+        name: job
+        schema:
+          type: integer
+        description: Limit to a job (needs view_job_schedule).
+      - in: query
         name: job_levels
         schema:
           type: string
@@ -2655,10 +2660,19 @@ paths:
           type: string
         description: Scheduler filter (as the scheduler page's filter form).
       - in: query
+        name: phase
+        schema:
+          type: integer
+        description: Limit to a phase (needs view_job_schedule).
+      - in: query
         name: phases
         schema:
           type: string
         description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: project
+        schema:
+          type: integer
       - in: query
         name: projects
         schema:

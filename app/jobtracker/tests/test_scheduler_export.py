@@ -4,6 +4,7 @@ import json
 from datetime import timedelta
 
 from django.test import RequestFactory
+from rest_framework.test import APIClient
 from guardian.shortcuts import assign_perm
 from openpyxl import load_workbook
 
@@ -22,6 +23,28 @@ from jobtracker.models import (
 from jobtracker.schedule_export import SCHEDULER_EXPORT_MAX_DAYS
 from jobtracker.views import scheduler as sched_views
 from .test_schedule_history import ScheduleHistoryBase
+
+
+def v1_get(user, path, params):
+    """The scheduler's read feeds are /api/v1/ now."""
+    client = APIClient(HTTP_HOST="testserver")
+    client.force_authenticate(user)
+    resp = client.get(path, params)
+    assert resp.status_code == 200, resp.content
+    return resp.json()
+
+
+def v1_window(start, end):
+    return {"start": start.date().isoformat(), "end": end.date().isoformat()}
+
+
+def v1_slot_rows(user, start, end, params):
+    """/api/v1/schedule/ slots, with the old feed's key names for phase/type."""
+    body = v1_get(user, "/api/v1/schedule/", {**v1_window(start, end), **params})
+    return [
+        {**row, "phaseId": row["phase"], "slot_type_ID": row["slot_type"]}
+        for row in body["timeslots"]
+    ]
 
 
 class SchedulerScopeBase(ScheduleHistoryBase):
@@ -125,16 +148,13 @@ class SchedulerExportTests(SchedulerScopeBase):
         resp = self._export(end=self.start + timedelta(days=SCHEDULER_EXPORT_MAX_DAYS + 1))
         self.assertEqual(resp.status_code, 400)
 
-    def test_members_feed_still_json(self):
-        # Refactor guard: get_scheduler_members now wraps scheduler_member_rows.
-        req = self.rf.get(
-            "/jobtracker/scheduler/members",
-            {"start": self.start.isoformat(), "end": self.end.isoformat()},
-        )
-        req.user = self.actor
-        data = json.loads(sched_views.view_scheduler_members(req).content)
+    def test_rows_feed(self):
+        # The scheduler's rows come from scheduler_member_rows via /api/v1/.
+        data = v1_get(
+            self.actor, "/api/v1/schedule/resources/", v1_window(self.start, self.end)
+        )["users"]
         self.assertEqual({r["id"] for r in data}, {self.actor.pk, self.other.pk})
-        self.assertTrue(all(r["html_view"] for r in data))
+        self.assertTrue(all(r["display"] for r in data))
 
 
 class HiddenWorkBase(SchedulerScopeBase):
@@ -160,11 +180,9 @@ class HiddenWorkBase(SchedulerScopeBase):
         )
 
     def _member_ids(self, params, user=None):
-        query = {"start": self.start.isoformat(), "end": self.end.isoformat()}
-        query.update(params)
-        req = self.rf.get("/jobtracker/scheduler/members", query)
-        req.user = user or self.actor
-        return {r["id"] for r in json.loads(sched_views.view_scheduler_members(req).content)}
+        query = {**v1_window(self.start, self.end), **params}
+        rows = v1_get(user or self.actor, "/api/v1/schedule/resources/", query)
+        return {r["id"] for r in rows["users"]}
 
 
 class SchedulerFilterScopeTests(HiddenWorkBase):
@@ -213,14 +231,12 @@ class SchedulerClientFilterTests(HiddenWorkBase):
         self._delivery_slot()  # actor on self.job (Test Client); other has nothing
 
     def _slots(self, params):
-        query = {
-            "start": (self.start - timedelta(days=1)).isoformat(),
-            "end": (self.end + timedelta(days=1)).isoformat(),
-        }
-        query.update(params)
-        req = self.rf.get("/jobtracker/scheduler/timeslots", query)
-        req.user = self.actor
-        return json.loads(sched_views.view_scheduler_slots(req).content)
+        return v1_slot_rows(
+            self.actor,
+            self.start - timedelta(days=1),
+            self.end + timedelta(days=1),
+            params,
+        )
 
     def _delivery_rows(self, params):
         return [r for r in self._slots(params) if r.get("phaseId") == self.phase.pk]
@@ -304,14 +320,12 @@ class SchedulerFocusTests(HiddenWorkBase):
         self.client_params = {"clients": [str(self.client_obj.pk)]}
 
     def _slot_rows(self, params):
-        query = {
-            "start": (self.start - timedelta(days=1)).isoformat(),
-            "end": (self.end + timedelta(days=6)).isoformat(),
-        }
-        query.update(params)
-        req = self.rf.get("/jobtracker/scheduler/timeslots", query)
-        req.user = self.actor
-        return json.loads(sched_views.view_scheduler_slots(req).content)
+        return v1_slot_rows(
+            self.actor,
+            self.start - timedelta(days=1),
+            self.end + timedelta(days=6),
+            params,
+        )
 
     def _by_id(self, rows):
         return {r["id"]: r for r in rows if isinstance(r.get("id"), int) and "slot_type_ID" in r}
@@ -336,8 +350,17 @@ class SchedulerFocusTests(HiddenWorkBase):
         from constance.test import override_config
 
         with override_config(SCHEDULE_SHADE_AVAILABLE=True):
-            rows = self._slot_rows(self.client_params)
-        avail = [r for r in rows if str(r.get("id", "")).startswith("avail-%d-" % self.actor.pk)]
+            body = v1_get(
+                self.actor,
+                "/api/v1/schedule/",
+                {
+                    **v1_window(self.start - timedelta(days=1), self.end + timedelta(days=6)),
+                    **self.client_params,
+                },
+            )
+        avail = next(
+            a["runs"] for a in body["availability"] if a["user"] == self.actor.pk
+        )
         self.assertTrue(avail, "expected some available-day shading in the window")
         shaded = set()
         for r in avail:

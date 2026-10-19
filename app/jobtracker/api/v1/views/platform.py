@@ -44,8 +44,8 @@ FEATURE_FLAGS = {
     "easter_egg_games": "EASTEREGG_GAMES_ENABLED",
 }
 
-# Search groups the API returns, in display order. (Billing codes stay in the
-# main UI's search only: the API exposes billing as badges, not resources.)
+# Search groups the API returns, in display order. Billing codes are refs
+# without an API url (the API has no billing resource), for the header search.
 SEARCH_GROUPS = (
     ("jobs", "Jobs"),
     ("phases", "Phases"),
@@ -176,7 +176,7 @@ class MeScheduleView(ApiView):
     def get(self, request):
         start, end = parse_schedule_window(request)
         users = User.objects.filter(pk=request.user.pk)
-        return Response(build_schedule_payload(users, start, end))
+        return Response(build_schedule_payload(users, start, end, request=request))
 
 
 class SearchView(ApiView):

@@ -1,63 +1,52 @@
 # API Migration: legacy `/api/` → `/api/v1/`
 
-CHAOTICA has two API surfaces. This page explains the difference and how to move
-consumers that currently depend on the legacy URLs.
+`/api/v1/` is CHAOTICA's API for integrations, standalone UIs and the main web
+UI alike. See [REST API (v1)](../development/api_v1.md).
 
-## Why there are two
+## What is left of the legacy `/api/`
 
-| | Legacy `/api/` | New `/api/v1/` |
-|---|---|---|
-| Purpose | DataTables feeds for the **web UI** | Clean data API for **integrations** |
-| Payload | Rendered HTML links, `DT_RowId`/`DT_RowAttr` row metadata | Plain JSON: IDs + `*_name`/`*_display` labels |
-| Pagination | DataTables draw/paging params | Standard `{count, next, previous, results}` |
-| Versioned | No | Yes (`/api/v1/`) |
-| Stability | Frozen; may change with UI needs | Stable contract; documented via OpenAPI |
+The legacy endpoints were DataTables feeds for the web UI. They returned
+rendered HTML and `DT_*` row metadata, and were never a stable contract.
 
-The legacy endpoints are **not being removed** — the UI still relies on them — but
-they are unsuitable for programmatic use and are not documented for integration.
-New and migrating consumers should use `/api/v1/`.
+The UI has since moved to v1:
 
-## URL mapping
+- the job list (`/api/jobs/`) and client list (`/api/client/`) feeds have been
+  **removed**;
+- so have the old search, notification and scheduler read feeds.
 
-| Legacy endpoint | New endpoint | Notes |
-|---|---|---|
-| `GET /api/users/` | `GET /api/v1/users/` | v1 returns identity only (no PII) |
-| `GET /api/jobs/` | `GET /api/v1/jobs/` | v1 has no HTML/`DT_*`; adds `phase_count`, `is_restricted` |
-| `GET /api/client/` | `GET /api/v1/clients/` | note plural `clients` |
-| `GET /api/orgunit/` | `GET /api/v1/org-units/` | |
-| `GET /api/notes/` | *(not exposed in v1)* | superuser-only in legacy |
+What remains is frozen and undocumented for integration use:
 
-## New in v1 (no legacy equivalent)
+| Legacy endpoint | Use instead |
+|---|---|
+| `GET /api/users/` | `GET /api/v1/users/` (identity only; contact details need `view_user`) |
+| `GET /api/orgunit/` | `GET /api/v1/org-units/` |
+| `GET /api/notes/` | `GET /api/v1/jobs/{id}/notes/`, `/api/v1/phases/{id}/notes/` |
+| `GET /api/auditevents/` | `GET /api/v1/jobs/{id}/activity/`, `/api/v1/phases/{id}/activity/` |
+| ~~`GET /api/jobs/`~~ (removed) | `GET /api/v1/jobs/` |
+| ~~`GET /api/client/`~~ (removed) | `GET /api/v1/clients/` |
 
-`phases`, `projects`, `timeslots`, `timeslot-types`, `leave-requests`, `skills`,
-`skill-categories`, `user-skills`, `qualifications`, `qualification-records`,
-`services`.
+## Moving a consumer
 
-The composite **schedule** feed is also v1-only — `GET /api/v1/schedule/` and
-`GET /api/v1/users/{id}/schedule/` return timeslots + leave + holidays +
-availability for a date window in one call (see
-[REST API (v1) → Schedule](../development/api_v1.md#schedule-composite-window)).
+1. **Paths.** Prefix with `/api/v1/` and use the plural names: `client` →
+   `clients`, `orgunit` → `org-units`.
+2. **Auth.** Choose by client type:
+   - Scripts use an API token (`Authorization: Token <key>`).
+   - Browser apps on another origin use OAuth2 + PKCE through a
+     [Connected App](../administration/connected_apps.md).
+   - Session cookies work only on the CHAOTICA origin itself.
+3. **Shape.**
+   - Read `results` and follow `next` / `previous` to page.
+   - Relations are Ref objects (`id`, `display`, `url`, `web_url`), not HTML
+     fragments.
+   - `id` is always the primary key; jobs carry their business number as
+     `job_id`.
+4. **Times** are UTC.
+5. **Fields.** The OpenAPI schema (`/api/v1/schema/swagger-ui/`) is the source
+   of truth.
 
-Plus the supporting endpoints:
+## Access is never wider
 
-- `POST /api/v1/auth/token/` — obtain an auth token
-- `GET /api/v1/schema/`, `/schema/swagger-ui/`, `/schema/redoc/` — OpenAPI docs
-
-## What changes for a consumer
-
-1. **Base path**: prefix requests with `/api/v1/` and update the client/singular
-   paths (`client` → `clients`, `orgunit` → `org-units`).
-2. **Auth**: obtain a token from `/api/v1/auth/token/` and send
-   `Authorization: Token <key>` (session auth also works in-browser). If you relied
-   on the legacy token declaration, note it was previously non-functional — the
-   token backend is now installed and migrated.
-3. **Response shape**: read data from `results` and paginate via `next`/`previous`.
-   Stop parsing HTML out of fields — v1 gives you IDs and plain labels.
-4. **Fields**: consult the OpenAPI schema (`/api/v1/schema/swagger-ui/`) for the
-   exact field list per resource; it is the source of truth.
-
-## Access scoping is unchanged
-
-`/api/v1/` enforces the **same permissions** as the web UI (see
-[REST API (v1)](../development/api_v1.md#permissions-data-scoping)). Migrating to v1
-does not grant any consumer broader visibility than they had in the application.
+`/api/v1/` applies the same permissions as the web UI, and in a few places
+stricter ones (see [API / UI coexistence](../development/api_coexistence.md)).
+Moving to v1 never gives a consumer more visibility than they have in the
+application.

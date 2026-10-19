@@ -869,8 +869,16 @@ class AssignUserField(forms.Form):
         ),
     )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, viewer=None, **kwargs):
         super(AssignUserField, self).__init__(*args, **kwargs)
+        if viewer is not None:
+            # Only people the schedule will actually show (include_user is
+            # clamped to the viewer's scheduler visibility).
+            from .utils import viewable_schedule_user_pks
+
+            self.fields["user"].queryset = User.objects.filter(
+                is_active=True, pk__in=viewable_schedule_user_pks(viewer)
+            )
         self.helper = FormHelper(self)
         self.fields["user"].help_text = None
         self.fields["user"].label = False

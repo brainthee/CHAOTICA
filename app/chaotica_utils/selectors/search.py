@@ -36,6 +36,7 @@ def site_search(user, q, limit=DEFAULT_LIMIT, policy=None):
     Returns ``{}`` for queries shorter than :data:`MIN_QUERY_LENGTH`. Each list
     is evaluated, at most ``limit`` long, with the relations the results render.
     """
+    from jobtracker.enums import JobStatuses, PhaseStatuses
     from jobtracker.models import (
         BillingCode,
         Client,
@@ -62,6 +63,7 @@ def site_search(user, q, limit=DEFAULT_LIMIT, policy=None):
     return {
         "jobs": list(
             Job.objects.filter(unit__in=units)
+            .exclude(status=JobStatuses.DELETED)
             .select_related("client")
             .annotate(
                 lower_title=Lower("title"),
@@ -78,6 +80,8 @@ def site_search(user, q, limit=DEFAULT_LIMIT, policy=None):
         ),
         "phases": list(
             Phase.objects.filter(job__unit__in=units)
+            .exclude(status=PhaseStatuses.DELETED)
+            .exclude(job__status=JobStatuses.DELETED)
             .select_related("job", "job__client")
             .annotate(
                 lower_title=Lower("title"),

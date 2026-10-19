@@ -111,8 +111,14 @@ class UserDetailView(UserBaseView, DetailView):
         date_range_parts = self.request.GET.get("dateRange", "").split(" to ")
         if len(date_range_parts) == 2:
             start_raw, end_raw = date_range_parts
-        start = parse_date(start_raw or "") if start_raw else None
-        end = parse_date(end_raw or "") if end_raw else None
+        def _date(raw):
+            try:
+                return parse_date(raw) if raw else None
+            except ValueError:  # well-formed but impossible, e.g. 2026-02-30
+                return None
+
+        start = _date(start_raw)
+        end = _date(end_raw)
         context["start_date"] = start or today - datetime.timedelta(days=30)
         context["end_date"] = end or today
 
