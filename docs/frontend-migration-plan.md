@@ -29,9 +29,9 @@ Migrate CHAOTICA from server-rendered Django templates (365 templates, jQuery, B
 | Tables | PrimeVue DataTable |
 | Rich text | TinyMCE Vue wrapper or TipTap |
 | Maps | vue-leaflet |
-| API | Django REST Framework |
-| Auth | DRF SessionAuthentication |
-| Permissions | Custom DRF permission classes wrapping Guardian |
+| API | Django REST Framework, `/api/v1/` ([REST API (v1)](development/api_v1.md)) |
+| Auth | Session (same-origin SPA) or OAuth2 + PKCE (separate origin) |
+| Permissions | `jobtracker/policy.py` `PolicyContext`, surfaced as `capabilities` blocks |
 
 ---
 
@@ -46,31 +46,47 @@ Migrate CHAOTICA from server-rendered Django templates (365 templates, jQuery, B
 - [ ] PrimeVue theme configuration — choose base theme, configure design tokens
 - [ ] Set up directory structure (`stores/`, `composables/`, `components/`, `views/`)
 
-### 0b: DRF API layer — core models (3-4 weeks)
+### 0b: API layer — reads ✅ done (2026-10), writes to do
 
-Expand existing DRF setup (`app/jobtracker/views/api.py`, `app/jobtracker/serializers.py`) to full CRUD.
+The SPA builds on the versioned `/api/v1/`, not the legacy `/api/` DataTables
+feeds, which are frozen and mostly removed.
 
-**For each model: read serializer (nested + computed fields), write serializer (with validation from forms.py), list serializer (lightweight for tables).**
+**Done (read-only):**
 
-- [ ] Job, Phase, TimeSlot serializers + ViewSets (core workflow)
-- [ ] Client, Service, Framework serializers + ViewSets (job configuration)
-- [ ] OrganisationalUnit, OrganisationalUnitMember serializers + ViewSets (org structure)
-- [ ] User, UserSkill, UserQualification, UserJobLevel serializers + ViewSets (people)
-- [ ] Note serializer + ViewSet (generic relation, attached to Jobs/Phases)
-- [ ] Notification, NotificationSubscription serializers + ViewSets (alerts)
-- [ ] Report, ReportField, ReportFilter serializers + ViewSets (reporting)
-- [ ] LeaveRequest, Holiday serializers + ViewSets (availability)
-- [ ] Migrate validation logic from `app/jobtracker/forms.py` (3,058 lines) to serializer validation
-- [ ] API URL routing configuration
+- dashboard queues and stats, alarms, notifications;
+- jobs and phases plus every tab (team, sales, support team, notes, activity,
+  feedback, schedule), with `workflow` and `capabilities` blocks;
+- the scheduler: windowed schedules, rows, history, deltas;
+- clients, contacts, frameworks, users and profiles, org units;
+- skills, the skill matrix, services (coverage and metrics), qualifications;
+- search and ID jump.
 
-### 0c: DRF permissions & auth (2-3 weeks)
+Template views and the API share selectors (`jobtracker/selectors/`), so the
+two cannot drift. The main UI already reads from v1 in several places: the
+scheduler, the job and client lists, search and notifications.
 
-- [ ] DRF SessionAuthentication configuration (same domain, no JWT needed)
-- [ ] Custom DRF permission classes wrapping Guardian's `get_objects_for_user()`
-- [ ] `/api/me/` endpoint — current user + permission flags (replaces `{% if perms.* %}`)
-- [ ] Queryset filtering in ViewSets based on user permissions
-- [ ] CSRF handling via DRF SessionAuth
-- [ ] Replicate permission logic from `app/jobtracker/mixins.py` (UnitPermissionRequiredMixin, JobPermissionRequiredMixin)
+**To do (writes):**
+
+- [ ] Write endpoints, for each model, with validation moved from `forms.py` into shared services. Clients post workflow transitions **by name** (from the `workflow` block).
+- [ ] Scheduler writes (create, move, delete slots; revert) over v1. Today they still use page endpoints plus the `ws/schedule/` socket.
+- [ ] Reporting, notification subscriptions, leave requests.
+
+### 0c: Permissions & auth ✅ done (2026-10)
+
+- `PolicyContext` (`jobtracker/policy.py`) is the single permission facade:
+  `can`, `scope` and `capabilities`, memoised per request. The SPA reads
+  `capabilities` from `/api/v1/me/` and from each detail response, instead of
+  re-implementing `{% if perms.* %}`.
+- **Auth.** A same-origin SPA uses the session cookie plus CSRF. A SPA on
+  another origin uses OAuth2 authorization code + PKCE, registered as a
+  [Connected App](administration/connected_apps.md). Realtime uses `ws/me/`,
+  with a single-use ticket from `/api/v1/realtime/ticket/` when the cookie
+  isn't available.
+- Middleware handles API callers properly:
+  - maintenance and setup return JSON 503s;
+  - times are in UTC;
+  - audit records the right actor and impersonator;
+  - throttling and CORS are restricted to registered origins.
 
 ---
 
@@ -89,7 +105,7 @@ Expand existing DRF setup (`app/jobtracker/views/api.py`, `app/jobtracker/serial
 
 ## Phase 2: Dashboard (2-3 weeks)
 
-- [ ] API endpoint: `/api/dashboard/` returning aggregated stats (migrate logic from `app/dashboard/views.py` — 57+ context variables)
+- [x] API endpoints: `/api/v1/me/dashboard/` (queues + stats), `/api/v1/me/alarms/`, queue lists via `/jobs/?queue=` / `/phases/?queue=`
 - [ ] Stats cards with vue-echarts
 - [ ] Job/phase lists with status badges
 - [ ] Permission-based tab/section visibility (from `/api/me/` permission flags)
@@ -118,7 +134,7 @@ Expand existing DRF setup (`app/jobtracker/views/api.py`, `app/jobtracker/serial
 - [ ] Job list with advanced filtering
 - [ ] Job detail with tabbed sub-views (overview, phases, team, schedule, notes, history)
 - [ ] Job create/edit forms
-- [ ] FSM workflow transitions — `/api/jobs/{slug}/transition/` endpoints + UI buttons
+- [ ] FSM workflow transitions — a write endpoint taking the transition name; buttons render from the `workflow` block (already in v1)
 - [ ] Team assignment modals (PrimeVue Dialog)
 - [ ] Framework/billing code assignment
 - [ ] Note CRUD (generic relation)
@@ -138,7 +154,7 @@ Expand existing DRF setup (`app/jobtracker/views/api.py`, `app/jobtracker/serial
 
 ### 4b: Scheduler (3-4 weeks)
 
-- [ ] FullCalendar Vue 3 component (`@fullcalendar/vue3`) with resource timeline
+- [ ] Timeline component (the current UI uses vis-timeline, fed by `/api/v1/schedule/` + `/schedule/resources/`)
 - [ ] TimeSlot CRUD via API
 - [ ] Constraint validation UI:
   - [ ] Framework closed/over-allocated warnings
@@ -164,7 +180,7 @@ Expand existing DRF setup (`app/jobtracker/views/api.py`, `app/jobtracker/serial
 
 - [ ] Notification rules management
 - [ ] Subscription preferences
-- [ ] Real-time notification indicator (polling initially, WebSocket later if needed)
+- [ ] Real-time notification indicator (`ws/me/` pushes the unread count; already used by the current UI)
 - [ ] Notification list/detail views
 
 ### 5c: User management (2-3 weeks)
@@ -201,7 +217,7 @@ Expand existing DRF setup (`app/jobtracker/views/api.py`, `app/jobtracker/serial
 ### 6c: Cutover (1-2 weeks)
 
 - [ ] Django serves built Vue SPA at all frontend routes
-- [ ] Django handles only `/api/`, `/admin/`, `/oauth2/` routes
+- [ ] Django handles only `/api/v1/`, `/o/` (OAuth2), `/oauth2/` (ADFS), `/ws/` and `/admin/` routes
 - [ ] `TemplateView` serves `index.html` for all non-API routes (Vue Router handles client-side)
 - [ ] Redirect old Django template URLs if bookmarked
 - [ ] Remove Django template dependencies (crispy-forms, widget-tweaks, etc.)
@@ -229,9 +245,10 @@ CHAOTICA/
 ├── app/                          # Django backend (API only after migration)
 │   ├── chaotica/settings.py      # Add DRF config, CORS, SPA serving
 │   ├── jobtracker/
-│   │   ├── serializers.py        # Full CRUD serializers
-│   │   ├── views/api.py          # Full CRUD ViewSets
-│   │   └── permissions.py        # DRF permission classes (Guardian wrapper)
+│   │   ├── api/v1/               # Versioned API (serializers/, views/, filters, fields)
+│   │   ├── selectors/            # Query logic shared by templates and the API
+│   │   ├── policy.py             # PolicyContext — permissions facade
+│   │   └── workflow.py           # Job/phase transition table
 │   └── ...
 ├── frontend/                     # Vue.js SPA
 │   ├── src/
@@ -259,6 +276,6 @@ CHAOTICA/
 | Custom computed methods | 50+ (profit, utilisation, scheduling) |
 | Form definitions | 3,484 lines, 48 form classes |
 | View logic | 6,328 lines, 79 CBVs |
-| Existing API endpoints | 5 (read-only, DataTables-focused) |
+| API endpoints | `/api/v1/`: ~85 paths, read-mostly (see `docs/api/openapi-v1.yaml`) |
 | Guardian permission checks | 26 in views + 564 in templates |
 | Vendor JS libraries | 40+ (FullCalendar, DataTables, ECharts, Gantt, Leaflet, TinyMCE) |

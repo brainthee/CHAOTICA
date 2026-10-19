@@ -1,78 +1,60 @@
-# API / UI coexistence — debt register (working list)
+# API / UI coexistence
 
-Where the main UI and `/api/v1/` differ, or where page logic still lives in a
-template view instead of a shared selector. `/api/v1/` never widens access
-beyond the UI; where the UI is *looser* than the API's stance, the API stays
-strict and the gap is listed here. To be cleaned up as pages move onto the API.
+The main UI and `/api/v1/` share selectors (`jobtracker/selectors/`), the
+permission facade (`jobtracker/policy.py`) and the workflow table
+(`jobtracker/workflow.py`). The API never shows more than the UI. Where the
+UI is currently *looser* than the API, the API stays strict and the gap is
+listed here, so each one can be closed in the UI or accepted deliberately.
 
-## UI looser than the API
-- Global site search lists every active user to every signed-in user. API
-  search returns them as identity-only refs, the same as the UI. The API's
-  `/users/` list stays gated on `view_user`, which no default role holds.
-- Job Sales tab shows staff cost and profit to anyone who can view the job
-  (`views/job.py` `view_job_sales`). The API sends these figures only with
-  `can_view_loaded_costs` (A3).
-- Support-team money is hidden in the template only; the API strips it on
-  the server (A3).
-- The user profile page is open to any user with a global role, and its
-  Schedule History tab is ungated. The API does not expose schedule history
-  (A6).
-- `user_skill_table.html` lists every user's rating for a skill. API
-  `/skills/{id}/users/` uses UserSkill scoping (A7).
-- The skill matrix shows every role holder's ratings to anyone with
-  `view_skill`; the API's matrix rows follow the `/user-skills/` rule (A7).
-- Service coverage lists people by competency to `view_service` holders; the
-  API returns counts, plus names only with `view_users_skill` (A7).
-- The client page lists contacts and frameworks to anyone who can view the
-  client. The API includes them only with `view_contact` /
-  `view_frameworkagreement` (A6).
-- The profile page shows skills and qualifications to anyone with a global
-  role. The API's `/users/{id}/profile/` includes them only for yourself, your
-  manager or holders of `view_users_skill` / `view_users_qualifications` (A6).
-- The contact detail route (`client_contact_detail`) has no template and
-  errors; contacts are only reachable through their edit modal. API contact
-  refs link to the client page instead (A6).
+## Where the UI is looser than the API
 
-## Main UI on /api/v1/ (A9)
-- On v1:
-  - the notifications widget, which also gets a live `ws/me/` badge;
-  - header search and the ID jump;
-  - the job and client lists;
-  - the vis-timeline scheduler's reads (rows, slots, extent, history, polled deltas).
-- Still on page endpoints:
-  - scheduler writes and its WebSocket (writes are out of scope);
-  - the dashboard tab partials (server-rendered HTML; same selectors as `/me/dashboard/`).
-- The old scheduler read feeds (`view_*_schedule_members|slots`,
-  `view_scheduler_slots_since`, `schedule_action_history`) are no longer
-  called by the pages. They're kept only because older tests exercise them;
-  remove them with those tests.
-- Workflow buttons render from `jobtracker/workflow.py`, the same table the
-  API uses.
+| Area | UI today | API |
+|---|---|---|
+| Site search, people | Lists every active user to every signed-in user | Same people, as identity-only refs. `/users/` requires `view_user`, which no default role holds |
+| Job Sales tab | Staff cost and profit shown to anyone who can view the job | Only with `can_view_loaded_costs` |
+| Support-team money | Hidden by the template only | Removed on the server |
+| User profile page | Open to any global role; the Schedule History tab is ungated | Skills and qualifications only for self, manager, or `view_users_skill` / `view_users_qualifications`; schedule history not exposed |
+| Skill page user table, skill matrix | Every holder's rating shown to anyone with `view_skill` | Follows the `/user-skills/` rule |
+| Service coverage | Names people by competency to `view_service` holders | Counts only; names require `view_users_skill` |
+| Client page | Contacts and frameworks shown to anyone who can view the client | Require `view_contact` / `view_frameworkagreement` |
 
-## Scheduler (A5)
-- Utilisation: `/schedule/` uses `calculate_bulk_utilization` (via
-  `collect_schedule_members`). The scheduler rows (`/schedule/resources/`)
-  and the page's members feed use `get_bulk_stats`. Both feed the same
-  `calculate_utilisation` engine for the window; `get_bulk_stats` also adds
-  upcoming-availability ranges, which the window doesn't need.
-- Holidays: everywhere it is now the user's country's holidays plus global
-  ones. The page's holiday bands used to drop global holidays.
+## Same as the UI (accepted for now)
 
-## Fixed in passing
-- `/api/v1/jobs/` and `/projects/` returned the business number as `id` while
-  `/{id}/` looked up the primary key. `id` is now the pk; the number is
-  `job_id` / `project_id`.
-- `/api/v1/timeslots/` showed slots of people who had left the viewer's unit;
-  it now uses scheduler visibility (`viewable_schedule_user_pks`).
-- Job/phase schedule feeds: `include_user` added anyone by id (exposing
-  their other commitments); it is now limited to people the viewer may see.
-- Global schedule history listed every change; it now lists only changes
-  touching people the viewer may see.
-- Contact and framework pages (view, edit, delete) resolved any pk under any
-  client slug; they are now bound to the client in the URL.
-- The service page's Performance tab covered every phase (and listed their
-  clients); it now covers the phases the viewer can see, like its Jobs tab.
-- Skill page Edit/Delete buttons checked `perms.chaotica.*` and never showed.
-- Header search never listed qualifications (the template read the wrong
-  context name). It does now, via the API.
-- Notification titles were inserted into the page unescaped (stored XSS).
+These are as open in the API as in the UI. They are listed because they're
+worth a decision.
+
+- **Job contacts:** a job's primary and additional contacts (with phone and
+  email) are shown to anyone who can view the job. The people delivering the
+  job need them. The client page is stricter (see above).
+- **Framework usage:** a framework's usage lists every job and person on the
+  framework, including jobs the viewer can't open.
+- **Schedule history text:** a history entry is shown when it touches anyone
+  whose schedule you can see. Its summary or override reason may name other
+  people.
+- **Restricted jobs:** marked (`is_restricted`) but not hidden.
+
+## Pages still using page endpoints
+
+- **Scheduler writes:** create, move, delete, revert and undo, plus the
+  `ws/schedule/` socket. All scheduler *reads* use `/api/v1/`.
+- **Dashboard tab partials:** server-rendered HTML, built from the same
+  selectors as `/api/v1/me/dashboard/`.
+
+## Known follow-ups (not blocking)
+
+- **Phase detail:** about 40 queries, 19 of them the same membership lookup
+  repeated by the workflow readiness checks. It should be memoised per
+  request.
+- **`/me/dashboard/`:** about 80 queries and 0.5–0.7s on production-sized
+  data. The queue counts would benefit from short per-user caching.
+- **Payload sizes:**
+  - `/schedule/` is about 700 KB per 28 days unfiltered.
+  - `/skills/matrix/` is about 1.3 MB; it could send only non-default cells.
+  - JSON responses are not gzip-compressed by the app. Enable it at the
+    proxy (`gzip_types application/json`).
+- **Global schedule history:** filtered in Python over the latest 1,000–2,000
+  actions. Storing affected users in an indexed column would let SQL do it.
+- **Realtime across instances:** live socket pushes, single-use tickets and
+  throttle counters need a Redis shared by every app instance. A
+  per-container Redis only reaches sockets on the same instance; the
+  notification badge falls back to polling every 5 minutes.

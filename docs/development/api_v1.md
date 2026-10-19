@@ -1,328 +1,293 @@
 # REST API (v1)
 
-CHAOTICA exposes a versioned, **read-mostly** REST API under `/api/v1/` for
-programmatic access to the main engagement-lifecycle data. It is built on Django
-REST Framework and documented by an auto-generated OpenAPI schema.
+CHAOTICA's API lives under `/api/v1/`. It is the single API for every client:
+integrations, standalone UIs (such as LCARS), and the main web UI itself, whose
+scheduler, job/client lists, search and notifications all read from it.
 
-!!! note "Read-mostly"
-    Endpoints support `GET`/`HEAD`/`OPTIONS`. Writes are limited to a few
-    narrowly-scoped per-user actions — [account status](#writes-account-status)
-    and [profile / career level / loaded cost rate](#writes-user-profile-career-level-loaded-cost-rate).
-    Each reproduces the exact permission gate of its UI equivalent. Broader
-    create/update support is a deliberate future step.
+It is **read-mostly**. You can read the dashboard, jobs and phases (plus
+everything they link to), the scheduler, and skills, services and
+qualifications. Writes are limited to:
 
-!!! warning "Not the legacy `/api/` endpoints"
-    The older `/api/` endpoints (`/api/jobs/`, `/api/client/`, …) are **DataTables
-    feeds for the web UI**, not a clean data API — they return rendered HTML and
-    table-row metadata. They remain in place but are frozen and undocumented for
-    integration use. See [API migration](../integration/api_migration.md).
+- notifications (mark as read);
+- a few per-user HR actions ([below](#writes-user-administration)).
 
-## Base information
+The API is built from the **same selectors and policy code as the web pages**.
+It therefore never shows a user more than the UI would. Where the UI is
+currently looser, the API stays strict (see
+[API / UI coexistence](api_coexistence.md)).
 
-| | |
-|---|---|
-| **Base URL** | `https://your-instance/api/v1/` |
-| **Format** | JSON |
-| **Auth** | Token or session (see below) |
-| **Pagination** | Page-number: `{count, next, previous, results}` |
+!!! info "The contract is the schema"
+    The OpenAPI schema is the source of truth for every endpoint, parameter and
+    field. It is committed at `docs/api/openapi-v1.yaml`, CI fails if it drifts
+    from the code, and it is served live at:
+
+    - `/api/v1/schema/swagger-ui/`
+    - `/api/v1/schema/redoc/`
+    - `/api/v1/schema/`
+
+    This page covers what the schema can't: auth, conventions and behaviour.
 
 ## Authentication
 
-All endpoints require an authenticated user (`IsAuthenticated`).
+Every endpoint except `/meta/` requires a signed-in, **active** user. Every
+request is scoped to that user's own permissions, whichever method is used.
 
-### Token authentication (programmatic clients)
+| Method | For | How |
+|---|---|---|
+| **OAuth2 + PKCE** | browser apps on another origin (e.g. LCARS), anything acting *for* a person | `Authorization: Bearer <access token>` |
+| **API token** | scripts and server-to-server integrations | `Authorization: Token <key>` |
+| **Session** | the main web UI and the browsable API | the CHAOTICA session cookie (same origin only) |
 
-Get a token in any of three ways:
+A bearer token takes precedence when a request carries more than one.
 
-- **In the UI**: **Profile → API Token → Generate Token**, where you can also
-  view, regenerate and revoke it.
-- **By credentials**: POST to `/api/v1/auth/token/` (below).
-- **On the server**: `cd app && python manage.py drf_create_token <email>`.
+### OAuth2 (authorization code + PKCE)
 
-A token authenticates as its owner and **inherits exactly that user's
-permissions** — every request is scoped to what the owner could see or do in the
-web UI, and a token can never do more.
+This is off by default. To turn it on, enable `API_OAUTH2_ENABLED` (**Settings
+→ Access → Authentication**) and register the client as a
+[Connected App](../administration/connected_apps.md). While it is off, `/o/`
+returns 404 and bearer tokens are ignored.
 
-Obtain a token by POSTing credentials, then send it on every request:
+- **Flow:** authorization code with PKCE, `S256` only. Public clients, so there
+  is no client secret. Implicit, password and client-credentials grants are
+  refused.
+- **Endpoints:**
+
+  | Purpose | Endpoint |
+  |---|---|
+  | Authorize | `/o/authorize/` |
+  | Token and refresh | `/o/token/` |
+  | Revoke | `/o/revoke_token/` |
+
+  `/meta/` advertises these under `auth.oauth` whenever OAuth is enabled.
+- **Sign-in:** `/o/authorize/` sends the user through the normal CHAOTICA
+  login (SSO or local), then to a consent page. Trusted apps skip consent.
+  Authorization is refused while impersonating another user.
+- **Scopes:** `read` (the default) and `write`. A bearer token without `read`
+  gets 403.
+- **Lifetimes:**
+  - Access tokens last 1 hour.
+  - Refresh tokens last 30 days and rotate on every use. Reusing an old refresh
+    token revokes the whole token family.
+- **Revocation:** tokens are revoked when the user does so from **Profile →
+  Connected apps**, when an admin deletes the app, or when the account is
+  deactivated. Tokens of inactive users are rejected (401).
+- **CORS:** `/api/v1/` and `/o/token|revoke_token/` accept cross-origin calls
+  only from a Connected App's *allowed origins*, plus the `CORS_ALLOWED_ORIGINS`
+  env var. Credentials (cookies) are never allowed cross-origin.
+
+### API tokens
+
+API tokens are long-lived and inherit exactly their owner's permissions. Treat
+them like passwords. You can get one in three ways:
+
+- **Profile → API Token**, where you can generate, view, regenerate or revoke it.
+- `POST /api/v1/auth/token/` with `username` (email) and `password`. This is
+  available only while local login is enabled, and is throttled to 10/min.
+- On the server: `python manage.py drf_create_token <email>`.
 
 ```bash
-# 1. Obtain a token
-curl -X POST https://your-instance/api/v1/auth/token/ \
-     -d "username=you@example.com&password=your-password"
-# -> {"token": "9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b"}
-
-# 2. Use it
-curl -H "Authorization: Token 9944b09199c62bcf9418ad846dd0e4bbdfc6ee4b" \
-     https://your-instance/api/v1/jobs/
+curl -H "Authorization: Token <key>" https://your-instance/api/v1/me/
 ```
 
-`username` is the user's email address (the account's login identifier).
+### Realtime (WebSockets)
 
-!!! info "Token lifecycle"
-    Tokens are long-lived and do not expire. Treat them like passwords: store in
-    environment variables, never commit them, and re-issue if compromised. Expiring
-    / rotatable tokens are a candidate future enhancement.
+| Socket | Sends |
+|---|---|
+| `ws/me/` | `{"type": "unread", "count": N}` on connect and whenever your unread notifications change |
+| `ws/schedule/global/`, `ws/schedule/job/{id}/`, `ws/schedule/phase/{id}/` | scheduler deltas: `{"type": "delta", ...}` |
 
-### Session authentication (browsable API)
+**How a socket authenticates:**
 
-When logged into the web UI you can browse the API interactively in the same
-session — useful during development.
+- **Session-cookie sockets** must come from the CHAOTICA origin itself.
+- **Other clients** call `POST /api/v1/realtime/ticket/`, which returns
+  `{ticket, expires_in, ws_url}`, then connect to `…/ws/me/?ticket=<ticket>`.
+  A ticket is single-use and expires after 30 seconds.
 
-## Pagination
+Sockets are closed with code `4401` when the user's tokens are revoked or their
+account is deactivated.
 
-Responses are paginated with a standard page-number scheme:
+### Maintenance and setup
 
-```json
-{
-    "count": 150,
-    "next": "https://your-instance/api/v1/jobs/?page=2",
-    "previous": null,
-    "results": [ ... ]
-}
-```
-
-Control paging with `?page=<n>` and `?page_size=<n>` (default 50, max 200).
-
-## Permissions & data scoping
-
-The API **reproduces the same access rules as the web UI** — it never widens them:
-
-- Jobs, phases and projects are scoped to the organisational units where you hold
-  the relevant permission (e.g. `can_view_jobs`), plus any you are on the team of.
-- Timeslots are limited to users whose schedule you may view
-  (`view_users_schedule`), plus your own.
-- The schedule endpoints (`/schedule/`, `/users/{id}/schedule/`) use the same
-  `view_users_schedule` visibility, plus your own schedule — identical to the
-  scheduler in the UI.
-- Leave requests follow the same visibility as the *Manage Leave* screen (your own,
-  your reports', and units where you can view all leave).
-- Skills, qualifications, clients, services and org units are scoped by their
-  respective `view_*` permissions (administrators/global-role holders see all).
-- A user's own skills/qualification records are visible to them, their manager, and
-  holders of the relevant view permission.
-
-Sensitive fields are deliberately never serialized — notably qualification
-`certificate_file` and user PII such as phone numbers.
+- In maintenance mode, every endpoint returns `503` with the error code
+  `maintenance`. Superusers are the exception.
+- Before first-run setup is complete, every endpoint returns `503`.
+- `/meta/` reports `maintenance` so clients can show a banner.
 
 ## Conventions
 
 - **References.** Every relation is an object:
-  `{"id", "type", "display", "url", "web_url"}`. `url` is the API resource
-  (null if the type has none) and `web_url` the page in the main UI.
+  `{"id", "type", "display", "url", "web_url"}`.
+  - `url` is the API resource, or null if the type has none.
+  - `web_url` is the page in the main UI.
 - **Ids.** `id` is always the primary key used in `/{id}/` URLs. Jobs and
   projects also carry the number people quote, as `job_id` / `project_id`.
-- **Errors.** `{"error": {"code", "message", "fields"?}}`, e.g. `not_found`,
-  `permission_denied`, `not_authenticated`, `invalid` (with `fields`),
-  `throttled` (with `retry_after`), `maintenance` (503).
-- **Lists** take `?q=` (search), `?ordering=` (an allowlist per resource) and
-  resource filters; `me` is accepted where a user id is (`?lead=me`).
-- **Times** are UTC (ISO 8601).
-- The full contract is the committed schema, `docs/api/openapi-v1.yaml`.
+- **Workflow and capabilities.**
+  - Job and phase detail responses include a `workflow` block: grouped `steps`,
+    plus the transitions available to *you*, with labels identical to the UI's
+    buttons.
+  - They also include a `capabilities` block of booleans for what you may do.
+    Show or hide actions from these, rather than re-deriving permissions on the
+    client.
+- **Lists:**
+  - Paginated as `{count, next, previous, results}`.
+  - `?page=` and `?page_size=` (default 50, max 200).
+  - `?q=` searches.
+  - `?ordering=` takes a per-resource allowlist, shown in the schema.
+  - Resource filters are listed in the schema.
+  - `me` is accepted wherever a user id is, e.g. `?lead=me`.
+  - Dashboard queues are list filters, e.g. `/jobs/?queue=scoping` and
+    `/phases/?queue=tqa`.
+- **Times.** Always UTC (ISO 8601). Localise using `tz` from `/me/`.
+- **Errors.** All errors use one envelope:
+
+  ```json
+  {"error": {"code": "not_found", "message": "Not found."}}
+  ```
+
+  | Code | When |
+  |---|---|
+  | `not_authenticated` | 401 |
+  | `permission_denied` | 403 |
+  | `not_found` | 404 |
+  | `invalid` | validation error; includes `fields` |
+  | `throttled` | rate limit hit; includes `retry_after` |
+  | `maintenance` | 503 |
+- **Throttling.** 60/min anonymous and 600/min per user by default.
+  - Adjust with the `API_THROTTLE_ANON` / `API_THROTTLE_USER` env vars.
+  - Set `API_NUM_PROXIES` to the number of reverse proxies in front of the app
+    so client IPs are read correctly.
+
+## Access and sensitive data
+
+The API applies the UI's own rules, and is stricter wherever the UI is loose:
+
+- **Jobs, phases and projects:** visible if you hold a view permission on the
+  unit, are involved with the job, created it, or hold the per-job permission.
+  Deleted jobs are never visible. Restricted jobs carry `is_restricted`; as in
+  the UI, they are not hidden.
+- **Schedules** (timeslots, `/schedule/`, history, deltas): follow the
+  scheduler's visibility (`view_users_schedule` in your units, plus yourself).
+- **Leave:** follows *Manage Leave* (yourself, your reports, and units where you
+  can view all leave). Schedule windows also include other people's
+  *approved* leave, as the scheduler draws it, but without notes or approver.
+- **Money:**
+  - Loaded costs, staff cost and profit appear only with
+    `can_view_loaded_costs`.
+  - Support-team money is removed on the server.
+  - Billing codes appear only as badges.
+- **People:**
+  - User refs carry identity only.
+  - The `contact` block on `/users/{id}/` (email, phone) requires `view_user`.
+  - Skill and qualification data requires being that user, their manager, or
+    holding the relevant view permission.
+- **Never serialised:** certificate files.
 
 ## Resources
 
-| Resource | Endpoint | Notes |
-|---|---|---|
-| Users | `/api/v1/users/` | identity, `job_title`, current `job_level`/`job_level_label`, `city` (ref), `country` code; no PII |
-| Organisational units | `/api/v1/org-units/` | |
-| Clients | `/api/v1/clients/` | |
-| Jobs | `/api/v1/jobs/` | active jobs; includes `phase_count`, `is_restricted` flag |
-| Phases | `/api/v1/phases/` | |
-| Projects | `/api/v1/projects/` | |
-| Timeslots | `/api/v1/timeslots/` | scheduling assignments (paginated, per-slot) |
-| Schedule (global) | `/api/v1/schedule/` | composite window: timeslots + leave + holidays + per-user availability (see below) |
-| Schedule (per-user) | `/api/v1/users/{id}/schedule/` | the same composite for one user |
-| Timeslot types | `/api/v1/timeslot-types/` | reference data |
-| Leave requests | `/api/v1/leave-requests/` | |
-| Skills | `/api/v1/skills/` | |
-| Skill categories | `/api/v1/skill-categories/` | reference data |
-| User skills | `/api/v1/user-skills/` | per-user competency |
-| Qualifications | `/api/v1/qualifications/` | |
-| Qualification records | `/api/v1/qualification-records/` | per-user; no certificate file |
-| Services | `/api/v1/services/` | |
+The full list, with parameters and fields, is in the schema. In outline:
 
-Each resource supports list (`GET /api/v1/<resource>/`) and detail
-(`GET /api/v1/<resource>/{id}/`, integer primary key).
+| Area | Endpoints |
+|---|---|
+| Platform | `meta/`, `me/`, `me/preferences/`, `search/?q=`, `search/goto/?id=`, `realtime/ticket/` |
+| Dashboard | `me/dashboard/` (queues and stats), `me/alarms/`, `entropy/`, `notifications/` (+ `unread-count/`, `mark-read/`, `mark-all-read/`) |
+| Jobs | `jobs/`, `jobs/{id}/` + `phases/`, `team/`, `sales/`, `support-team/`, `schedule/`, `notes/`, `activity/` |
+| Phases | `phases/`, `phases/{id}/` + `team/`, `feedback/`, `schedule/`, `notes/`, `activity/` |
+| Projects | `projects/`, `projects/{id}/` + `schedule/` |
+| Scheduler | `schedule/` (+ `resources/`, `actions/`, `deltas/`, `bounds/`), `me/schedule/`, `users/{id}/schedule/`, `timeslots/`, `timeslot-comments/`, `timeslot-types/`, `leave-requests/` |
+| Clients | `clients/`, `clients/{id}/` + `jobs/`, `contacts/`, `frameworks/`; `contacts/`, `frameworks/` |
+| People | `users/`, `users/{id}/` + `profile/`, `stats/`; `org-units/`, `org-units/{id}/` + `members/` |
+| Catalogue | `skills/` (+ `matrix/`, `{id}/users/`), `skill-categories/`, `user-skills/`, `services/{id}/` + `coverage/`, `metrics/`, `phases/`; `qualifications/` (+ `{id}/records/`), `qualification-records/`, `awarding-bodies/` |
 
-## Schedule (composite window)
+### Schedule windows
 
-For building a calendar/timeline view there is a dedicated read-only schedule
-feed. It returns everything the scheduler needs for a date window in one call —
-work timeslots, leave, public holidays and per-user availability/utilisation —
-rather than making you stitch the individual resources together.
+`/schedule/`, `me/schedule/`, `users/{id}/schedule/` and the
+job/phase/project `schedule/` endpoints all return one composite object for a
+date window, not a paginated list. Each contains:
 
-- `GET /api/v1/schedule/` — every user you may see (`view_users_schedule`, plus
-  yourself). Optionally narrow with `?unit=<id>` or `?user=<id>`.
-- `GET /api/v1/users/{id}/schedule/` — a single user (yourself, or anyone whose
-  schedule you may view). Ideal for a personal admin/availability tool.
-
-Both accept a date window and are **not paginated** — bound the result with the
-window instead:
+- users and timeslots, where each slot has a `display` block with the colours
+  and title the scheduler draws;
+- leave, holidays (the user's country plus global ones), comments and
+  availability;
+- a `refs` lookup for phases and projects.
 
 | Param | Default | Notes |
 |---|---|---|
-| `start` | today | ISO date (`YYYY-MM-DD`) |
-| `end` | `start` + 28 days | ISO date; the span must be **366 days or fewer** |
+| `start` | today | `YYYY-MM-DD` |
+| `end` | `start` + 28 days | the span must be 366 days or fewer |
 
-An invalid date, an inverted range, or an over-cap span returns `400`.
+Invalid, inverted or over-long windows return `400`.
 
-```bash
-curl -H "Authorization: Token <your-token>" \
-     "https://your-instance/api/v1/users/42/schedule/?start=2026-09-01&end=2026-09-30"
-```
+The global schedule also takes the scheduler's own filters (unit, user, skills,
+and so on; see the schema). `schedule/resources/` returns the scheduler's rows
+in display order. `schedule/deltas/?since=` returns changes since a timestamp,
+for polling clients.
 
-```json
-{
-  "start": "2026-09-01",
-  "end": "2026-09-30",
-  "users": [
-    {"user": 42, "availability": 40.0, "utilisation": 55.0,
-     "business_hours": {"startTime": "09:00", "endTime": "17:30", "daysOfWeek": [1,2,3,4,5]}}
-  ],
-  "timeslots": [ {"id": 1001, "user": 42, "start": "…", "end": "…", "slot_type": 3, "phase": 87, ...} ],
-  "leave":     [ {"id": 12, "user": 42, "start_date": "…", "end_date": "…", "type_of_leave": 1, ...} ],
-  "holidays":  [ {"id": 3, "date": "2026-09-07", "country": "US", "reason": "Labor Day"} ]
-}
-```
+## Writes: user administration
 
-`timeslots` and `leave` use the same fields as the `/timeslots/` and
-`/leave-requests/` resources. `holidays` apply per country — match one to a user
-via the user's country. The schedule feed is built from the **same shared core**
-as the in-app vis-timeline scheduler, so the two never drift.
+These per-user actions let an HR or directory sync push people data into
+CHAOTICA. Each reproduces the permission gate of its UI equivalent. All of them
+compare against the current state, so replaying a full import each run is
+safe: unchanged people are no-ops (`"changed": false`).
 
-## Writes: account status
+| Action | Endpoint | Body | Permission |
+|---|---|---|---|
+| Activate / deactivate | `POST users/{id}/set-status/` | `{"is_active": false}` | `chaotica_utils.manage_user`; not yourself |
+| Update profile | `POST users/{id}/update-profile/` | any of `first_name`, `last_name`, `job_title`, `city` (id), `country` (2-letter) | self, (acting) manager, or `manage_user` |
+| Career level | `POST users/{id}/set-job-level/` | `{"job_level": "JL5", "effective_from": "2026-01-01"}` or `{"clear": true}` | (acting) manager, superuser/staff, or self if unmanaged |
+| Loaded cost rate | `POST users/{id}/set-cost/` | `{"cost_per_hour": "43.46", "effective_from": "2026-01-01"}` | `jobtracker.can_view_loaded_costs`, held globally or on every unit the user belongs to |
 
-The one write action in v1 activates or deactivates a user account — the API
-twin of the *Manage → Activate/Deactivate* control in the UI:
+What each action also does:
 
-```bash
-curl -X POST https://your-instance/api/v1/users/42/set-status/ \
-     -H "Authorization: Token <your-token>" \
-     -H "Content-Type: application/json" \
-     -d '{"is_active": false}'
-```
+- **Activate / deactivate:**
+  - Deactivation closes the user's team and unit memberships.
+  - It also revokes their OAuth tokens and disconnects their sockets.
+- **Career level and loaded cost rate:**
+  - These are effective-dated. A change adds a new record from
+    `effective_from` (default today) and supersedes the old one.
+  - The cost rate is gated on finance permission, not on management rights. As
+    a result, nobody can set their own rate.
 
-```json
-{"changed": true, "user": {"id": 42, "email": "jane@example.com", "is_active": false, ...}}
-```
+Worked examples live in `examples/api/`:
 
-- Requires the `chaotica_utils.manage_user` permission (403 otherwise).
-- Deactivation also closes the user's open team and org-unit memberships, exactly
-  as the management screen does.
-- **Idempotent**: `changed` is `false` if the account was already in the
-  requested state.
-- You cannot deactivate your own account.
+- `sync_aad_status.py` reconciles account status with Entra ID.
+- `job_titles.py` pushes job titles.
 
-A worked example that reconciles status against Azure AD / Entra ID lives in
-`examples/api/sync_aad_status.py`.
+## Developing the API
 
-## Writes: user profile, career level & loaded cost rate
+Code layout under `app/jobtracker/api/v1/`:
 
-Three further per-user write actions let an HR/directory sync push people data
-into CHAOTICA. Each reproduces the exact permission gate of its UI equivalent —
-they never widen access — so an integration token can only do what its owner can
-do in the app.
+| Path | Holds |
+|---|---|
+| `base.py` | `ApiView` and `BaseReadOnlyAPIViewSet`, which set auth, permissions, throttles, UTC, the error envelope and `self.policy` |
+| `serializers/`, `views/` | one module per area |
+| `fields.py` | the Ref fields |
+| `filters.py` | the FilterSets |
 
-| Action | Endpoint | Permission gate |
-|---|---|---|
-| Update profile | `POST /api/v1/users/{id}/update-profile/` | Self, the user's (acting) manager, or `chaotica_utils.manage_user` |
-| Set career level | `POST /api/v1/users/{id}/set-job-level/` | The user's (acting) manager, a superuser/staff, or self when they have no manager |
-| Set loaded cost rate | `POST /api/v1/users/{id}/set-cost/` | `jobtracker.can_view_loaded_costs` — held globally, or on **every** org-unit the user belongs to |
+Shared logic:
 
-**Update profile** — partial update of org-chart facts only (`first_name`,
-`last_name`, `job_title`, `city` by id, `country` as a 2-letter code). Account
-status, cost rates, permissions and email are *not* writable here.
+- **Selectors.** Query logic lives in `jobtracker/selectors/`,
+  `chaotica_utils/selectors/` and `notifications/selectors.py`. Template views
+  and API views both call these, so an endpoint and its page cannot drift.
+- **Policy.** `jobtracker/policy.py` holds `PolicyContext`: `can(action, obj)`,
+  `scope(resource, qs)` and `capabilities(obj)`, memoised per request. Use it
+  rather than calling guardian directly.
+- **Workflow.** `jobtracker/workflow.py` is the single transition table for
+  both the status buttons and the API's `workflow` block.
+
+Tests live in `jobtracker/tests/api_v1/`. `helpers.py` provides a user matrix
+and `assert_same_ids` for parity checks against the page's queryset. Give new
+endpoints a permission matrix test, a parity test and an `assertNumQueries`
+budget.
+
+After changing any endpoint, regenerate the schema:
 
 ```bash
-curl -X POST https://your-instance/api/v1/users/42/update-profile/ \
-     -H "Authorization: Token <your-token>" -H "Content-Type: application/json" \
-     -d '{"job_title": "Senior Consultant", "city": 1826, "country": "GB"}'
-```
-
-**Set career level** — sets the current level by its short label, or clears it.
-Effective-dated and idempotent: a new assignment is created only when the level
-actually changes (dated `effective_from`, default today), and the previous
-assignment is closed off (`is_current=false`). Re-posting the same level is a
-no-op (`changed: false`).
-
-```bash
-curl ... -d '{"job_level": "JL5", "effective_from": "2026-01-01"}'   # set/promote
-curl ... -d '{"clear": true}'                                        # clear
-```
-```json
-{"changed": true, "user": {"id": 42, "job_level": "JL5", ...}}
-```
-
-**Set loaded cost rate (LCR)** — a date-effective rate. Effective-dated and
-idempotent: if the rate already in force on `effective_from` (default today)
-equals the posted value, nothing is written (`changed: false`); otherwise a new
-row is added at that date and the previous rate is superseded from then on
-(the old rate stays valid up to the new date — that's the "close-off"). So a
-weekly import only ever adds a row when the number actually moves. This is the
-finance boundary: gated on `can_view_loaded_costs`, **not** on
-manager/`manage_user`, so profile-editing rights never leak into cost-rate
-access, and a person can never set their own LCR.
-
-```bash
-curl -X POST https://your-instance/api/v1/users/42/set-cost/ \
-     -H "Authorization: Token <your-token>" -H "Content-Type: application/json" \
-     -d '{"cost_per_hour": "43.46", "effective_from": "2026-01-01"}'
-```
-```json
-{"changed": true, "created": true, "user_id": 42, "effective_from": "2026-01-01", "cost_per_hour": "43.46"}
-```
-
-Because both actions diff against current state, the intended workflow is simply
-to **replay the full import each run**: unchanged people are no-ops, and only
-genuine changes create a new dated record. You can still `GET /api/v1/users/{id}/`
-to inspect `city`/`country`/`job_level` first if you want to log diffs yourself.
-
-## Interactive documentation & schema
-
-The full, always-current field list for every endpoint is published as OpenAPI:
-
-- **Swagger UI**: `/api/v1/schema/swagger-ui/`
-- **ReDoc**: `/api/v1/schema/redoc/`
-- **Raw schema**: `/api/v1/schema/`
-
-Generate the schema file from the CLI with:
-
-```bash
-cd app && python manage.py spectacular --file schema.yml
-```
-
-## Example
-
-```bash
-curl -H "Authorization: Token <your-token>" \
-     "https://your-instance/api/v1/phases/?page_size=10"
-```
-
-```json
-{
-    "count": 42,
-    "next": "https://your-instance/api/v1/phases/?page=2&page_size=10",
-    "previous": null,
-    "results": [
-        {
-            "id": 450,
-            "phase_id": "2501-1",
-            "title": "Web Application Assessment",
-            "status": 5,
-            "status_display": "In Progress",
-            "job": {"id": 2501, "type": "job", "display": "2501: Acme Web Refresh",
-                    "url": "/api/v1/jobs/2501/", "web_url": "https://your-instance/job/acme-web-refresh/"},
-            "service": {"id": 12, "type": "service", "display": "Web Application Testing",
-                        "url": "/api/v1/services/12/", "web_url": "https://your-instance/ops/service/web-app/"},
-            "start_date": "2026-04-01",
-            "delivery_date": "2026-04-15",
-            "delivery_hours": "40.00"
-        }
-    ]
-}
+cd app && python manage.py spectacular --file ../docs/api/openapi-v1.yaml --validate
 ```
 
 ## Related topics
 
+- [Connected Apps (admin guide)](../administration/connected_apps.md)
+- [API / UI coexistence](api_coexistence.md)
 - [API migration (legacy `/api/` → `/api/v1/`)](../integration/api_migration.md)
 - [Access control](../security/access_control.md)
