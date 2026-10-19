@@ -8,6 +8,8 @@
 //     createExtraParams: '',            // e.g. '&job=5&phase=12'
 //     resetUrl: '',                     // filter "reset" target (global only)
 //     cards: {util, userBreakdown, phaseStatus} | null,  // scoped analytics
+//     v1: {schedule, resources, bounds, actions, deltas, scope,   // /api/v1/ feeds
+//          shadeAvailable, availableColour},
 //   }
 (function () {
   var CFG = window.SCHEDULER_CONFIG || {};
@@ -54,6 +56,123 @@
   // Existing filter querystring (without the leading "?") so the global page can
   // re-apply the same SchedulerFilter. Ignored by the scoped endpoints.
   var filterParams = window.location.search.replace(/^\?/, '');
+
+  // ---- /api/v1/ feeds -------------------------------------------------
+  // The scheduler reads its rows, slots, extent, history and polled changes
+  // from /api/v1/ (the same data any API client gets). These adapters turn
+  // the REST shapes into the event / row shapes the rest of this file uses.
+  var V1 = CFG.v1 || null;
+
+  function v1Url(base, extra) {
+    var parts = [];
+    if (V1.scope) parts.push(V1.scope);
+    if (extra) parts.push(extra);
+    if (filterParams) parts.push(filterParams);
+    return base + (base.indexOf('?') >= 0 ? '&' : '?') + parts.join('&');
+  }
+
+  function v1Window(start, end) {
+    // Schedule windows are whole days (YYYY-MM-DD, inclusive).
+    return 'start=' + start.toISOString().slice(0, 10) +
+      '&end=' + end.toISOString().slice(0, 10);
+  }
+
+  function v1Slot(t) {
+    var d = t.display || {};
+    return {
+      id: t.id, title: d.title, resourceId: t.user, userId: t.user,
+      start: t.start, end: t.end, slot_type_name: t.slot_type_name,
+      backgroundColor: d.colour, textColor: d.text_colour, icon: d.icon,
+      can_edit: d.can_edit, is_comment: false, is_tentative: d.tentative,
+      locked_reason: d.locked_reason, rm_managed: d.rm_managed,
+      edit_url: d.edit_url, viewURL: d.view_url, out_of_scope: !!t.out_of_scope
+    };
+  }
+
+  function v1Comment(c) {
+    var d = c.display || {};
+    return {
+      id: c.id, title: d.title, resourceId: c.user, userId: c.user,
+      start: c.start, end: c.end, color: d.colour, textColor: d.text_colour,
+      icon: d.icon, can_edit: d.can_edit, edit_url: d.edit_url, is_comment: true
+    };
+  }
+
+  function v1Events(payload) {
+    var events = (payload.timeslots || []).map(v1Slot)
+      .concat((payload.comments || []).map(v1Comment));
+    // Holidays: a user's country's, plus global (country-less) ones.
+    (payload.users || []).forEach(function (u) {
+      (payload.holidays || []).forEach(function (h) {
+        if (!h.country || h.country === u.country) {
+          events.push({ id: h.id, title: h.reason, start: h.date, end: h.date,
+                        allDay: true, display: 'background', resourceId: u.user });
+        }
+      });
+    });
+    if (V1.shadeAvailable) {
+      (payload.availability || []).forEach(function (a) {
+        (a.runs || []).forEach(function (r) {
+          events.push({ id: 'avail-' + a.user + '-' + r.start, title: '',
+                        start: r.start, end: dayAfter(r.end), display: 'background',
+                        backgroundColor: V1.availableColour, resourceId: a.user });
+        });
+      });
+    }
+    return events;
+  }
+
+  function v1Row(r) {
+    return {
+      id: r.id, title: r.display, first_name: r.first_name, last_name: r.last_name,
+      job_level: r.job_level_label, org_unit: r.org_unit, roles: r.roles,
+      util: r.utilisation, url: r.web_url, businessHours: r.business_hours
+    };
+  }
+
+  function v1Action(a) {
+    return $.extend({}, a, { actor: a.actor ? a.actor.display : 'System' });
+  }
+
+  function v1Delta(d) {
+    return {
+      action_id: d.action_id,
+      upserts: (d.timeslots || []).map(v1Slot).concat((d.comments || []).map(v1Comment)),
+      removals: (d.removed_timeslots || []).map(function (id) { return { is_comment: false, id: id }; })
+        .concat((d.removed_comments || []).map(function (id) { return { is_comment: true, id: id }; }))
+    };
+  }
+
+  // A schedule window is capped at 366 days, so a long view (e.g. after Fit)
+  // is fetched as consecutive chunks and merged.
+  var V1_MAX_DAYS = 360;
+  function v1Schedule(start, end) {
+    var chunks = [], cur = new Date(start);
+    while (cur < end) {
+      var next = new Date(Math.min(end.getTime(), cur.getTime() + V1_MAX_DAYS * 86400000));
+      chunks.push([new Date(cur), next]);
+      cur = new Date(next.getTime() + 86400000);
+    }
+    var requests = chunks.map(function (c) {
+      return $.ajax({ url: v1Url(V1.schedule, v1Window(c[0], c[1])), method: 'GET' });
+    });
+    return $.when.apply($, requests).then(function () {
+      var results = requests.length === 1 ? [arguments[0]]
+        : Array.prototype.map.call(arguments, function (a) { return a[0]; });
+      var merged = { timeslots: [], comments: [], holidays: [], availability: [], users: [] };
+      var seen = { timeslots: {}, comments: {}, holidays: {} };
+      results.forEach(function (r) {
+        ['timeslots', 'comments', 'holidays'].forEach(function (k) {
+          (r[k] || []).forEach(function (x) {
+            if (!seen[k][x.id]) { seen[k][x.id] = true; merged[k].push(x); }
+          });
+        });
+        merged.availability = merged.availability.concat(r.availability || []);
+        if (!merged.users.length) merged.users = r.users || [];
+      });
+      return v1Events(merged);
+    });
+  }
 
   function buildUrl(base, start, end) {
     var q = 'start=' + encodeURIComponent(start) + '&end=' + encodeURIComponent(end);
@@ -467,9 +586,11 @@
     loading(true);
     var w = timeline.getWindow();
     $.ajax({
-      url: buildUrl(membersUrl, w.start.toISOString(), w.end.toISOString()),
+      url: V1 ? v1Url(V1.resources, v1Window(w.start, w.end))
+              : buildUrl(membersUrl, w.start.toISOString(), w.end.toISOString()),
       method: 'GET',
       success: function (data) {
+        if (V1) data = (data.users || []).map(v1Row);
         var g = data.map(function (r, idx) {
           return {
             id: r.id, content: buildGroupContent(r), order: idx, util: r.util,
@@ -648,10 +769,11 @@
     var span = w.end - w.start;
     var s = new Date(w.start.getTime() - span);
     var en = new Date(w.end.getTime() + span);
-    $.ajax({
+    var request = V1 ? v1Schedule(s, en) : $.ajax({
       url: buildUrl(slotsUrl, s.toISOString(), en.toISOString()),
-      method: 'GET',
-      success: function (data) {
+      method: 'GET'
+    });
+    request.then(function (data) {
         // Optionally drop out-of-scope ("other") slots so the view isn't noisy.
         var rows = showOthers ? data : data.filter(function (e) { return !e.out_of_scope; });
         paintHiddenBanner(data.length - rows.length);
@@ -668,9 +790,7 @@
         loadedRanges = [];
         addLoadedRange(s.getTime(), en.getTime());
         renderUnloaded();
-      },
-      complete: function () { loading(false); }
-    });
+    }).always(function () { loading(false); });
   }
 
   // ---- Drag / resize / move-to-another-user ----
@@ -1087,7 +1207,8 @@
   // to the buffer makes repeated Fit creep outward as more data streams in.
   function fitToData() {
     loading(true);
-    var url = slotsUrl + (slotsUrl.indexOf('?') >= 0 ? '&' : '?') + 'bounds=1' + (filterParams ? '&' + filterParams : '');
+    var url = V1 ? v1Url(V1.bounds)
+      : slotsUrl + (slotsUrl.indexOf('?') >= 0 ? '&' : '?') + 'bounds=1' + (filterParams ? '&' + filterParams : '');
     $.ajax({
       url: url, method: 'GET',
       success: function (b) {
@@ -1355,10 +1476,10 @@
   //   and apply it to the vis DataSet by pk — no full reload for observers.
   // =====================================================================
   var HIST = {
-    listUrl: CFG.historyUrl,
+    listUrl: V1 ? V1.actions : CFG.historyUrl,
     revertUrl: CFG.revertUrl,
     undoUrl: CFG.undoUrl,
-    sinceUrl: CFG.sinceUrl
+    sinceUrl: V1 ? V1.deltas : CFG.sinceUrl
   };
 
   // Scope identifiers passed to the history/since endpoints & revert/undo bodies.
@@ -1423,7 +1544,7 @@
     if (!HIST.listUrl) return;
     var q = scopeQuery();
     $.get(HIST.listUrl + (q ? '?' + q : ''), function (data) {
-      renderHistory((data && data.actions) || []);
+      renderHistory(V1 ? (data || []).map(v1Action) : ((data && data.actions) || []));
     });
   }
 
@@ -1522,7 +1643,7 @@
       $.get(HIST.sinceUrl + '?since=' + encodeURIComponent(lastPoll) + (q ? '&' + q : ''),
         function (data) {
           if (!data) return;
-          (data.deltas || []).forEach(applyDelta);
+          (data.deltas || []).map(V1 ? v1Delta : function (d) { return d; }).forEach(applyDelta);
           if (data.now) lastPoll = data.now;
         });
     }, 5000);

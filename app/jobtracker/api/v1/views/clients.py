@@ -3,7 +3,9 @@
 from drf_spectacular.utils import extend_schema
 from rest_framework.decorators import action
 
-from ....models import Client, Contact, FrameworkAgreement, Job
+from django.db.models import Count, Q
+
+from ....models import Client, Contact, FrameworkAgreement, Job, Project
 from ..base import BaseReadOnlyAPIViewSet
 from ..serializers import (
     ClientDetailSerializer,
@@ -18,7 +20,7 @@ from ..serializers import (
 class ClientViewSet(BaseReadOnlyAPIViewSet):
     serializer_class = ClientSerializer
     policy_scope = "client.view"
-    ordering_fields = ("name",)
+    ordering_fields = ("name", "jobs_count", "projects_count")
     search_fields = ("name",)
 
     def get_serializer_class(self):
@@ -31,6 +33,18 @@ class ClientViewSet(BaseReadOnlyAPIViewSet):
         qs = Client.objects.prefetch_related(
             "account_managers", "tech_account_managers"
         )
+        if self.action == "list" and not getattr(self, "swagger_fake_view", False):
+            # Only jobs / projects the caller can see count.
+            jobs = self.policy.scope("job.view", Job.objects.all()).values("pk")
+            projects = self.policy.scope("project.view", Project.objects.all()).values(
+                "pk"
+            )
+            qs = qs.annotate(
+                jobs_count=Count("jobs", filter=Q(jobs__in=jobs), distinct=True),
+                projects_count=Count(
+                    "projects", filter=Q(projects__in=projects), distinct=True
+                ),
+            )
         if self.action == "retrieve":
             qs = qs.prefetch_related("contacts", "framework_agreements__client")
         return qs

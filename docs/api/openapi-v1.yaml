@@ -624,6 +624,15 @@ paths:
           type: string
           format: date
       - in: query
+        name: exclude_status
+        schema:
+          type: array
+          items:
+            type: integer
+        description: Multiple values may be separated by commas.
+        explode: false
+        style: form
+      - in: query
         name: involving
         schema:
           type: string
@@ -2407,6 +2416,139 @@ paths:
               schema:
                 $ref: '#/components/schemas/ScheduleAction'
           description: ''
+  /api/v1/schedule/bounds/:
+    get:
+      operationId: schedule_bounds_retrieve
+      description: Earliest start and latest end among the slots a schedule would
+        show (for zoom-to-fit). Takes the same filters, or ``job`` / ``phase`` / ``project``.
+      summary: Date extent of the schedule's slots
+      parameters:
+      - in: query
+        name: clients
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: compressed_view
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: filter_by_city
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: include_user
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: job
+        schema:
+          type: integer
+        description: Limit to a job (needs view_job_schedule).
+      - in: query
+        name: job_levels
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: jobs
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: onboarded_to
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: ordering
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: ordering_direction
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: org_unit_roles
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: org_units
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: phase
+        schema:
+          type: integer
+        description: Limit to a phase (needs view_job_schedule).
+      - in: query
+        name: phases
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: project
+        schema:
+          type: integer
+      - in: query
+        name: projects
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: services
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: show_inactive_users
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: skills_can_do_alone
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: skills_can_do_support
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: skills_specialist
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: teams
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      - in: query
+        name: users
+        schema:
+          type: string
+        description: Scheduler filter (as the scheduler page's filter form).
+      tags:
+      - schedule
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleBounds'
+          description: ''
   /api/v1/schedule/deltas/:
     get:
       operationId: schedule_deltas_retrieve
@@ -4086,6 +4228,12 @@ components:
           items:
             $ref: '#/components/schemas/Ref'
           readOnly: true
+        jobs_count:
+          type: integer
+          readOnly: true
+        projects_count:
+          type: integer
+          readOnly: true
         web_url:
           type: string
           nullable: true
@@ -4094,7 +4242,9 @@ components:
       - account_managers
       - id
       - is_ready
+      - jobs_count
       - name
+      - projects_count
       - tech_account_managers
       - web_url
     ClientDetail:
@@ -4123,6 +4273,12 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Ref'
+          readOnly: true
+        jobs_count:
+          type: integer
+          readOnly: true
+        projects_count:
+          type: integer
           readOnly: true
         web_url:
           type: string
@@ -4174,7 +4330,9 @@ components:
       - frameworks
       - id
       - is_ready
+      - jobs_count
       - name
+      - projects_count
       - tech_account_managers
       - web_url
     ConsultantStats:
@@ -5222,6 +5380,10 @@ components:
         status_display:
           type: string
           readOnly: true
+        status_colour:
+          type: string
+          readOnly: true
+          description: Bootstrap colour name.
         unit:
           allOf:
           - $ref: '#/components/schemas/Ref'
@@ -5289,6 +5451,7 @@ components:
       - restricted_detail_display
       - slug
       - start_date
+      - status_colour
       - status_display
       - title
       - unit
@@ -5342,6 +5505,10 @@ components:
         status_display:
           type: string
           readOnly: true
+        status_colour:
+          type: string
+          readOnly: true
+          description: Bootstrap colour name.
         unit:
           allOf:
           - $ref: '#/components/schemas/Ref'
@@ -5532,6 +5699,7 @@ components:
       - scoped_signed_off_by
       - slug
       - start_date
+      - status_colour
       - status_display
       - title
       - unit
@@ -6078,6 +6246,9 @@ components:
         timestamp:
           type: string
           format: date-time
+        timestamp_human:
+          type: string
+          description: e.g. '3 hours ago'.
         title:
           type: string
         message:
@@ -6101,6 +6272,7 @@ components:
       - message
       - read
       - timestamp
+      - timestamp_human
       - title
       - type
       - type_display
@@ -7823,6 +7995,20 @@ components:
       - reverted
       - reverted_by
       - summary
+    ScheduleBounds:
+      type: object
+      properties:
+        start:
+          type: string
+          format: date-time
+          nullable: true
+        end:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - end
+      - start
     ScheduleDelta:
       type: object
       properties:
@@ -7980,8 +8166,13 @@ components:
         utilisation:
           type: number
           format: double
+        business_hours:
+          type: object
+          additionalProperties: {}
+          description: startTime, endTime, daysOfWeek.
       required:
       - availability
+      - business_hours
       - display
       - first_name
       - id
@@ -8085,11 +8276,20 @@ components:
           type: string
           format: date-time
           readOnly: true
+        display:
+          allOf:
+          - $ref: '#/components/schemas/SlotDisplay'
+          readOnly: true
+        out_of_scope:
+          type: boolean
+          readOnly: true
       required:
       - deliveryRole_display
+      - display
       - end
       - id
       - is_confirmed
+      - out_of_scope
       - slot_type_name
       - start
       - updated
@@ -8102,6 +8302,10 @@ components:
       properties:
         user:
           type: integer
+        country:
+          type: string
+          nullable: true
+          description: For matching holidays.
         availability:
           type: number
           format: double
@@ -8114,6 +8318,7 @@ components:
       required:
       - availability
       - business_hours
+      - country
       - user
       - utilisation
     SearchGroup:
@@ -8126,11 +8331,52 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/Ref'
+            $ref: '#/components/schemas/SearchResult'
       required:
       - label
       - results
       - type
+    SearchResult:
+      type: object
+      description: |-
+        A reference to another object: its id, type and label, plus links to
+        its API resource (``url``) and main-UI page (``web_url``).
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        display:
+          type: string
+        url:
+          type: string
+          nullable: true
+        web_url:
+          type: string
+          nullable: true
+        subtitle:
+          type: string
+          nullable: true
+          description: Client, job title…
+        status_display:
+          type: string
+          nullable: true
+        status_colour:
+          type: string
+          nullable: true
+        image_url:
+          type: string
+          nullable: true
+      required:
+      - display
+      - id
+      - image_url
+      - status_colour
+      - status_display
+      - subtitle
+      - type
+      - url
+      - web_url
     SearchResults:
       type: object
       properties:
@@ -8487,6 +8733,47 @@ components:
       - rating
       - rating_display
       - skill
+    SlotDisplay:
+      type: object
+      description: How the main scheduler draws a slot (same rules as its own feed).
+      properties:
+        title:
+          type: string
+        colour:
+          type: string
+        text_colour:
+          type: string
+        tentative:
+          type: boolean
+        can_edit:
+          type: boolean
+        locked_reason:
+          type: string
+          nullable: true
+        rm_managed:
+          type: boolean
+        edit_url:
+          type: string
+          nullable: true
+          description: Main-UI edit modal.
+        view_url:
+          type: string
+          nullable: true
+          description: Main-UI page.
+        icon:
+          type: string
+          nullable: true
+      required:
+      - can_edit
+      - colour
+      - edit_url
+      - icon
+      - locked_reason
+      - rm_managed
+      - tentative
+      - text_colour
+      - title
+      - view_url
     StateEnum:
       enum:
       - done
@@ -8784,7 +9071,12 @@ components:
           type: integer
         comment:
           type: string
+        display:
+          allOf:
+          - $ref: '#/components/schemas/SlotDisplay'
+          readOnly: true
       required:
+      - display
       - end
       - id
       - start
@@ -10516,6 +10808,8 @@ components:
           type: string
         style:
           type: string
+        icon:
+          type: string
         menu:
           type: boolean
         needs_reason:
@@ -10526,6 +10820,7 @@ components:
           type: boolean
       required:
       - allowed
+      - icon
       - label
       - menu
       - name

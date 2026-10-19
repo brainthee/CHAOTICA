@@ -1,19 +1,12 @@
 from django.http import JsonResponse, HttpResponse
 from ..selectors import (
-    MAX_PAGE_SIZE,
-    mark_all_read as mark_all_read_for,
-    notifications_for,
     parse_positive_int,
-    serialize_notification,
-    set_read,
-    unread_count,
 )
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods, require_POST, require_GET
-from django.core.paginator import Paginator
 
-from notifications.models import Notification, NotificationSubscription, NotificationOptOut
+from notifications.models import NotificationSubscription, NotificationOptOut
 from notifications.enums import NotificationTypes
 
 import json
@@ -38,7 +31,7 @@ logger = logging.getLogger(__name__)
 @login_required
 @require_http_methods(["GET", "POST"])
 def notification_settings(request):
-    from notifications.models import NotificationSubscription, NotificationCategory
+    from notifications.models import NotificationSubscription
     from notifications.enums import NotificationTypes
     
     # Handle form submission
@@ -117,55 +110,6 @@ def notification_settings(request):
     template = loader.get_template("notification_settings.html")
     context = {**context, **page_defaults(request)}
     return HttpResponse(template.render(context, request))
-
-
-@login_required
-@require_http_methods(["GET", "POST"])
-def notifications_api(request):
-    """API endpoint for getting and marking notifications"""
-    if request.method == "GET":
-        # Get user's notifications, paginated
-        # Bad or huge paging values fall back / are capped instead of 500ing.
-        page = parse_positive_int(request.GET.get('page'), 1)
-        per_page = min(parse_positive_int(request.GET.get('per_page'), 10), MAX_PAGE_SIZE)
-        unread_only = request.GET.get('unread_only') == 'true'
-
-        paginator = Paginator(notifications_for(request.user, unread_only), per_page)
-        page_obj = paginator.get_page(page)
-
-        data = {
-            'count': paginator.count,
-            'num_pages': paginator.num_pages,
-            'current_page': page_obj.number,
-            'notifications': [serialize_notification(n) for n in page_obj.object_list],
-            'unread_count': unread_count(request.user),
-        }
-        
-        return JsonResponse(data)
-    
-    elif request.method == "POST":
-        # Mark notifications as read/unread
-        try:
-            data = json.loads(request.body)
-            notification_ids = data.get('notification_ids', [])
-            action = data.get('action')
-            
-            if not notification_ids or action not in ['mark_read', 'mark_unread']:
-                return JsonResponse({'error': 'Invalid parameters'}, status=400)
-            
-            # Only the user's own notifications are touched.
-            updated = set_read(request.user, notification_ids, read=(action == 'mark_read'))
-            return JsonResponse({'status': 'success', 'updated_count': updated})
-            
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON'}, status=400)
-
-
-@login_required
-@require_POST
-def mark_all_read(request):
-    """Mark all notifications as read for the current user"""
-    return JsonResponse({'status': 'success', 'updated_count': mark_all_read_for(request.user)})
 
 
 @login_required
@@ -447,13 +391,6 @@ def notification_subscription_status(request):
         'is_following': is_following,
         'subscriptions': subscriptions,
     })
-
-
-@login_required
-@require_GET
-def get_unread_count(request):
-    """Get the count of unread notifications"""
-    return JsonResponse({'unread_count': unread_count(request.user)})
 
 
 @login_required

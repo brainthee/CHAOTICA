@@ -495,6 +495,22 @@ def phase_assigned_role_map(phase):
     return role_map
 
 
+def schedule_colours():
+    """The configured scheduler colours, read once per request."""
+    return {
+        key: str(getattr(config, key))
+        for key in (
+            "SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY",
+            "SCHEDULE_COLOR_PHASE_CONFIRMED",
+            "SCHEDULE_COLOR_PHASE_AWAY",
+            "SCHEDULE_COLOR_PHASE",
+            "SCHEDULE_COLOR_PROJECT",
+            "SCHEDULE_COLOR_INTERNAL",
+            "SCHEDULE_COLOR_COMMENT",
+        )
+    }
+
+
 def collect_schedule_slots(
     users, start, end, scope_phases=None, scope_projects=None, hard_scope=True
 ):
@@ -576,6 +592,7 @@ def collect_schedule_members(users, start, end):
         members.append(
             {
                 "user": user_stat["user"].pk,
+                "country": str(user_stat["user"].country or "") or None,
                 "availability": user_stat.get("available_percentage") or 0,
                 "utilisation": user_stat.get("utilisation_percentage") or 0,
                 "business_hours": (
@@ -937,17 +954,7 @@ def get_scheduler_slots(
     if not end:
         end = clean_fullcalendar_datetime(request.GET.get("end", None))
 
-    schedule_colours = {
-        "SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY": str(
-            config.SCHEDULE_COLOR_PHASE_CONFIRMED_AWAY
-        ),
-        "SCHEDULE_COLOR_PHASE_CONFIRMED": str(config.SCHEDULE_COLOR_PHASE_CONFIRMED),
-        "SCHEDULE_COLOR_PHASE_AWAY": str(config.SCHEDULE_COLOR_PHASE_AWAY),
-        "SCHEDULE_COLOR_PHASE": str(config.SCHEDULE_COLOR_PHASE),
-        "SCHEDULE_COLOR_PROJECT": str(config.SCHEDULE_COLOR_PROJECT),
-        "SCHEDULE_COLOR_INTERNAL": str(config.SCHEDULE_COLOR_INTERNAL),
-        "SCHEDULE_COLOR_COMMENT": str(config.SCHEDULE_COLOR_COMMENT),
-    }
+    colours = schedule_colours()
 
     compressed_view = (
         cleaned_data.get("compressed_view", False) if cleaned_data else False
@@ -968,7 +975,7 @@ def get_scheduler_slots(
     # Load the timeslots
     for slot in dataset["timeslots"]:
         slot_json = slot.get_schedule_json(
-            schedule_colours=schedule_colours, compressed_view=compressed_view
+            schedule_colours=colours, compressed_view=compressed_view
         )
         # Not part of the filtered jobs/phases/clients/projects: faded, and
         # hideable client-side via the "Other slots" toggle.
@@ -1029,5 +1036,5 @@ def get_scheduler_slots(
 
     # Add the comments
     for comment in dataset["comments"]:
-        data.append(comment.get_schedule_json(schedule_colours=schedule_colours))
+        data.append(comment.get_schedule_json(schedule_colours=colours))
     return JsonResponse(data, safe=False)

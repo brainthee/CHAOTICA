@@ -18,6 +18,9 @@ from ..fields import RefField, RefListField, WebUrlField
 
 class JobSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source="get_status_display", read_only=True)
+    status_colour = serializers.CharField(
+        source="status_bs_colour", read_only=True, help_text="Bootstrap colour name."
+    )
     # ``id`` is the primary key (what /jobs/{id}/ and refs use); the Job ID
     # people quote is ``job_id``.
     id = serializers.IntegerField(source="pk", read_only=True)
@@ -44,6 +47,7 @@ class JobSerializer(serializers.ModelSerializer):
             "title",
             "status",
             "status_display",
+            "status_colour",
             "unit",
             "client",
             "account_manager",
@@ -129,6 +133,7 @@ class WorkflowTransitionSerializer(serializers.Serializer):
     target = serializers.IntegerField()
     label = serializers.CharField()
     style = serializers.CharField()
+    icon = serializers.CharField(allow_blank=True)
     menu = serializers.BooleanField()
     needs_reason = serializers.BooleanField()
     ready = serializers.BooleanField()

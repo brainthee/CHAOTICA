@@ -41,6 +41,7 @@ def _registry():
     from chaotica_utils.models.leave import LeaveRequest
     from ...models import (
         AwardingBody,
+        BillingCode,
         Client,
         Contact,
         FrameworkAgreement,
@@ -92,6 +93,8 @@ def _registry():
         TimeSlotType: RefType("timeslot_type", "timeslot-type", lambda t: t.name),
         LeaveRequest: RefType("leave_request", "leave-request", lambda l: str(l.pk)),
         AwardingBody: RefType("awarding_body", None, lambda b: b.name),
+        # No API resource (billing is shown as badges); the page links only.
+        BillingCode: RefType("billing_code", None, str, lambda c: c.get_absolute_url()),
         QualificationTag: RefType("qualification_tag", None, lambda t: t.name),
         TimeSlot: RefType("timeslot", "timeslot", lambda t: str(t.pk)),
         Team: RefType("team", None, lambda t: t.name, _slug_url),

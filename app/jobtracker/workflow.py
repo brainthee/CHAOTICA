@@ -17,9 +17,15 @@ from .enums import JobStatuses, PhaseStatuses
 class Transition:
     name: str
     label: str
-    style: str = "primary"  # primary | warning | danger | secondary
-    menu: bool = False  # secondary "more" menu rather than a main button
+    style: str = "info"  # bootstrap colour: info | success | warning | danger
+    menu: bool = False  # in the status menu rather than a main button
     needs_reason: bool = False
+    icon: str = ""  # Font Awesome class, e.g. "fa-solid fa-rotate-left"
+    # Status-specific labels, e.g. "Return to Scoping" from Scoping Complete.
+    labels: tuple = ()
+
+    def label_for(self, status):
+        return dict(self.labels).get(status, self.label)
 
 
 @dataclass(frozen=True)
@@ -30,51 +36,70 @@ class Step:
 
 J, P = JobStatuses, PhaseStatuses
 
+# The transitions people take by hand, as the job/phase pages offer them.
+# Others (e.g. a job going In Progress / Complete) follow from its phases.
 JOB_TRANSITIONS = {
     t.name: t
     for t in (
-        Transition("to_pending_scope", "Request Scoping"),
-        Transition("to_scoping", "Begin Scoping"),
-        Transition("to_additional_scope_req", "Additional Scoping Required", "warning"),
-        Transition("to_scope_pending_signoff", "Submit for Scope Signoff"),
-        Transition("to_scope_complete", "Approve Scope"),
-        Transition("to_pending_start", "Pending Start"),
-        Transition("to_in_progress", "Start Job"),
-        Transition("to_complete", "Complete Job"),
-        Transition("to_reopen", "Reopen Job", "warning", needs_reason=True),
-        Transition("to_lost", "Mark as Lost", "danger", menu=True),
+        Transition("to_pending_scope", "Move to Pending Scoping Queue"),
+        Transition(
+            "to_scoping",
+            "Begin Scoping",
+            labels=((J.SCOPING_COMPLETE, "Return to Scoping"),),
+        ),
+        Transition("to_additional_scope_req", "Additional Scoping Required"),
+        Transition("to_scope_pending_signoff", "Move to Signoff Queue"),
+        Transition("to_scope_complete", "Signoff Scope"),
+        Transition(
+            "to_reopen",
+            "Reopen Job",
+            "warning",
+            needs_reason=True,
+            icon="fa-solid fa-rotate-left",
+        ),
+        Transition("to_lost", "Close as Lost", "warning", menu=True),
         Transition("to_delete", "Delete Job", "danger", menu=True),
-        Transition("to_archive", "Archive Job", "secondary", menu=True),
     )
 }
 
 PHASE_TRANSITIONS = {
     t.name: t
     for t in (
-        Transition("to_pending_sched", "Ready to Schedule"),
-        Transition("to_sched_tentative", "Tentatively Scheduled"),
-        Transition("to_sched_confirmed", "Confirm Schedule"),
-        Transition("to_pre_checks", "Begin Pre-checks"),
+        Transition("to_pending_sched", "Mark Pending Scheduling", "success"),
+        Transition("to_sched_confirmed", "Confirm Schedule", "success"),
         Transition("to_not_ready", "Client Not Ready", "warning"),
         Transition("to_ready", "Ready To Begin"),
-        Transition("to_in_progress", "Start Phase"),
         Transition("to_pending_tech_qa", "Submit to Tech QA Queue"),
         Transition("to_tech_qa", "Begin Tech QA"),
-        Transition("to_tech_qa_updates", "Return for Author Updates", "warning"),
+        Transition("to_tech_qa_updates", "Return for Author Updates"),
         Transition("to_pending_pres_qa", "Submit to Pres QA Queue"),
         Transition("to_pres_qa", "Begin Pres QA"),
-        Transition("to_pres_qa_updates", "Return for Author Updates", "warning"),
-        Transition("to_completed", "Set as Completed"),
-        Transition("to_delivered", "Set as Delivered"),
-        Transition("to_reopen", "Reopen Phase", "warning", needs_reason=True),
-        Transition("to_postponed", "Postpone", "warning", menu=True),
-        Transition("to_cancelled", "Cancel", "danger", menu=True),
+        Transition("to_pres_qa_updates", "Return for Author Updates"),
+        Transition("to_completed", "Set as Completed", "success"),
+        Transition("to_delivered", "Set as Delivered", "success"),
+        Transition(
+            "to_reopen",
+            "Reopen Phase",
+            "warning",
+            needs_reason=True,
+            icon="fa-solid fa-rotate-left",
+        ),
+        Transition("to_postponed", "Postpone Phase", "info", menu=True),
+        Transition("to_cancelled", "Close as Cancelled", "warning", menu=True),
         Transition("to_deleted", "Delete Phase", "danger", menu=True),
-        Transition("to_archived", "Archive Phase", "secondary", menu=True),
     )
 }
-# FSM transitions deliberately not offered to users.
-INTERNAL_TRANSITIONS = {"to_reopen_for_phase"}  # driven by Phase.to_reopen
+# FSM transitions not offered by hand.
+INTERNAL_TRANSITIONS = {
+    "to_reopen_for_phase",  # driven by Phase.to_reopen
+    "to_pending_start",
+    "to_in_progress",
+    "to_complete",
+    "to_archive",
+    "to_sched_tentative",
+    "to_pre_checks",
+    "to_archived",
+}
 
 JOB_STEPS = (
     Step("Draft", (J.DRAFT,)),
@@ -138,6 +163,15 @@ def _ready(obj, name):
     return True if check is None else bool(check())
 
 
+def can_reach(obj, target):
+    """Whether the FSM lets ``obj`` move to status ``target`` now by a forward
+    transition (reopening is its own action)."""
+    return any(
+        t.target == target and t.name not in ("to_reopen", "to_reopen_for_phase")
+        for t in obj.get_available_status_transitions()
+    )
+
+
 def available_transitions(policy, obj):
     """Transitions the FSM allows from the current status, with
     ``ready`` (preconditions met) and ``allowed`` (caller may act)."""
@@ -152,8 +186,9 @@ def available_transitions(policy, obj):
             {
                 "name": t.name,
                 "target": fsm_t.target,
-                "label": t.label,
+                "label": t.label_for(obj.status),
                 "style": t.style,
+                "icon": t.icon,
                 "menu": t.menu,
                 "needs_reason": t.needs_reason,
                 "ready": _ready(obj, t.name),

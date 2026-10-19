@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load menu %}
+{% load scheduler_tags %}
 {% load static %}
 {% load guardian_tags %}
 
@@ -297,6 +298,7 @@
 <script>
   window.SCHEDULER_CONFIG = {
     scope: 'project',
+    v1: {% scheduler_v1_config "project" project %},
     readonly: true,
     membersUrl: "{% url 'view_project_schedule_members' project.slug %}",
     slotsUrl: "{% url 'view_project_schedule_slots' project.slug %}",

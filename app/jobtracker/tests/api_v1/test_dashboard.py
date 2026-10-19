@@ -179,13 +179,12 @@ class NotificationTests(ApiV1TestCase):
             self.api.get("/api/v1/notifications/?unread_only=true").json()["count"], 0
         )
 
-    def test_legacy_widget_tolerates_bad_paging(self):
+    def test_widget_uses_v1(self):
         self.client.force_login(self.normal)
-        resp = self.client.get(
-            reverse("notifications_api"), {"page": "abc", "per_page": "999999"}
-        )
-        self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.json()["current_page"], 1)
+        page = self.client.get(reverse("dashboard")).content.decode()
+        self.assertIn(reverse("api_v1:notifications"), page)
+        self.assertIn("/ws/me/", page)
+        self.assertIn("escapeHtml(n.title)", page)
 
     def test_legacy_subscription_update_accepts_id(self):
         sub = NotificationSubscription.objects.create(

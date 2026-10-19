@@ -112,6 +112,7 @@ def build_schedule_payload(
     scope_projects=None,
     hard_scope=True,
     request=None,
+    focus=None,
 ):
     """Assemble the composite schedule window for ``users`` in ``[start, end]``.
 
@@ -155,6 +156,27 @@ def build_schedule_payload(
             projects[slot.project_id] = make_ref(slot.project, request)
 
     runs = availability_runs(users, start, end, holidays)
+
+    # Slots the view doesn't centre on — a soft job/phase/project scope's
+    # "other commitments", or work outside the global filter's jobs / phases /
+    # clients / projects — are flagged so clients can fade or hide them.
+    context = {"request": request}
+    timeslots = ScheduleTimeSlotSerializer(slots, many=True, context=context).data
+    scope_phase_ids = dataset["scope_phase_ids"]
+    scope_project_ids = dataset["scope_project_ids"]
+    for slot, row in zip(slots, timeslots):
+        outside = False
+        if not hard_scope:
+            if scope_phase_ids is not None and slot.phase_id not in scope_phase_ids:
+                outside = True
+            if (
+                scope_project_ids is not None
+                and slot.project_id not in scope_project_ids
+            ):
+                outside = True
+        if focus is not None and focus.is_unfocused(slot):
+            outside = True
+        row["out_of_scope"] = outside
     scope = None
     if (
         dataset["scope_phase_ids"] is not None
@@ -179,10 +201,12 @@ def build_schedule_payload(
         "end": end.date(),
         # collect_schedule_members already returns plain, JSON-safe dicts.
         "users": collect_schedule_members(users, start, end),
-        "timeslots": ScheduleTimeSlotSerializer(slots, many=True).data,
+        "timeslots": timeslots,
         "leave": ScheduleLeaveSerializer(leave, many=True).data,
         "holidays": HolidaySerializer(holidays, many=True).data,
-        "comments": TimeSlotCommentSerializer(dataset["comments"], many=True).data,
+        "comments": TimeSlotCommentSerializer(
+            dataset["comments"], many=True, context=context
+        ).data,
         "availability": [
             {
                 "user": uid,

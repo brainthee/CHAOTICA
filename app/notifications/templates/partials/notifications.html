@@ -79,63 +79,93 @@
 
 <script>
   $(document).ready(function() {
-    // Initial count update
+    // The widget runs on /api/v1/ (session auth + CSRF). The unread badge is
+    // pushed live over ws/me/; polling is only the fallback while that
+    // socket is down.
+    const API = '{% url "api_v1:notifications" %}';
+    const csrf = () => $('[name=csrfmiddlewaretoken]').val();
+    let pollTimer = null;
+
+    function escapeHtml(value) {
+      return String(value == null ? '' : value).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]));
+    }
+
+    function safeLink(value) {
+      // Only same-site paths or http(s) links (never javascript: and friends).
+      const link = String(value || '');
+      return /^(\/(?!\/)|https?:\/\/)/i.test(link) ? link : '#';
+    }
+
+    function showCount(count) {
+      const counter = $('.notification-counter');
+      if (count > 0) {
+        counter.text(count).removeClass('d-none');
+      } else {
+        counter.text('0').addClass('d-none');
+      }
+    }
+
+    function updateNotificationCounter() {
+      $.getJSON(API + 'unread-count/')
+        .done(data => showCount(data.unread_count || 0))
+        .fail((xhr, status, error) => console.error('Error fetching notification count:', error));
+    }
+
+    function startPolling() {
+      if (!pollTimer) pollTimer = setInterval(updateNotificationCounter, 60000);
+    }
+
+    function stopPolling() {
+      if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    }
+
+    function connectLive(retryMs) {
+      if (!('WebSocket' in window)) { startPolling(); return; }
+      const proto = location.protocol === 'https:' ? 'wss://' : 'ws://';
+      let ws;
+      try { ws = new WebSocket(proto + location.host + '/ws/me/'); }
+      catch (err) { startPolling(); return; }
+      ws.onopen = () => { stopPolling(); retryMs = 5000; };
+      ws.onmessage = ev => {
+        try {
+          const msg = JSON.parse(ev.data);
+          if (msg && msg.type === 'unread') showCount(msg.count || 0);
+        } catch (e) { /* ignore malformed frames */ }
+      };
+      ws.onclose = ev => {
+        startPolling();
+        if (ev.code === 4401) return;  // access ended; don't reconnect
+        setTimeout(() => connectLive(Math.min(retryMs * 2, 120000)), retryMs);
+      };
+      ws.onerror = () => { try { ws.close(); } catch (e) {} };
+    }
+
     updateNotificationCounter();
-    
-    // Set up polling for notification count
-    setInterval(updateNotificationCounter, 60000); // Update count every minute
-    
+    connectLive(5000);
+
     // Load notifications when dropdown is opened
     $('#notificationDropdown').on('show.bs.dropdown', function() {
       loadNotifications();
     });
-    
-    // Function to update the notification counter
-    function updateNotificationCounter() {
-      $.ajax({
-        url: '{% url "get_unread_count" %}',
-        type: 'GET',
-        dataType: 'json',
-        success: function(data) {
-          const count = data.unread_count || 0;
-          const counter = $('.notification-counter');
-          
-          if (count > 0) {
-            counter.text(count).removeClass('d-none');
-          } else {
-            counter.text('0').addClass('d-none');
-          }
-        },
-        error: function(xhr, status, error) {
-          console.error('Error fetching notification count:', error);
-        }
-      });
-    }
-    
-    // Function to load notifications via AJAX
+
     function loadNotifications() {
-      $.ajax({
-        url: '{% url "notifications_api" %}',
-        type: 'GET',
-        dataType: 'json',
-        success: function(data) {
-          renderNotifications(data.notifications);
-        },
-        error: function(xhr, status, error) {
+      $.getJSON(API, { page_size: 10 })
+        .done(data => renderNotifications(data.results))
+        .fail((xhr, status, error) => {
           $('#notification-container').html(
             '<div class="p-3 text-center">' +
             '<p class="mb-0 text-danger">Failed to load notifications</p>' +
             '</div>'
           );
           console.error('Error fetching notifications:', error);
-        }
-      });
+        });
     }
-    
-    // Function to render notifications
+
     function renderNotifications(notifications) {
       const container = $('#notification-container');
-      
+
       if (!notifications || notifications.length === 0) {
         container.html(
           '<div class="px-2 px-sm-3 py-3 border-300 notification-card position-relative border-bottom">' +
@@ -150,24 +180,23 @@
         );
         return;
       }
-      
+
       let html = '';
-      
-      notifications.forEach(function(notification) {
+      notifications.forEach(function(n) {
+        const entity = n.entity_type && n.entity_id
+          ? `data-entity-type="${escapeHtml(n.entity_type)}" data-entity-id="${escapeHtml(n.entity_id)}"`
+          : '';
         html += `
-          <div class="p-2 border-300 notification-card position-relative ${notification.read ? 'read' : 'unread'} border-bottom" 
-               data-notification-id="${notification.id}"
-               ${notification.entity_type && notification.entity_id ? `data-entity-type="${notification.entity_type}" data-entity-id="${notification.entity_id}"` : ''}>
+          <div class="p-2 border-300 notification-card position-relative ${n.read ? 'read' : 'unread'} border-bottom"
+               data-notification-id="${escapeHtml(n.id)}" ${entity}>
             <div class="d-flex align-items-center justify-content-between position-relative">
-              <a class="notification-content-link" href="${notification.link}">
-                <div class="d-flex">              
+              <a class="notification-content-link" href="${escapeHtml(safeLink(n.link))}">
+                <div class="d-flex">
                   <div class="flex-1 me-sm-3">
-                    <h4 class="fs-9 text-body-emphasis">
-                      ${notification.title}
-                    </h4>
+                    <h4 class="fs-9 text-body-emphasis">${escapeHtml(n.title)}</h4>
                     <p class="text-800 fs-9 mb-0">
                       <span class="me-1 fas fa-clock"></span>
-                      ${notification.timestamp_human}
+                      ${escapeHtml(n.timestamp_human)}
                     </p>
                   </div>
                 </div>
@@ -181,22 +210,33 @@
           </div>
         `;
       });
-      
+
       container.html(html);
-      
+
       // Hide the action menu when clicking elsewhere
       $(document).on('click', function(e) {
         if (!$(e.target).closest('.notification-action-trigger, #notification-action-menu').length) {
           $('#notification-action-menu').hide();
         }
       });
-      
+
       // Hide the action menu when the dropdown is closed
       $('#notificationDropdown').on('hide.bs.dropdown', function() {
         $('#notification-action-menu').hide();
       });
     }
-    
+
+    function post(path, body) {
+      return $.ajax({
+        url: API + path,
+        type: 'POST',
+        dataType: 'json',
+        contentType: 'application/json',
+        data: JSON.stringify(body || {}),
+        headers: { 'X-CSRFToken': csrf() }
+      });
+    }
+
     // Handle clicks on the action trigger
     $(document).on('click', '.notification-action-trigger', function(e) {
       e.preventDefault();
@@ -244,38 +284,17 @@
       
       if (!notificationId) return;
       
-      $.ajax({
-        url: '{% url "notifications_api" %}',
-        type: 'POST',
-        dataType: 'json',
-        contentType: 'application/json',
-        data: JSON.stringify({
-          notification_ids: [notificationId],
-          action: 'mark_read'
-        }),
-        headers: {
-          'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
-        },
-        success: function(data) {
-          if (data.status === 'success') {
-            // Update UI
-            $(`.notification-card[data-notification-id="${notificationId}"]`)
-              .removeClass('unread')
-              .addClass('read');
-            
-            // Hide the action menu
-            actionMenu.hide();
-            
-            // Update notification counter
-            updateNotificationCounter();
-          }
-        },
-        error: function(xhr, status, error) {
-          console.error('Error marking notification as read:', error);
-        }
-      });
+      post('mark-read/', { ids: [notificationId], read: true })
+        .done(data => {
+          $(`.notification-card[data-notification-id="${notificationId}"]`)
+            .removeClass('unread')
+            .addClass('read');
+          actionMenu.hide();
+          showCount(data.unread_count || 0);
+        })
+        .fail((xhr, status, error) => console.error('Error marking notification as read:', error));
     });
-    
+
     // Unfollow entity
     $(document).on('click', '.notification-unfollow-action', function() {
       const actionMenu = $('#notification-action-menu');
@@ -318,28 +337,14 @@
       e.preventDefault();
       e.stopPropagation();
       
-      $.ajax({
-        url: '{% url "mark_all_read" %}',
-        type: 'POST',
-        dataType: 'json',
-        headers: {
-          'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
-        },
-        success: function(data) {
-          if (data.status === 'success') {
-            // Update UI
-            $('.notification-card.unread').removeClass('unread').addClass('read');
-            
-            // Update notification counter
-            updateNotificationCounter();
-          }
-        },
-        error: function(xhr, status, error) {
-          console.error('Error marking all notifications as read:', error);
-        }
-      });
+      post('mark-all-read/')
+        .done(() => {
+          $('.notification-card.unread').removeClass('unread').addClass('read');
+          showCount(0);
+        })
+        .fail((xhr, status, error) => console.error('Error marking all notifications as read:', error));
     });
-    
+
     // Function to show toast notifications
     function showToast(message, type = 'info') {
       // If your site has a toast notification system, use it here

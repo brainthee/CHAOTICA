@@ -1,22 +1,22 @@
   <table class="table table-responsive table-sm datatable align-items-center mb-0 mw-100"
   id="jobTableAjax"
   {% if not job_list and not disableAjax %}
-  data-server-side=true
-  data-processing=true
-  data-ajax="{% url 'job-list' %}?format=datatables{% if filter_field %}&{{ filter_field }}={{ filter_value }}{% endif %}"
+  {# Every job you can see except archived ones (11; deleted are never listed). #}
+  data-v1-url="{% url 'api_v1:job-list' %}"
+  data-v1-params='{"exclude_status": "11"{% if filter_field %}, "{{ filter_field }}": "{{ filter_value }}"{% endif %}}'
   {% endif %}
   >
     <caption>Jobs</caption>
     <thead>
       <tr>
-        <th class="text-uppercase text-secondary text-xxs font-weight-bolder" scope="col" data-data="id" data-name="id">ID</th>
-        <th class="text-uppercase text-wrap text-break text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="title_link" style="word-wrap: break-word;" data-name="title">Name</th>
-        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="unit_link" data-name="unit.name">Unit</th>
-        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="client_link" data-name="client.name">Client</th>
-        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="start_date" data-searchable=false data-orderable=false>Start</th>
-        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="delivery_date" data-searchable=false data-orderable=false>End</th>
-        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="phase_count" data-searchable=false data-orderable=false>Phases</th>
-        <th class="text-uppercase col-1 text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="status_display" data-name="status" style="width:10%;">Status</th>
+        <th class="text-uppercase text-secondary text-xxs font-weight-bolder" scope="col" data-data="job_id" data-v1-order="id">ID</th>
+        <th class="text-uppercase text-wrap text-break text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="title" data-v1-render="link" data-v1-order="title" style="word-wrap: break-word;">Name</th>
+        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="unit" data-v1-render="ref">Unit</th>
+        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="client" data-v1-render="ref">Client</th>
+        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="start_date" data-v1-order="start_date">Start</th>
+        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="delivery_date" data-v1-order="delivery_date">End</th>
+        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="phase_count">Phases</th>
+        <th class="text-uppercase col-1 text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="status_display" data-v1-render="job-status" data-v1-order="status" style="width:10%;">Status</th>
       </tr>
     </thead>
     {% if job_list %}
@@ -51,45 +51,3 @@
     </tbody>
     {% endif %}
   </table>
-  
-  {% comment %} <script>
-    $('#jobTableAjax').DataTable({retrieve: true,}).destroy();
-    
-    table = $('.jobTableAjax').DataTable({
-      {% include 'js/dtDefaultConfig.js' %}
-      {% if not job_list and not disableAjax %}
-      serverSide: true,
-      processing: true,
-      ajax: "{% url 'job-list' %}?format=datatables{% if filter_field %}&{{ filter_field }}={{ filter_value }}{% endif %}",
-      {% endif %}
-      initComplete: function () {
-        this.api()
-            .columns('.dtFilter')
-            .every(function () {
-                let column = this;
- 
-                // Create select element
-                let select = document.createElement('select');
-                select.add(new Option(''));
-                column.footer().replaceChildren(select);
- 
-                // Apply listener for user change in value
-                select.addEventListener('change', function () {
-                    column
-                        .search(select.value, {exact: true})
-                        .draw();
-                });
- 
-                // Add list of options
-                column
-                    .data()
-                    .unique()
-                    .sort()
-                    .each(function (d, j, a) {
-                      console.log('Data in index: ' + d + ' is: ' + j);
-                      select.add(new Option(d));
-                    });
-            });
-    }
-  });
-</script> {% endcomment %}

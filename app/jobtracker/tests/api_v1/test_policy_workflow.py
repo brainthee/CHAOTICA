@@ -3,6 +3,7 @@
 from datetime import timedelta
 
 from django.test import TestCase
+from django.urls import reverse
 from django.utils import timezone
 
 from chaotica_utils.middleware.common import set_current_user
@@ -23,17 +24,24 @@ class PolicyContextTests(ApiV1TestCase):
             policy.unit_ids("can_view_jobs")  # same perm, either spelling
             policy.units("jobtracker.can_view_jobs")
 
-    def test_job_scope_matches_legacy_union(self):
-        job = self.make_job(account_manager=self.normal)
-        self.make_job()
-        scoped = PolicyContext(self.normal).scope("job.view", Job.objects.all())
-        expected = set(
-            Job.objects.jobs_with_unit_permission(
-                self.normal, "jobtracker.can_view_jobs"
-            ).values_list("pk", flat=True)
-        ) | set(Job.objects.jobs_for_user(self.normal).values_list("pk", flat=True))
-        self.assertEqual(set(scoped.values_list("pk", flat=True)), expected)
-        self.assertIn(job.pk, expected)
+    def test_job_scope_matches_the_pages(self):
+        """Every status but deleted, by unit permission or team membership —
+        including completed / lost jobs the old (live-only) scope dropped."""
+        from jobtracker.utils import can_view_job
+
+        team_job = self.make_job(account_manager=self.normal)
+        done = self.make_job(account_manager=self.normal, status=JobStatuses.COMPLETED)
+        gone = self.make_job(account_manager=self.normal, status=JobStatuses.DELETED)
+        self.make_job()  # someone else's
+        scoped = set(
+            PolicyContext(self.normal)
+            .scope("job.view", Job.objects.all())
+            .values_list("pk", flat=True)
+        )
+        self.assertEqual(scoped, {team_job.pk, done.pk})
+        self.assertNotIn(gone.pk, scoped)
+        for job in (team_job, done):
+            self.assertTrue(can_view_job(self.normal, job))
 
     def test_unknown_action_raises(self):
         with self.assertRaises(KeyError):
@@ -143,3 +151,61 @@ class WorkflowBlockTests(ApiV1TestCase):
         job.refresh_from_db()
         steps = workflow.steps(job)
         self.assertNotIn("current", {s["state"] for s in steps})
+
+
+class WorkflowButtonsTests(ApiV1TestCase):
+    """The job/phase pages render their status buttons from workflow.py."""
+
+    def test_job_buttons_and_menu(self):
+        job = self.make_job()
+        Job.objects.filter(pk=job.pk).update(status=JobStatuses.PENDING_SCOPE)
+        self.client.force_login(self.superuser)
+        page = self.client.get(job.get_absolute_url()).content.decode()
+        self.assertIn("Begin Scoping", page)
+        self.assertIn(
+            reverse("job_update_workflow", args=[job.slug, JobStatuses.SCOPING]), page
+        )
+        self.assertIn("Close as Lost", page)
+        # Transitions the page never offered by hand stay off it.
+        self.assertNotIn("Start Job", page)
+
+    def test_return_to_scoping_label(self):
+        job = self.make_job()
+        Job.objects.filter(pk=job.pk).update(status=JobStatuses.SCOPING_COMPLETE)
+        job.refresh_from_db()
+        labels = {
+            t["name"]: t["label"]
+            for t in workflow.available_transitions(PolicyContext(self.superuser), job)
+        }
+        self.assertEqual(labels["to_scoping"], "Return to Scoping")
+
+    def test_phase_buttons_hidden_without_update_permission(self):
+        job = self.make_job()
+        phase = self.make_phase(job)
+        Phase.objects.filter(pk=phase.pk).update(status=PhaseStatuses.PENDING_SCHED)
+        outsider = User.objects.create_user(email="guest@example.com", password="pw")
+        self.assertEqual(
+            [
+                t
+                for t in workflow.available_transitions(PolicyContext(outsider), phase)
+                if t["allowed"]
+            ],
+            [],
+        )
+        self.client.force_login(self.superuser)
+        page = self.client.get(phase.get_absolute_url()).content.decode()
+        self.assertIn("Confirm Schedule", page)
+
+    def test_bulk_modal_uses_fsm(self):
+        job = self.make_job()
+        phase = self.make_phase(job)
+        Phase.objects.filter(pk=phase.pk).update(status=PhaseStatuses.PENDING_SCHED)
+        self.client.force_login(self.superuser)
+        resp = self.client.get(
+            reverse(
+                "phases_bulk_workflow_modal",
+                args=[job.slug, PhaseStatuses.SCHEDULED_CONFIRMED],
+            )
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(phase.title, resp.json()["html_form"])

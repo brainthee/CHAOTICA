@@ -158,3 +158,43 @@ class UnitScopedListTests(ApiV1TestCase):
             f"/api/v1/phases/?status__in={PhaseStatuses.DRAFT}"
         )
         self.assertEqual(resp.status_code, 200)
+
+
+class ListPagesOnV1Tests(ApiV1TestCase):
+    """The job and client list pages page over /api/v1/ (A9)."""
+
+    def test_job_list_page(self):
+        from django.urls import reverse
+
+        self.client.force_login(self.superuser)
+        page = self.client.get(reverse("job_list")).content.decode()
+        self.assertIn(f'data-v1-url="{reverse("api_v1:job-list")}"', page)
+        self.assertIn('"exclude_status": "11"', page)
+
+    def test_client_list_page_and_counts(self):
+        from django.urls import reverse
+
+        job = self.make_job()
+        self.make_job(client=job.client)
+        self.client.force_login(self.superuser)
+        page = self.client.get(reverse("client_list")).content.decode()
+        self.assertIn(reverse("api_v1:client-list"), page)
+        rows = self.as_user(self.normal).get("/api/v1/clients/").json()["results"]
+        # normal can't see the client at all; superuser sees both jobs.
+        self.assertEqual(rows, [])
+        row = next(
+            r
+            for r in self.as_user(self.superuser)
+            .get("/api/v1/clients/")
+            .json()["results"]
+            if r["id"] == job.client.pk
+        )
+        self.assertEqual(row["jobs_count"], 2)
+
+    def test_exclude_status(self):
+        keep = self.make_job()
+        self.make_job(status=JobStatuses.ARCHIVED)
+        resp = self.as_user(self.superuser).get(
+            f"/api/v1/jobs/?exclude_status={JobStatuses.ARCHIVED}"
+        )
+        self.assert_same_ids(resp, Job.objects.filter(pk=keep.pk))

@@ -46,6 +46,10 @@ class TeamBreakdownDatesTests(ScheduleHistoryBase):
         self.assertIsNone(entry["end"])
 
     def test_build_team_rows_aligns_capacities(self):
+        # A weekday at 09:00 (a weekend "now" has no business hours).
+        days_ahead = (7 - self.start.weekday()) % 7 or 7
+        self.start = (self.start + timedelta(days=days_ahead)).replace(hour=9, minute=0, second=0)
+        self.end = self.start + timedelta(hours=8)
         self._delivery_slot()
         labels, entries = build_team_rows(get_user_schedule_breakdown(self.job))
         self.assertEqual(labels[0], "Delivery")

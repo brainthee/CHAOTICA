@@ -40,7 +40,11 @@ class JobPhaseBase(ApiV1TestCase):
             User.objects.create_user(email="crew@example.com", password="pw"),
             self.job.unit,
         )
-        start = timezone.now().replace(hour=9, minute=0, second=0, microsecond=0)
+        # A weekday (business hours are zero at weekends).
+        now = timezone.now()
+        start = (now + timedelta(days=(7 - now.weekday()) % 7 or 7)).replace(
+            hour=9, minute=0, second=0, microsecond=0
+        )
         TimeSlot.objects.create(
             user=self.member,
             phase=self.phase,
@@ -74,7 +78,7 @@ class JobDetailTests(JobPhaseBase):
 
     def test_detail_query_budget(self):
         self.su.get(f"/api/v1/jobs/{self.job.pk}/")
-        with self.assertNumQueries(13):
+        with self.assertNumQueries(10):
             self.su.get(f"/api/v1/jobs/{self.job.pk}/")
 
     def test_capabilities_follow_unit_role(self):

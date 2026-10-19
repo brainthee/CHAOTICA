@@ -1,6 +1,5 @@
 import re
 
-from django.template import loader
 from django.db.models import Value, Q
 from django.db.models.functions import Concat
 from django.http import JsonResponse
@@ -8,9 +7,6 @@ from cities_light.models import City
 from django.contrib.auth.decorators import login_required
 from django_select2.views import AutoResponseView
 from ..models import User
-from ..utils import is_ajax
-from ..selectors.search import resolve_goto, site_search as site_search_selector
-from django.views.decorators.http import require_POST
 
 
 ######################################
@@ -96,46 +92,3 @@ class UserAutocomplete(AutoResponseView):
         return JsonResponse({"results": results, "pagination": {"more": has_more}})
 
 
-# Template context name for each search group.
-_SEARCH_CONTEXT_KEYS = {
-    "jobs": "search_jobs",
-    "phases": "search_phases",
-    "clients": "search_clients",
-    "billing_codes": "search_billingCodes",
-    "services": "search_services",
-    "skills": "search_skills",
-    "qualifications": "search_quals",
-    "projects": "search_project",
-    "users": "search_users",
-}
-
-
-@login_required
-@require_POST
-def site_search(request):
-    q = request.POST.get("q", "").lower()
-    groups = site_search_selector(request.user, q) if is_ajax(request) else {}
-    context = {_SEARCH_CONTEXT_KEYS[k]: v for k, v in groups.items()}
-    context["results_count"] = sum(len(v) for v in groups.values())
-    context["q"] = q
-    return JsonResponse(
-        {
-            "html_form": loader.render_to_string(
-                "partials/search-results.html", context, request=request
-            )
-        }
-    )
-
-
-@login_required
-def search_goto(request):
-    """Resolve a typed Job ID or Phase ID straight to its canonical URL.
-
-    Powers the "type an ID and hit Enter" quick-jump in the global search box.
-    Scoped like the search itself, so it never leaks the existence of
-    jobs/phases the user can't already see. Returns ``{"url": <url>}`` on a
-    hit, or ``{"url": None}`` (HTTP 200) so the client can silently fall back
-    to the normal search-results dropdown.
-    """
-    obj = resolve_goto(request.user, request.GET.get("q", ""))
-    return JsonResponse({"url": obj.get_absolute_url() if obj else None})

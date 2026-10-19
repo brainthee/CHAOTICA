@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load menu %}{% load static %}
+{% load scheduler_tags %}
 
 {% block pageTitle %}Job{% endblock pageTitle %}
 {% block head_title %}{{ job }}{% endblock head_title %}
@@ -214,6 +215,7 @@ $("#scopeForm").dirty({preventLeaving: true});
 <script>
   window.SCHEDULER_CONFIG = {
     scope: 'job',
+    v1: {% scheduler_v1_config "job" job %},
     readonly: true,
     membersUrl: "{% url 'view_job_schedule_members' job.slug %}",
     slotsUrl: "{% url 'view_job_schedule_slots' job.slug %}",

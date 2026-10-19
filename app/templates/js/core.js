@@ -86,11 +86,91 @@ $(document).ready(function() {
     });
 });
 
+// ---- Tables backed by /api/v1/ ---------------------------------------------
+// <table class="datatable" data-v1-url="/api/v1/jobs/" data-v1-params='{"k":"v"}'>
+// with <th data-data="field.path" data-v1-render="ref" data-v1-order="title">.
+// DataTables' server-side paging is mapped onto ?page=&page_size=&ordering=&q=
+// and cells are rendered here, escaped (the API returns data, not HTML).
+const V1_MAX_PAGE_SIZE = 200;
+
+function v1Escape(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+}
+
+function v1Link(href, text) {
+    const url = String(href || '');
+    if (!/^(\/(?!\/)|https?:\/\/)/i.test(url)) return v1Escape(text);
+    return `<a class="fw-bold fs-8" href="${v1Escape(url)}">${v1Escape(text)}</a>`;
+}
+
+const V1_RENDERERS = {
+    text: (value) => v1Escape(value),
+    link: (value, row) => v1Link(row.web_url, value),
+    ref: (value) => value ? v1Link(value.web_url, value.display) : '',
+    refs: (value) => (value || []).map(r => v1Link(r.web_url, r.display)).join(', '),
+    'job-status': (value, row) =>
+        `<span class="badge text-wrap badge-phoenix badge-phoenix-${v1Escape(row.status_colour)}">${v1Escape(row.status_display)}</span>`,
+    'client-status': (value) => value
+        ? '<span class="badge badge-phoenix badge-phoenix-success">Ready</span>'
+        : '<span class="badge badge-phoenix badge-phoenix-warning">Not Ready</span>',
+};
+
+function initV1Tables() {
+    document.querySelectorAll('table.datatable[data-v1-url]').forEach(function (table) {
+        const url = table.dataset.v1Url;
+        const extra = table.dataset.v1Params ? JSON.parse(table.dataset.v1Params) : {};
+        const heads = Array.from(table.querySelectorAll('thead th'));
+        const columns = heads.map(th => {
+            const render = V1_RENDERERS[th.dataset.v1Render || 'text'];
+            return {
+                data: th.dataset.data,
+                orderable: !!th.dataset.v1Order,
+                searchable: false,
+                defaultContent: '',
+                render: (value, type, row) => type === 'display' ? render(value, row) : value,
+            };
+        });
+        new DataTable(table, {
+            {% include 'js/dtDefaultConfig.js' %}
+            serverSide: true,
+            processing: true,
+            columns: columns,
+            ajax: function (data, callback) {
+                const size = data.length > 0 ? Math.min(data.length, V1_MAX_PAGE_SIZE) : V1_MAX_PAGE_SIZE;
+                const params = new URLSearchParams(Object.assign({}, extra, {
+                    page: Math.floor(data.start / size) + 1,
+                    page_size: size,
+                }));
+                if (data.search && data.search.value) params.set('q', data.search.value);
+                if (data.order && data.order.length) {
+                    const field = heads[data.order[0].column].dataset.v1Order;
+                    if (field) params.set('ordering', (data.order[0].dir === 'desc' ? '-' : '') + field);
+                }
+                fetch(url + '?' + params.toString(), {
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'same-origin',
+                })
+                    .then(r => r.ok ? r.json() : Promise.reject(r.status))
+                    .then(body => callback({
+                        draw: data.draw,
+                        recordsTotal: body.count,
+                        recordsFiltered: body.count,
+                        data: body.results,
+                    }))
+                    .catch(() => callback({ draw: data.draw, recordsTotal: 0, recordsFiltered: 0, data: [] }));
+            },
+        });
+    });
+}
+
 $(function() {
 
-    const dt = new DataTable('table.datatable', {
+    const dt = new DataTable('table.datatable:not([data-v1-url])', {
         {% include 'js/dtDefaultConfig.js' %}
     });
+    initV1Tables();
     dt.tables().every(function () {
         const th = this.table().header().querySelector('th.default-sort');
         if (!th) return;
@@ -477,42 +557,68 @@ $(function() {
     }
 
 
-    var search = function(str) {
-        setRequestHeader();
-        $.ajax({
-            url: "{% url 'search' %}",
-            type: 'POST',
-            dataType: 'json',
-            data: {
-                "q": str,
-            },
-            params: { // extra parameters that will be passed to ajax
-                contentType: "application/json; charset=utf-8",
-            },
-            success: function(data) {
-                $("#searchResultContainer").html(data.html_form);
-            }
-        });
+    // Header search runs on /api/v1/search/ (rendered here, escaped).
+    const SEARCH_ICONS = {
+        jobs: 'fa-briefcase', phases: 'fa-list-check', projects: 'fa-diagram-project',
+        clients: 'fa-handshake', billing_codes: 'fa-money-bill', users: 'fa-user',
+        services: 'fa-laptop-code', skills: 'fa-graduation-cap',
+        qualifications: 'fa-certificate',
     };
-        
+
+    function searchHeader(text) {
+        return '<h6 class="dropdown-header text-1000 fs-9 py-2">' + v1Escape(text) + '</h6>';
+    }
+
+    function renderSearchResult(group, r) {
+        const badge = r.status_display
+            ? `<div class="flex-1 text-end"><span class="badge text-wrap badge-phoenix badge-phoenix-${v1Escape(r.status_colour)}">${v1Escape(r.status_display)}</span></div>`
+            : '';
+        const lead = r.image_url
+            ? `<div class="avatar avatar-l me-2 text-900"><img class="rounded-circle" src="${v1Escape(r.image_url)}" alt="" /></div>`
+            : `<span class="fa-solid ${SEARCH_ICONS[group.type] || 'fa-circle'} text-900 me-2"></span>`;
+        const sub = r.subtitle ? `<p class="fs-10 mb-0 d-flex text-700">${v1Escape(r.subtitle)}</p>` : '';
+        const href = /^(\/(?!\/)|https?:\/\/)/i.test(r.web_url || '') ? r.web_url : '#';
+        return `<a class="dropdown-item py-2 d-flex align-items-center" href="${v1Escape(href)}">` +
+            lead + `<div class="flex-1"><h6 class="mb-0 text-1000 text-wrap title">${v1Escape(r.display)}</h6>${sub}</div>` +
+            badge + '</a>';
+    }
+
+    function renderSearch(q, body) {
+        const groups = (body && body.groups) || [];
+        if (!q) return searchHeader('Start typing to search...');
+        if (q.length < 3) return searchHeader('Type more than 2 characters');
+        const total = groups.reduce((n, g) => n + g.results.length, 0);
+        if (!total) return searchHeader('No results found');
+        let html = '<div class="list py-0"><h6 class="dropdown-header text-1000 fs-10 py-2">';
+        if (total >= 50) {
+            html += '<div class="alert alert-phoenix-warning py-1 text-wrap" role="alert">' +
+                'Lots of results. Please be more specific to avoid truncated results.</div>';
+        }
+        html += `<div class="alert alert-phoenix-info p-0 mb-0 border-0" role="alert">${total} <span class="text-500">results</span></div></h6>`;
+        groups.forEach(g => {
+            html += '<hr class="text-200 my-0" />' +
+                `<h6 class="dropdown-header text-1000 fs-9 border-bottom border-200 py-2 lh-sm">${v1Escape(g.label)}</h6>` +
+                '<div class="py-2">' + g.results.map(r => renderSearchResult(g, r)).join('') + '</div>';
+        });
+        return html + '</div>';
+    }
+
+    var search = function(str) {
+        const q = (str || '').trim();
+        if (q.length < 3) {
+            $("#searchResultContainer").html(renderSearch(q, null));
+            return;
+        }
+        $.getJSON("{% url 'api_v1:search' %}", { q: q, limit: 25 })
+            .done(body => $("#searchResultContainer").html(renderSearch(q, body)));
+    };
+
     // Resolve a typed Job ID / Phase ID straight to its page. On a hit we
     // navigate there; on a miss we do nothing and leave the normal search
     // results dropdown in place.
     var searchGoto = function(str) {
-        setRequestHeader();
-        $.ajax({
-            url: "{% url 'search_goto' %}",
-            type: 'GET',
-            dataType: 'json',
-            data: {
-                "q": str,
-            },
-            success: function(data) {
-                if (data.url) {
-                    window.location = data.url;
-                }
-            }
-        });
+        $.getJSON("{% url 'api_v1:search-goto' %}", { id: str })
+            .done(ref => { if (ref && ref.web_url) window.location = ref.web_url; });
     };
 
     // Job IDs are plain digits ("1234"); Phase IDs are "1234-1".

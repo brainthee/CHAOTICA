@@ -98,10 +98,17 @@ class RealtimeTicketSerializer(serializers.Serializer):
     ws_url = serializers.CharField()
 
 
+class SearchResultSerializer(RefSerializer):
+    subtitle = serializers.CharField(allow_null=True, help_text="Client, job title…")
+    status_display = serializers.CharField(allow_null=True)
+    status_colour = serializers.CharField(allow_null=True)
+    image_url = serializers.CharField(allow_null=True)
+
+
 class SearchGroupSerializer(serializers.Serializer):
     type = serializers.CharField()
     label = serializers.CharField()
-    results = RefSerializer(many=True)
+    results = SearchResultSerializer(many=True)
 
 
 class SearchResultsSerializer(serializers.Serializer):

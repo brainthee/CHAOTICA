@@ -78,6 +78,7 @@ from .phases import (  # noqa: F401
 )
 from .schedule import (  # noqa: F401
     TimeSlotTypeSerializer,
+    SlotDisplaySerializer,
     ScheduleTimeSlotSerializer,
     TimeSlotSerializer,
     ScheduleLeaveSerializer,
@@ -90,6 +91,7 @@ from .schedule import (  # noqa: F401
     ScheduleScopeSerializer,
     ScheduleSerializer,
     ScheduleResourceSerializer,
+    ScheduleBoundsSerializer,
     ScheduleResourcesSerializer,
     ScheduleActionSerializer,
     ScheduleDeltaSerializer,

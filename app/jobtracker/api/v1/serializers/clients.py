@@ -10,15 +10,15 @@ from ..fields import RefField, RefListField, RefSerializer, WebUrlField, make_re
 
 class ClientSerializer(serializers.ModelSerializer):
     is_ready = serializers.BooleanField(source="is_ready_for_jobs", read_only=True)
+    # Counts of the client's jobs / projects *you* can see (annotated on lists).
+    jobs_count = serializers.IntegerField(read_only=True, required=False)
+    projects_count = serializers.IntegerField(read_only=True, required=False)
     account_managers = RefListField()
     tech_account_managers = RefListField()
     web_url = WebUrlField()
 
     class Meta:
         model = Client
-        # jobs_count intentionally omitted: the client detail view re-gates the
-        # client's jobs per-object, so a raw count would leak jobs the viewer
-        # cannot see.
         fields = [
             "id",
             "name",
@@ -26,6 +26,8 @@ class ClientSerializer(serializers.ModelSerializer):
             "is_ready",
             "account_managers",
             "tech_account_managers",
+            "jobs_count",
+            "projects_count",
             "web_url",
         ]
 
