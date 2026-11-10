@@ -10,10 +10,10 @@
 {% endblock %}
 
 {% block breadcrumbItem %}
-  <li class="breadcrumb-item text-sm">
+  <li class="breadcrumb-item">
     <a class="opacity-50 text-body-emphasis" href="{% url 'skill_list' %}">Skills</a>
   </li>
-  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">{{ skillcategory.name }}</li>
+  <li class="breadcrumb-item text-body-emphasis active" aria-current="page">{{ skillcategory.name }}</li>
 {% endblock %}
 
 {% block content %}
@@ -107,9 +107,9 @@
     </div>
     <div class="card-body p-0">
       <div class="table-responsive">
-        <table class="table table-hover mb-0">
+        <table class="table table-hover mb-0 table-sm align-middle fs-9">
           <thead>
-            <tr>
+            <tr class="text-body-secondary">
               <th class="ps-3">Skill</th>
               <th class="text-center">Team Coverage</th>
               <th class="text-center">Specialists</th>

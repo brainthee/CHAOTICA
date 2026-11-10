@@ -1,0 +1,18 @@
+{# Avatar grid for one client team group; same avatar style as the job Team widget. #}
+<div class="d-flex flex-wrap gap-4">
+    {% for member in members %}
+    <a href="{{ member.get_absolute_url }}" class="text-center text-decoration-none" style="width: 6rem;">
+        <div class="avatar avatar-xl rounded-circle mb-2">
+            <img class="rounded-circle" src="{{ member.get_avatar_url }}" alt="" />
+        </div>
+        <div class="fs-9 fw-semibold text-body-emphasis">{{ member }}</div>
+    </a>
+    {% empty %}
+    <div class="text-center" style="width: 6rem;">
+        <div class="avatar avatar-xl mb-2">
+            <span class="rounded-circle fs-4 fas fa-user-slash text-secondary-light"></span>
+        </div>
+        <div class="fs-9 fw-semibold text-body-tertiary">None assigned</div>
+    </div>
+    {% endfor %}
+</div>

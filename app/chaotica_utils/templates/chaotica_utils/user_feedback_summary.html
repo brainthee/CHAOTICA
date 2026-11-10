@@ -14,7 +14,7 @@
 {% block breadcrumbItem %}
   <li class="breadcrumb-item"><a href="{% url 'user_list' %}">Users</a></li>
   <li class="breadcrumb-item"><a href="{{ user_profile.get_absolute_url }}">{{ user_profile }}</a></li>
-  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Feedback Summary</li>
+  <li class="breadcrumb-item text-body-emphasis active" aria-current="page">Feedback Summary</li>
 {% endblock %}
 
 {% block content %}
@@ -161,9 +161,9 @@
       <div class="card-body">
         {% if reports %}
           <div class="table-responsive">
-            <table class="table table-striped">
+            <table class="table table-striped table-sm align-middle fs-9">
               <thead>
-                <tr>
+                <tr class="text-body-secondary">
                   <th>Report</th>
                   <th>Service</th>
                   <th>Client</th>

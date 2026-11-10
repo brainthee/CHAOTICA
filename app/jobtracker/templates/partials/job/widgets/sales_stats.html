@@ -24,15 +24,15 @@
               <p class="fw-bold mb-1">Estimated Profit</p>
               <h4 class="fw-bolder text-nowrap">
                 {% if job.profit_perc >= job.unit.targetProfit %}
-                <span class="text-success text-gradient">
+                <span class="text-success">
                     {{ job.profit_perc }}% 
                 </span>
                 {% elif job.profit_perc >= 0 %}
-                <span class="text-warning text-gradient">
+                <span class="text-warning">
                     {{ job.profit_perc }}% 
                 </span>
                 {% else %}
-                <span class="text-danger text-gradient">
+                <span class="text-danger">
                     {{ job.profit_perc }}% 
                 </span>
                 {% endif %}

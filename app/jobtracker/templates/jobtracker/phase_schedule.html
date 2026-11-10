@@ -13,22 +13,22 @@
 {% endblock %}
 
 {% block breadcrumbItem %}
-  <li class="breadcrumb-item text-sm">
+  <li class="breadcrumb-item">
     <a class="opacity-50 text-body-emphasis" href="{% url 'job_list' %}">Jobs</a>
   </li>
-  <li class="breadcrumb-item text-sm">
+  <li class="breadcrumb-item">
     <a class="opacity-50 text-body-emphasis" href="{{ job.client.get_absolute_url }}">{{ phase.job.client }}</a>
   </li>
-  <li class="breadcrumb-item text-sm">
+  <li class="breadcrumb-item">
     <a class="opacity-50 text-body-emphasis" href="{{ phase.job.get_absolute_url }}">{{ phase.job.id }}:{{ phase.job.title }}</a>
   </li>
-  <li class="breadcrumb-item text-sm">
+  <li class="breadcrumb-item">
     <span class="opacity-50 text-body-emphasis">Phase</span>
   </li>
-  <li class="breadcrumb-item text-sm">
+  <li class="breadcrumb-item">
     <a class="opacity-50 text-body-emphasis" href="{{ phase.get_absolute_url }}">{{ phase.phase_number }}:{{ phase.title }}</a>
   </li>
-  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Schedule</li>
+  <li class="breadcrumb-item text-body-emphasis active" aria-current="page">Schedule</li>
 {% endblock %}
 
 {% block content_classes %}

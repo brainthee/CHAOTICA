@@ -15,7 +15,7 @@
 {% endblock %}
 
 {% block breadcrumbItem %}
-  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Activity Log</li>
+  <li class="breadcrumb-item text-body-emphasis active" aria-current="page">Activity Log</li>
 {% endblock %}
 
 {% block content %}
@@ -95,17 +95,17 @@
     <div class="col-12">
       <div class="card p-2">
         <div class="card-body py-2">
-          <table class="table table-sm align-items-center mb-0 mw-100" id="auditTable" style="width:100%">
+          <table class="table table-sm mb-0 mw-100 align-middle fs-9" id="auditTable" style="width:100%">
             <caption class="visually-hidden">Audit Logs</caption>
             <thead>
-              <tr>
-                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Date</th>
-                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Category</th>
-                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Action</th>
-                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Actor</th>
-                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Object</th>
-                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Source</th>
-                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Event</th>
+              <tr class="text-body-secondary">
+                <th>Date</th>
+                <th class="ps-2">Category</th>
+                <th class="ps-2">Action</th>
+                <th class="ps-2">Actor</th>
+                <th class="ps-2">Object</th>
+                <th class="ps-2">Source</th>
+                <th class="ps-2">Event</th>
               </tr>
             </thead>
           </table>

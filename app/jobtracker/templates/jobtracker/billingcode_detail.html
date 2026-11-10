@@ -5,8 +5,8 @@
 {% block head_title %}{{ billingcode }}{% endblock head_title %}
 
 {% block breadcrumbItem %}
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{% url 'billingcode_list' %}">Billing Codes</a></li>
-<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">{{ billingcode.code }}</li>
+<li class="breadcrumb-item"><a class="opacity-50 text-body-emphasis" href="{% url 'billingcode_list' %}">Billing Codes</a></li>
+<li class="breadcrumb-item text-body-emphasis active" aria-current="page">{{ billingcode.code }}</li>
 {% endblock breadcrumbItem %}
 
 {% block content_classes %}pt-15 px-0{% endblock content_classes %}

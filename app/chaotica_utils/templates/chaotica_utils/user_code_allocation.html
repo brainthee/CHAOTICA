@@ -5,9 +5,9 @@
 {% block head_title %}Code Allocations — {{ userProfile }}{% endblock %}
 
 {% block breadcrumbItem %}
-  <li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{% url 'user_list' %}">Users</a></li>
-  <li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{{ userProfile.get_absolute_url }}">{{ userProfile }}</a></li>
-  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Code Allocations</li>
+  <li class="breadcrumb-item"><a class="opacity-50 text-body-emphasis" href="{% url 'user_list' %}">Users</a></li>
+  <li class="breadcrumb-item"><a class="opacity-50 text-body-emphasis" href="{{ userProfile.get_absolute_url }}">{{ userProfile }}</a></li>
+  <li class="breadcrumb-item text-body-emphasis active" aria-current="page">Code Allocations</li>
 {% endblock %}
 
 {% block content %}
@@ -127,9 +127,9 @@
       <div class="card h-100">
         <div class="card-header"><h5 class="mb-0">Per day</h5></div>
         <div class="card-body p-0">
-          <table class="table table-sm align-middle mb-0">
+          <table class="table table-sm align-middle fs-9 mb-0">
             <thead>
-              <tr class="fs-9 text-body-secondary">
+              <tr class="text-body-secondary">
                 <th class="ps-3">Day</th>
                 <th>Code(s)</th>
                 <th class="text-end pe-3">Hours</th>
@@ -138,7 +138,7 @@
             <tbody>
               {% for day, row in per_day.items %}
                 <tr>
-                  <td class="ps-3 fs-9">{{ day|date:'D d M Y' }}</td>
+                  <td class="ps-3">{{ day|date:'D d M Y' }}</td>
                   <td>
                     {% for entry in row.entries %}
                       <div class="mb-1">
@@ -174,7 +174,7 @@
                         <span class="fs-10 text-body-tertiary ms-1">+{{ row.support_more.count }} more code{{ row.support_more.count|pluralize }} (see Per code)</span></div>
                     {% endif %}
                   </td>
-                  <td class="text-end pe-3 fs-9">
+                  <td class="text-end pe-3">
                     {% for entry in row.entries %}
                       <div class="mb-1">{{ entry.hours|floatformat:2 }}</div>
                     {% endfor %}
@@ -194,10 +194,10 @@
       <div class="card h-100">
         <div class="card-header"><h5 class="mb-0">Per code</h5></div>
         <div class="card-body">
-          <div id="code-allocation-chart" style="height:220px;"></div>
-          <table class="table table-sm align-middle mb-0 mt-3">
+          {% if per_code %}<div id="code-allocation-chart" style="height:220px;"></div>{% endif %}
+          <table class="table table-sm align-middle fs-9 mb-0{% if per_code %} mt-3{% endif %}">
             <thead>
-              <tr class="fs-9 text-body-secondary">
+              <tr class="text-body-secondary">
                 <th>Code</th>
                 <th class="text-center">Type</th>
                 <th class="text-end">Days</th>
@@ -212,8 +212,8 @@
                     {% if c.is_chargeable %}<span class="badge badge-phoenix badge-phoenix-success">Chargeable</span>{% endif %}
                     {% if c.is_internal %}<span class="badge badge-phoenix badge-phoenix-info">Internal</span>{% endif %}
                   </td>
-                  <td class="text-end fs-9">{{ c.days }}</td>
-                  <td class="text-end fs-9">{{ c.hours|floatformat:2 }}</td>
+                  <td class="text-end">{{ c.days }}</td>
+                  <td class="text-end">{{ c.hours|floatformat:2 }}</td>
                 </tr>
               {% empty %}
                 <tr><td colspan="4" class="text-center text-body-secondary py-4">No codes in this window.</td></tr>
@@ -226,9 +226,9 @@
             <h6 class="text-warning-emphasis mb-2 fs-9">
               <i class="fas fa-exclamation-triangle me-1"></i>Uncoded work — {{ uncoded.hours|floatformat:2 }}h
             </h6>
-            <table class="table table-sm align-middle mb-0">
+            <table class="table table-sm align-middle fs-9 mb-0">
               <thead>
-                <tr class="fs-9 text-body-secondary">
+                <tr class="text-body-secondary">
                   <th>Engagement</th>
                   <th class="text-end">Days</th>
                   <th class="text-end">Hours</th>
@@ -237,11 +237,11 @@
               <tbody>
                 {% for t in uncoded.by_target.values %}
                   <tr>
-                    <td class="fs-9">
+                    <td>
                       {% if t.url %}<a href="{{ t.url }}">{{ t.label }}</a>{% else %}<span class="text-body-secondary">{{ t.label }}</span>{% endif %}
                     </td>
-                    <td class="text-end fs-9">{{ t.days }}</td>
-                    <td class="text-end fs-9">{{ t.hours|floatformat:2 }}</td>
+                    <td class="text-end">{{ t.days }}</td>
+                    <td class="text-end">{{ t.hours|floatformat:2 }}</td>
                   </tr>
                 {% endfor %}
               </tbody>
@@ -287,7 +287,7 @@
           </div>
           {% endif %}
           <div class="table-responsive">
-            <table class="table fs-10 mb-0">
+            <table class="table table-sm align-middle fs-9 mb-0">
               <thead>
                 <tr>
                   <th class="ps-3">Job</th>

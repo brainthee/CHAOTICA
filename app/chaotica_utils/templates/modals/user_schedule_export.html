@@ -4,7 +4,7 @@
         <form method="post" action="{% url 'user_schedule_export' email=export_user.email %}">
             {% csrf_token %}
             <div class="modal-header">
-                <h6 class="modal-title font-weight-normal" id="modal-title-default">
+                <h6 class="modal-title" id="modal-title-default">
                     Export Schedule — {{ export_user.get_full_name|default:export_user.email }}
                 </h6>
                 <button type="button" class="btn-close text-body-emphasis" data-bs-dismiss="modal" aria-label="Close"></button>

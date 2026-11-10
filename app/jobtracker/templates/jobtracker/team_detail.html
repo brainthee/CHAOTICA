@@ -12,10 +12,10 @@
 {% endblock %}
 
 {% block breadcrumbItem %}
-  <li class="breadcrumb-item text-sm">
+  <li class="breadcrumb-item">
     <a class="opacity-50 text-body-emphasis" href="{% url 'team_list' %}">Teams</a>
   </li>
-  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">{{ team.name }}</li>
+  <li class="breadcrumb-item text-body-emphasis active" aria-current="page">{{ team.name }}</li>
 {% endblock %}
 
 {% block content_classes %}

@@ -4,7 +4,7 @@
 </h5>
 
 {% if not alarm_count %}
-  <div class="alert alert-subtle-success d-flex align-items-center py-2 fs-9" role="alert">
+  <div class="alert alert-phoenix-success" role="alert">
     <span class="fas fa-check-circle me-2"></span>No overdue alarms{% if stale_alarm_count %} — but there's stale work to tidy up below{% else %} — everything looks good{% endif %}.
   </div>
 {% endif %}
@@ -18,16 +18,16 @@
     </h5>
   </div>
   <div class="p-3 bg-body-emphasis">
-    <table class="table table-responsive table-sm datatable align-items-center mb-0">
+    <table class="table table-responsive table-sm datatable mb-0 align-middle fs-9">
       <caption>Delivery Overdue Phases</caption>
       <thead>
-        <tr>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder">ID</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Phase</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Client</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Status</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Delivery Date</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Lead</th>
+        <tr class="text-body-secondary">
+          <th>ID</th>
+          <th class="ps-2">Phase</th>
+          <th class="ps-2">Client</th>
+          <th class="ps-2">Status</th>
+          <th class="ps-2">Delivery Date</th>
+          <th class="ps-2">Lead</th>
         </tr>
       </thead>
       <tbody>
@@ -62,16 +62,16 @@
     </h5>
   </div>
   <div class="p-3 bg-body-emphasis">
-    <table class="table table-responsive table-sm datatable align-items-center mb-0">
+    <table class="table table-responsive table-sm datatable mb-0 align-middle fs-9">
       <caption>Tech QA Overdue Phases</caption>
       <thead>
-        <tr>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder">ID</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Phase</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Client</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Status</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">TQA Due</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Tech QA</th>
+        <tr class="text-body-secondary">
+          <th>ID</th>
+          <th class="ps-2">Phase</th>
+          <th class="ps-2">Client</th>
+          <th class="ps-2">Status</th>
+          <th class="ps-2">TQA Due</th>
+          <th class="ps-2">Tech QA</th>
         </tr>
       </thead>
       <tbody>
@@ -106,16 +106,16 @@
     </h5>
   </div>
   <div class="p-3 bg-body-emphasis">
-    <table class="table table-responsive table-sm datatable align-items-center mb-0">
+    <table class="table table-responsive table-sm datatable mb-0 align-middle fs-9">
       <caption>Presentation QA Overdue Phases</caption>
       <thead>
-        <tr>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder">ID</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Phase</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Client</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Status</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">PQA Due</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Pres QA</th>
+        <tr class="text-body-secondary">
+          <th>ID</th>
+          <th class="ps-2">Phase</th>
+          <th class="ps-2">Client</th>
+          <th class="ps-2">Status</th>
+          <th class="ps-2">PQA Due</th>
+          <th class="ps-2">Pres QA</th>
         </tr>
       </thead>
       <tbody>
@@ -150,16 +150,16 @@
     </h5>
   </div>
   <div class="p-3 bg-body-emphasis">
-    <table class="table table-responsive table-sm datatable align-items-center mb-0">
+    <table class="table table-responsive table-sm datatable mb-0 align-middle fs-9">
       <caption>Phases with No Tech QA Assigned</caption>
       <thead>
-        <tr>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder">ID</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Phase</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Client</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Status</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Lead</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Author</th>
+        <tr class="text-body-secondary">
+          <th>ID</th>
+          <th class="ps-2">Phase</th>
+          <th class="ps-2">Client</th>
+          <th class="ps-2">Status</th>
+          <th class="ps-2">Lead</th>
+          <th class="ps-2">Author</th>
         </tr>
       </thead>
       <tbody>
@@ -196,16 +196,16 @@
     </h5>
   </div>
   <div class="p-3 bg-body-emphasis">
-    <table class="table table-responsive table-sm datatable align-items-center mb-0">
+    <table class="table table-responsive table-sm datatable mb-0 align-middle fs-9">
       <caption>Phases with No Pres QA Assigned</caption>
       <thead>
-        <tr>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder">ID</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Phase</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Client</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Status</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Lead</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Author</th>
+        <tr class="text-body-secondary">
+          <th>ID</th>
+          <th class="ps-2">Phase</th>
+          <th class="ps-2">Client</th>
+          <th class="ps-2">Status</th>
+          <th class="ps-2">Lead</th>
+          <th class="ps-2">Author</th>
         </tr>
       </thead>
       <tbody>
@@ -242,15 +242,15 @@
     </h5>
   </div>
   <div class="p-3 bg-body-emphasis">
-    <table class="table table-responsive table-sm datatable align-items-center mb-0">
+    <table class="table table-responsive table-sm datatable mb-0 align-middle fs-9">
       <caption>Active Phases with No Scheduled Slots</caption>
       <thead>
-        <tr>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder">ID</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Phase</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Client</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Status</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Lead</th>
+        <tr class="text-body-secondary">
+          <th>ID</th>
+          <th class="ps-2">Phase</th>
+          <th class="ps-2">Client</th>
+          <th class="ps-2">Status</th>
+          <th class="ps-2">Lead</th>
         </tr>
       </thead>
       <tbody>
@@ -282,15 +282,15 @@
     </h5>
   </div>
   <div class="p-3 bg-body-emphasis">
-    <table class="table table-responsive table-sm datatable align-items-center mb-0">
+    <table class="table table-responsive table-sm datatable mb-0 align-middle fs-9">
       <caption>Phases with no billing code on the phase or its job</caption>
       <thead>
-        <tr>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder">ID</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Phase</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Client</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Status</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Lead</th>
+        <tr class="text-body-secondary">
+          <th>ID</th>
+          <th class="ps-2">Phase</th>
+          <th class="ps-2">Client</th>
+          <th class="ps-2">Status</th>
+          <th class="ps-2">Lead</th>
         </tr>
       </thead>
       <tbody>
@@ -322,16 +322,16 @@
     </h5>
   </div>
   <div class="p-3 bg-body-emphasis">
-    <table class="table table-responsive table-sm datatable align-items-center mb-0">
+    <table class="table table-responsive table-sm datatable mb-0 align-middle fs-9">
       <caption>Overdue Jobs</caption>
       <thead>
-        <tr>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder">ID</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Job</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Client</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Unit</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Status</th>
-          <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Delivery Date</th>
+        <tr class="text-body-secondary">
+          <th>ID</th>
+          <th class="ps-2">Job</th>
+          <th class="ps-2">Client</th>
+          <th class="ps-2">Unit</th>
+          <th class="ps-2">Status</th>
+          <th class="ps-2">Delivery Date</th>
         </tr>
       </thead>
       <tbody>

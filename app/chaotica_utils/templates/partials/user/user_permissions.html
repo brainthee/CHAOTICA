@@ -10,7 +10,7 @@ Expects `user_permissions` = {"global_roles", "global_permissions", "units"}.
 
 <div class="card mb-3">
   <div class="card-header border-translucent">
-    <h6 class="mb-0"><span class="fas fa-globe me-2"></span>Global Role Permissions</h6>
+    <h5 class="mb-0"><span class="fas fa-globe me-2"></span>Global Role Permissions</h5>
     <div class="mt-2">
       {% for role in user_permissions.global_roles %}
         <span class="badge badge-phoenix badge-phoenix-{{ role.colour }}">{{ role.label }}</span>
@@ -24,12 +24,12 @@ Expects `user_permissions` = {"global_roles", "global_permissions", "units"}.
   </div>
 </div>
 
-<h6 class="mb-2"><span class="fas fa-sitemap me-2"></span>Unit Permissions</h6>
+<h4 class="mb-3"><span class="fas fa-sitemap me-2"></span>Unit Permissions</h4>
 {% for unit in user_permissions.units %}
   <div class="card mb-3">
     <div class="card-header border-translucent">
       <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <h6 class="mb-0">{{ unit.unit.name }}</h6>
+        <h5 class="mb-0">{{ unit.unit.name }}</h5>
         <div>
           {% for role in unit.roles %}
             {% include 'partials/unit/role_badge.html' with role=role %}

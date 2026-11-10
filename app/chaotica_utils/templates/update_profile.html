@@ -4,8 +4,8 @@
 {% block head_title %}Profile{% endblock head_title %}
 
 {% block breadcrumbItem %}
-<li class="breadcrumb-item text-sm">Users</li>
-<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Edit Profile</li>
+<li class="breadcrumb-item">Users</li>
+<li class="breadcrumb-item text-body-emphasis active" aria-current="page">Edit Profile</li>
 {% endblock breadcrumbItem %}
 
 {% block content %}
@@ -20,14 +20,14 @@
             </div>
             <div class="col-sm-auto col-8 my-auto">
                <div class="h-100">
-                  <h5 class="mb-1 font-weight-bolder">
+                  <h5 class="mb-1">
                      {{ usr }}
                   </h5>
-                  <p class="mb-0 font-weight-normal text-sm">
+                  <p class="mb-0">
                      {% if usr.job_title %}{{ usr.job_title }}{% endif %}
                   </p>
                   {% if usr.alias %}
-                    <p class="mb-0 font-weight-normal text-sm">
+                    <p class="mb-0">
                       "{{ usr.alias }}"
                     </p>
                   {% endif %}
@@ -47,36 +47,36 @@
 <div class="row mt-4 mb-5">
     <div class="col-lg-3 g-2 mt-0">
        <div class="card position-sticky top-0">
-          <ul class="nav flex-column bg-body-emphasis border-radius-lg p-3">
+          <ul class="nav flex-column bg-body-emphasis p-3">
              <li class="nav-item pt-2">
                 <a class="nav-link text-body-emphasis d-flex" data-scroll="" href="#basic-info">
                   <span class="fa fa-calendar me-sm-2 fs-7"></span>
-                  <span class="text-sm">Basic Info</span>
+                  <span>Basic Info</span>
                 </a>
              </li>
              <li class="nav-item pt-2">
                 <a class="nav-link text-body-emphasis d-flex" data-scroll="" href="#skills">
                   <span class="fab fa-readme me-sm-2 fs-7"></span>
-                  <span class="text-sm">Skills</span>
+                  <span>Skills</span>
                 </a>
              </li>
              {% if usr == request.user %}
              <li class="nav-item pt-2">
                 <a class="nav-link text-body-emphasis d-flex" data-scroll="" href="#feeds">
                   <span class="far fa-calendar-plus me-sm-2 fs-7"></span>
-                  <span class="text-sm">Feeds</span>
+                  <span>Feeds</span>
                 </a>
              </li>
              <li class="nav-item pt-2">
                 <a class="nav-link text-body-emphasis d-flex" data-scroll="" href="#api-tokens">
                   <span class="fa fa-key me-sm-2 fs-7"></span>
-                  <span class="text-sm">API Token</span>
+                  <span>API Token</span>
                 </a>
              </li>
              <li class="nav-item pt-2">
                 <a class="nav-link text-body-emphasis d-flex" data-scroll="" href="#connected-apps">
                   <span class="fa fa-plug me-sm-2 fs-7"></span>
-                  <span class="text-sm">Connected Apps</span>
+                  <span>Connected Apps</span>
                 </a>
              </li>
              {% endif %}
@@ -97,14 +97,14 @@
                <div class="row justify-content-between align-items-center">
                   <div class="col">
                      <h5>Skills</h5>
-                     <p class="text-sm mb-0">Showcase your skillset. Values are automatically saved.</p>
+                     <p class="mb-0">Showcase your skillset. Values are automatically saved.</p>
                   </div>
                   <div class="col-3 d-flex flex-column align-items-end">
                      <span class="badge badge-phoenix badge-phoenix-secondary"
                      data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ usr.skills_last_updated }}">
                         {{ usr.skills_last_updated | naturalday}}
                      </span>      
-                     <span class="fs-10 text-opacity-60 fw-semibold">
+                     <span class="fs-10 fw-semibold">
                         Last Updated
                      </span>    
                   </div>
@@ -116,10 +116,10 @@
                {% for category in skillCategories %}
                <h4 class="ps-3 mt-4 text-body-secondary" >{{ category.grouper }}</h4>
                <p class="ps-3 mb-3 text-body-tertiary lh-sm mb-1">{{ category.grouper.description }}</p>
-               <table class="table table-responsive mb-0">
+               <table class="table table-responsive mb-0 table-sm align-middle fs-9">
                   <caption>User's Skills</caption>
                   <thead>
-                     <tr>
+                     <tr class="text-body-secondary">
                         <th scope="col" class="col ps-1">
                            <p class="mb-0">Skill</p>
                         </th>
@@ -149,7 +149,7 @@
                      <tr class="skill-row {% if userSkill.interested_in_improving_skill %}wants-improvement{% endif %}" data-skill-slug="{{ skill.slug }}">
                         <td class="ps-1">
                            <div class="my-auto">
-                              <span class="text-xs font-weight-normal">
+                              <span>
                                  <a href="{{ skill.get_absolute_url }}">{{ skill.name }}</a>
                                  {% if skill.description %}
                                  <span class="fa fa-circle-question me-sm-2 fs-9" 
@@ -229,7 +229,7 @@
                <div class="col">
                   {% if usr.schedule_feed_enabled %}
                   <div class="d-flex align-items-center">
-                     <p class="font-monospace border border-cake text-sm ms-auto my-auto me-3 p-2">
+                     <p class="font-monospace border border-cake ms-auto my-auto me-3 p-2">
                         <a href="{{ feed_url }}">{{ feed_url }}</a>
                      </p>
                   </div>
@@ -263,7 +263,7 @@
                <div class="col">
                   {% if usr.schedule_feed_family_enabled %}
                   <div class="d-flex align-items-center">
-                     <p class="font-monospace border border-cake text-sm ms-auto my-auto me-3 p-2">
+                     <p class="font-monospace border border-cake ms-auto my-auto me-3 p-2">
                         <a href="{{ feed_family_url }}">{{ feed_family_url }}</a>
                      </p>
                   </div>
@@ -296,7 +296,7 @@
             <h5>API Token</h5>
          </div>
          <div class="card-body">
-            <p class="text-sm text-body-secondary">
+            <p class="text-body-secondary">
                A personal token for the <code>/api/v1/</code> REST API. It authenticates
                as you and inherits exactly your permissions &mdash; it can never see or do
                more than you can in the app. Send it as the header
@@ -309,7 +309,7 @@
                   <p class="my-auto">Your token</p>
                </div>
                <div class="col">
-                  <p class="font-monospace border border-cake text-sm my-auto p-2 text-break">
+                  <p class="font-monospace border border-cake my-auto p-2 text-break">
                      {{ api_token.key }}
                   </p>
                   <span class="fs-10 text-body-tertiary">Created {{ api_token.created }}</span>
@@ -338,7 +338,7 @@
             <h5>Connected Apps</h5>
          </div>
          <div class="card-body">
-            <p class="text-sm text-body-secondary">
+            <p class="text-body-secondary">
                Apps you've signed in to with your CHAOTICA account. Each acts as you, with
                your permissions. Disconnecting one ends its access immediately.
             </p>

@@ -3,7 +3,7 @@
         <form method="post" action="{% url 'phase_update_workflow' phase.job.slug phase.slug new_state %}" class="js-workflow-phase-form">
             {% csrf_token %}            
             <div class="modal-header {% if not can_proceed %}bg-danger{% endif %}">
-                <h6 class="modal-title {% if not can_proceed %}text-white{% endif %} font-weight-normal" 
+                <h6 class="modal-title {% if not can_proceed %}text-white{% endif %}" 
                     id="modal-title-default">
                         Move to {{ new_state_str }}
                 </h6>

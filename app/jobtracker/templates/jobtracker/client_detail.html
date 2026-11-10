@@ -12,10 +12,10 @@
 {% endblock %}
 
 {% block breadcrumbItem %}
-  <li class="breadcrumb-item text-sm">
+  <li class="breadcrumb-item">
     <a class="opacity-50 text-body-emphasis" href="{% url 'client_list' %}">Clients</a>
   </li>
-  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">{{ client.name }}</li>
+  <li class="breadcrumb-item text-body-emphasis active" aria-current="page">{{ client.name }}</li>
 {% endblock %}
 
 {% block content_classes %}

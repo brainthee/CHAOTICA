@@ -2,38 +2,44 @@
 {# jobtracker/alarms.py (STALE_* settings); these are left out of the overdue  #}
 {# lists above so those only show genuinely late work.                         #}
 {% if stale_alarm_count %}
-<div class="d-flex flex-wrap align-items-center gap-2 mt-4 mb-3">
-  <div>
-    <h4 class="mb-0">Stale <span class="badge badge-phoenix badge-phoenix-secondary fs-10 align-middle">{{ stale_alarm_count }}</span></h4>
-    <p class="fs-9 text-body-tertiary mb-0">Work that has stopped moving. Nobody's going to make these "on time" &mdash; pick them back up or close them off. Late reminders aren't sent for stalled phases.</p>
-  </div>
-</div>
+<h3 class="mt-4 mb-3 lh-sm">Stale</h3>
+<h5 class="mb-3 text-body-tertiary fw-semibold">
+  Work that has stopped moving. Nobody's going to make these "on time" &mdash; pick them back up or close them off. Late reminders aren't sent for stalled phases.
+</h5>
 
 {% if alarms.stale_stalled %}
 <div class="card mb-3">
   <div class="card-header">
-    <h5 class="mb-0">Stalled phases <span class="badge badge-phoenix badge-phoenix-warning fs-10 ms-1">{{ alarms.stale_stalled|length }}</span></h5>
-    <p class="fs-9 text-body-tertiary mb-0">Scheduled-to-In-Progress phases with no status change in {{ config.STALE_PHASE_DAYS }} days and nothing booked since then. Move them on (e.g. to QA), postpone or cancel them.</p>
+    <h5 class="mb-0 text-warning-emphasis">
+      <span class="fas fa-hourglass-half me-2"></span>Stalled phases
+      <span class="badge bg-warning text-dark ms-2">{{ alarms.stale_stalled|length }}</span>
+    </h5>
+    <p class="mb-0 mt-1 text-body-tertiary">Scheduled-to-In-Progress phases with no status change in {{ config.STALE_PHASE_DAYS }} days and nothing booked since then. Move them on (e.g. to QA), postpone or cancel them.</p>
   </div>
-  <div class="card-body">
-    <table class="table table-sm datatable align-middle mb-0 fs-9">
+  <div class="p-3 bg-body-emphasis">
+    <table class="table table-responsive table-sm datatable mb-0 align-middle fs-9">
       <caption class="visually-hidden">Stalled phases</caption>
       <thead>
         <tr class="text-body-secondary">
-          <th class="ps-3">ID</th><th>Phase</th><th>Client</th><th>Status</th>
-          <th>Status since</th><th>Last booking</th><th class="pe-3">Lead</th>
+          <th>ID</th>
+          <th class="ps-2">Phase</th>
+          <th class="ps-2">Client</th>
+          <th class="ps-2">Status</th>
+          <th class="ps-2">Status since</th>
+          <th class="ps-2">Last booking</th>
+          <th class="ps-2">Lead</th>
         </tr>
       </thead>
       <tbody>
         {% for phase in alarms.stale_stalled %}
         <tr>
-          <td class="ps-3"><a href="{{ phase.get_absolute_url }}">{{ phase.phase_id }}</a></td>
+          <td><a href="{{ phase.get_absolute_url }}">{{ phase.phase_id }}</a></td>
           <td><a href="{{ phase.get_absolute_url }}">{{ phase.title }}</a></td>
           <td><a href="{{ phase.job.client.get_absolute_url }}">{{ phase.job.client }}</a></td>
           <td>{% include 'partials/phase/status_badge.html' with badge_size='sm' %}</td>
           <td class="text-nowrap" data-order="{{ phase.status_changed_date|date:'c' }}">{{ phase.status_changed_date|date:'j M Y' }}</td>
           <td class="text-nowrap" data-order="{{ phase.last_booking|date:'c' }}">{% if phase.last_booking %}{{ phase.last_booking|date:'j M Y' }}{% else %}<span class="text-body-tertiary">Never booked</span>{% endif %}</td>
-          <td class="pe-3">{% if phase.project_lead %}{% include 'partials/users/user_link.html' with user_profile=phase.project_lead %}{% else %}<span class="text-body-tertiary">&mdash;</span>{% endif %}</td>
+          <td>{% if phase.project_lead %}{% include 'partials/users/user_link.html' with user_profile=phase.project_lead %}{% else %}<span class="text-body-tertiary">&mdash;</span>{% endif %}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -45,25 +51,32 @@
 {% if alarms.stale_no_live_phases %}
 <div class="card mb-3">
   <div class="card-header">
-    <h5 class="mb-0">Jobs with no live phases <span class="badge badge-phoenix badge-phoenix-warning fs-10 ms-1">{{ alarms.stale_no_live_phases|length }}</span></h5>
-    <p class="fs-9 text-body-tertiary mb-0">Every phase is finished but the job can't complete &mdash; usually because they were all cancelled and nothing was delivered. Close the job (Lost before it's In Progress, otherwise Delete) or add the missing work.</p>
+    <h5 class="mb-0 text-warning-emphasis">
+      <span class="fas fa-ban me-2"></span>Jobs with no live phases
+      <span class="badge bg-warning text-dark ms-2">{{ alarms.stale_no_live_phases|length }}</span>
+    </h5>
+    <p class="mb-0 mt-1 text-body-tertiary">Every phase is finished but the job can't complete &mdash; usually because they were all cancelled and nothing was delivered. Close the job (Lost before it's In Progress, otherwise Delete) or add the missing work.</p>
   </div>
-  <div class="card-body">
-    <table class="table table-sm datatable align-middle mb-0 fs-9">
+  <div class="p-3 bg-body-emphasis">
+    <table class="table table-responsive table-sm datatable mb-0 align-middle fs-9">
       <caption class="visually-hidden">Jobs with no live phases</caption>
       <thead>
         <tr class="text-body-secondary">
-          <th class="ps-3">ID</th><th>Job</th><th>Client</th><th>Unit</th><th class="pe-3">Status</th>
+          <th>ID</th>
+          <th class="ps-2">Job</th>
+          <th class="ps-2">Client</th>
+          <th class="ps-2">Unit</th>
+          <th class="ps-2">Status</th>
         </tr>
       </thead>
       <tbody>
         {% for job in alarms.stale_no_live_phases %}
         <tr>
-          <td class="ps-3"><a href="{{ job.get_absolute_url }}">{{ job.id }}</a></td>
+          <td><a href="{{ job.get_absolute_url }}">{{ job.id }}</a></td>
           <td><a href="{{ job.get_absolute_url }}">{{ job.title }}</a></td>
           <td><a href="{{ job.client.get_absolute_url }}">{{ job.client }}</a></td>
           <td>{{ job.unit }}</td>
-          <td class="pe-3"><span class="badge badge-phoenix badge-phoenix-{{ job.status_bs_colour }}">{{ job.get_status_display }}</span></td>
+          <td><span class="badge badge-phoenix badge-phoenix-{{ job.status_bs_colour }}">{{ job.get_status_display }}</span></td>
         </tr>
         {% endfor %}
       </tbody>
@@ -75,25 +88,32 @@
 {% if alarms.stale_unbooked %}
 <div class="card mb-3">
   <div class="card-header">
-    <h5 class="mb-0">Never booked <span class="badge badge-phoenix badge-phoenix-secondary fs-10 ms-1">{{ alarms.stale_unbooked|length }}</span></h5>
-    <p class="fs-9 text-body-tertiary mb-0">Pending Scheduling phases whose wanted delivery date passed over {{ config.STALE_PHASE_DAYS }} days ago with nothing booked. Re-date, postpone or cancel them.</p>
+    <h5 class="mb-0 text-secondary-emphasis">
+      <span class="fas fa-calendar-times me-2"></span>Never booked
+      <span class="badge bg-secondary ms-2">{{ alarms.stale_unbooked|length }}</span>
+    </h5>
+    <p class="mb-0 mt-1 text-body-tertiary">Pending Scheduling phases whose wanted delivery date passed over {{ config.STALE_PHASE_DAYS }} days ago with nothing booked. Re-date, postpone or cancel them.</p>
   </div>
-  <div class="card-body">
-    <table class="table table-sm datatable align-middle mb-0 fs-9">
+  <div class="p-3 bg-body-emphasis">
+    <table class="table table-responsive table-sm datatable mb-0 align-middle fs-9">
       <caption class="visually-hidden">Never-booked phases</caption>
       <thead>
         <tr class="text-body-secondary">
-          <th class="ps-3">ID</th><th>Phase</th><th>Client</th><th>Wanted delivery</th><th class="pe-3">Lead</th>
+          <th>ID</th>
+          <th class="ps-2">Phase</th>
+          <th class="ps-2">Client</th>
+          <th class="ps-2">Wanted delivery</th>
+          <th class="ps-2">Lead</th>
         </tr>
       </thead>
       <tbody>
         {% for phase in alarms.stale_unbooked %}
         <tr>
-          <td class="ps-3"><a href="{{ phase.get_absolute_url }}">{{ phase.phase_id }}</a></td>
+          <td><a href="{{ phase.get_absolute_url }}">{{ phase.phase_id }}</a></td>
           <td><a href="{{ phase.get_absolute_url }}">{{ phase.title }}</a></td>
           <td><a href="{{ phase.job.client.get_absolute_url }}">{{ phase.job.client }}</a></td>
           <td class="text-nowrap" data-order="{{ phase.stale_wanted_date|date:'c' }}">{{ phase.stale_wanted_date|date:'j M Y' }}</td>
-          <td class="pe-3">{% if phase.project_lead %}{% include 'partials/users/user_link.html' with user_profile=phase.project_lead %}{% else %}<span class="text-body-tertiary">&mdash;</span>{% endif %}</td>
+          <td>{% if phase.project_lead %}{% include 'partials/users/user_link.html' with user_profile=phase.project_lead %}{% else %}<span class="text-body-tertiary">&mdash;</span>{% endif %}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -105,25 +125,32 @@
 {% if alarms.stale_postponed %}
 <div class="card mb-3">
   <div class="card-header">
-    <h5 class="mb-0">Long postponed <span class="badge badge-phoenix badge-phoenix-secondary fs-10 ms-1">{{ alarms.stale_postponed|length }}</span></h5>
-    <p class="fs-9 text-body-tertiary mb-0">Postponed for over {{ config.STALE_POSTPONED_DAYS }} days. A postponed phase stops its job completing &mdash; bring it back to Pending Scheduling or cancel it.</p>
+    <h5 class="mb-0 text-secondary-emphasis">
+      <span class="fas fa-pause-circle me-2"></span>Long postponed
+      <span class="badge bg-secondary ms-2">{{ alarms.stale_postponed|length }}</span>
+    </h5>
+    <p class="mb-0 mt-1 text-body-tertiary">Postponed for over {{ config.STALE_POSTPONED_DAYS }} days. A postponed phase stops its job completing &mdash; bring it back to Pending Scheduling or cancel it.</p>
   </div>
-  <div class="card-body">
-    <table class="table table-sm datatable align-middle mb-0 fs-9">
+  <div class="p-3 bg-body-emphasis">
+    <table class="table table-responsive table-sm datatable mb-0 align-middle fs-9">
       <caption class="visually-hidden">Long-postponed phases</caption>
       <thead>
         <tr class="text-body-secondary">
-          <th class="ps-3">ID</th><th>Phase</th><th>Client</th><th>Postponed since</th><th class="pe-3">Lead</th>
+          <th>ID</th>
+          <th class="ps-2">Phase</th>
+          <th class="ps-2">Client</th>
+          <th class="ps-2">Postponed since</th>
+          <th class="ps-2">Lead</th>
         </tr>
       </thead>
       <tbody>
         {% for phase in alarms.stale_postponed %}
         <tr>
-          <td class="ps-3"><a href="{{ phase.get_absolute_url }}">{{ phase.phase_id }}</a></td>
+          <td><a href="{{ phase.get_absolute_url }}">{{ phase.phase_id }}</a></td>
           <td><a href="{{ phase.get_absolute_url }}">{{ phase.title }}</a></td>
           <td><a href="{{ phase.job.client.get_absolute_url }}">{{ phase.job.client }}</a></td>
           <td class="text-nowrap" data-order="{{ phase.status_changed_date|date:'c' }}">{{ phase.status_changed_date|date:'j M Y' }}</td>
-          <td class="pe-3">{% if phase.project_lead %}{% include 'partials/users/user_link.html' with user_profile=phase.project_lead %}{% else %}<span class="text-body-tertiary">&mdash;</span>{% endif %}</td>
+          <td>{% if phase.project_lead %}{% include 'partials/users/user_link.html' with user_profile=phase.project_lead %}{% else %}<span class="text-body-tertiary">&mdash;</span>{% endif %}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -135,26 +162,34 @@
 {% if alarms.stale_dormant_jobs %}
 <div class="card mb-3">
   <div class="card-header">
-    <h5 class="mb-0">Dormant jobs <span class="badge badge-phoenix badge-phoenix-secondary fs-10 ms-1">{{ alarms.stale_dormant_jobs|length }}</span></h5>
-    <p class="fs-9 text-body-tertiary mb-0">Still in Draft, scoping or sign-off with no status change for {{ config.STALE_JOB_DAYS }} days. Move them on or close them as Lost.</p>
+    <h5 class="mb-0 text-secondary-emphasis">
+      <span class="fas fa-moon me-2"></span>Dormant jobs
+      <span class="badge bg-secondary ms-2">{{ alarms.stale_dormant_jobs|length }}</span>
+    </h5>
+    <p class="mb-0 mt-1 text-body-tertiary">Still in Draft, scoping or sign-off with no status change for {{ config.STALE_JOB_DAYS }} days. Move them on or close them as Lost.</p>
   </div>
-  <div class="card-body">
-    <table class="table table-sm datatable align-middle mb-0 fs-9">
+  <div class="p-3 bg-body-emphasis">
+    <table class="table table-responsive table-sm datatable mb-0 align-middle fs-9">
       <caption class="visually-hidden">Dormant jobs</caption>
       <thead>
         <tr class="text-body-secondary">
-          <th class="ps-3">ID</th><th>Job</th><th>Client</th><th>Status</th><th>Status since</th><th class="pe-3">Account manager</th>
+          <th>ID</th>
+          <th class="ps-2">Job</th>
+          <th class="ps-2">Client</th>
+          <th class="ps-2">Status</th>
+          <th class="ps-2">Status since</th>
+          <th class="ps-2">Account manager</th>
         </tr>
       </thead>
       <tbody>
         {% for job in alarms.stale_dormant_jobs %}
         <tr>
-          <td class="ps-3"><a href="{{ job.get_absolute_url }}">{{ job.id }}</a></td>
+          <td><a href="{{ job.get_absolute_url }}">{{ job.id }}</a></td>
           <td><a href="{{ job.get_absolute_url }}">{{ job.title }}</a></td>
           <td><a href="{{ job.client.get_absolute_url }}">{{ job.client }}</a></td>
           <td><span class="badge badge-phoenix badge-phoenix-{{ job.status_bs_colour }}">{{ job.get_status_display }}</span></td>
           <td class="text-nowrap" data-order="{{ job.status_changed_date|date:'c' }}">{{ job.status_changed_date|date:'j M Y' }}</td>
-          <td class="pe-3">{% if job.account_manager %}{% include 'partials/users/user_link.html' with user_profile=job.account_manager %}{% else %}<span class="text-body-tertiary">&mdash;</span>{% endif %}</td>
+          <td>{% if job.account_manager %}{% include 'partials/users/user_link.html' with user_profile=job.account_manager %}{% else %}<span class="text-body-tertiary">&mdash;</span>{% endif %}</td>
         </tr>
         {% endfor %}
       </tbody>

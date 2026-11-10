@@ -13,7 +13,7 @@
                 <h2 class="mb-2 lh-sm">QA Review: {{ phase.phase_id }}</h2>
                 <p class="mb-0">{{ phase }}</p>
             </div>
-            <div class="col-md-4 text-right">
+            <div class="col-md-4 text-end">
                 {% include 'partials/review_status_badge.html' %}
                 <p class="mt-2 mb-0">Started: {{ review.started_at|date:"Y-m-d H:i" }}</p>
             </div>

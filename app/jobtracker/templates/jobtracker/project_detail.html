@@ -12,10 +12,10 @@
 {% endblock %}
 
 {% block breadcrumbItem %}
-  <li class="breadcrumb-item text-sm">
+  <li class="breadcrumb-item">
     <a class="opacity-50 text-body-emphasis" href="{% url 'project_list' %}">Projects</a>
   </li>
-  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">{{ project }}</li>
+  <li class="breadcrumb-item text-body-emphasis active" aria-current="page">{{ project }}</li>
 {% endblock %}
 
 {% block content_classes %}
@@ -77,7 +77,7 @@
                 <thead>
                   <tr>
                     <th class="w-50" scope="col"></th>
-                    <th class="" scope="col"></th>
+                    <th scope="col"></th>
                     <th class="w-50" scope="col"></th>
                   </tr>
                 </thead>
@@ -155,7 +155,7 @@
                 <thead>
                   <tr>
                     <th class="w-25" scope="col"></th>
-                    <th class="" scope="col"></th>
+                    <th scope="col"></th>
                     <th class="w-75" scope="col"></th>
                   </tr>
                 </thead>

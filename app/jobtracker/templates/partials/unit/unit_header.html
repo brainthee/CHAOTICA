@@ -13,7 +13,7 @@
             <span class="fa-solid fa-user-tie text-body-tertiary"></span>
             {% for lead in organisationalunit.leads.all %}
               <a href="{{ lead.get_absolute_url }}" class="d-inline-flex align-items-center text-decoration-none bg-body-highlight rounded-pill py-1 pe-2 ps-1 border border-translucent" title="{{ lead.get_full_name }}">
-                <span class="avatar avatar-xs me-1">
+                <span class="avatar avatar-s me-1">
                   <img class="rounded-circle" src="{{ lead.get_avatar_url }}" alt="" />
                 </span>
                 <span class="fs-10 fw-semibold text-body-emphasis">{{ lead.get_full_name }}</span>

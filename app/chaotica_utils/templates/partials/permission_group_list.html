@@ -10,7 +10,7 @@ Renders a grouped permission list. Expects `grouped` = {group_key: [{"name", "co
           {% for perm in perms %}
             <li class="mb-1">
               <span class="fas fa-check text-success me-1"></span>{{ perm.name }}
-              <span class="d-block text-body-tertiary fs-10 ms-3"><code>{{ perm.codename }}</code></span>
+              <span class="d-block ms-3"><code class="fs-10">{{ perm.codename }}</code></span>
             </li>
           {% endfor %}
         </ul>

@@ -67,9 +67,9 @@
         <div class="table-responsive">
           <form id="exportForm" method="post" action="{% url 'export_notification_rules' %}">
             {% csrf_token %}
-            <table class="table table-hover mb-0">
+            <table class="table table-hover mb-0 table-sm align-middle fs-9">
               <thead class="table-light">
-                <tr>
+                <tr class="text-body-secondary">
                   <th width="30px">
                     <input type="checkbox" id="selectAll" class="form-check-input" />
                   </th>

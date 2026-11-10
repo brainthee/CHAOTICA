@@ -1,12 +1,12 @@
-<table class="table align-items-center mb-0">
+<table class="table mb-0 table-sm align-middle fs-9">
     <caption>Contact List</caption>
     <thead>
-        <tr>
-            <th class="px-3 text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Name</th>
-            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Phone</th>
-            <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Email</th>
+        <tr class="text-body-secondary">
+            <th class="px-3">Name</th>
+            <th class="ps-2">Phone</th>
+            <th class="text-center">Email</th>
             {% if perms.jobtracker.delete_contact %}
-            <th class="text-end text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 pe-3"></th>
+            <th class="text-end pe-3"></th>
             {% endif %}
         </tr>
     </thead>
@@ -16,16 +16,16 @@
         <td class="px-3">
             <div class="d-flex px-2 py-1">
                 <div class="d-flex flex-column justify-content-center">
-                    <h6 class="mb-0 text-xs">{{ contact }}</h6>
-                    <p class="text-xs text-secondary mb-0">{{ contact.jobtitle }}</p>
+                    <h6 class="mb-0">{{ contact }}</h6>
+                    <p class="text-secondary mb-0">{{ contact.jobtitle }}</p>
                 </div>
             </div>
         </td>
         <td>
-            <p class="text-xs text-secondary mb-0">{{ contact.phone }}</p>
+            <p class="text-secondary mb-0">{{ contact.phone }}</p>
         </td>
-        <td class="align-middle text-center text-sm">
-            <p class="text-xs text-secondary mb-0">{{ contact.email }}</p>
+        <td class="align-middle text-center">
+            <p class="text-secondary mb-0">{{ contact.email }}</p>
         </td>
         {% if perms.jobtracker.delete_contact %}
         <td class="align-middle text-end pe-3">
@@ -36,7 +36,7 @@
     {% empty %}
     <tr>
         <td colspan="4">
-            <p class="px-3 text-xs text-secondary mb-0">No contacts found</p>  
+            <p class="px-3 text-secondary mb-0">No contacts found</p>  
         </td>
     </tr>
     {% endfor %}

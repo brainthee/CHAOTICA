@@ -7,9 +7,9 @@
 
 
 {% block breadcrumbItem %}
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{% url 'job_list' %}">Jobs</a></li>
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{{ job.client.get_absolute_url }}">{{ job.client }}</a></li>
-<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">{{ job.id }}:{{ job.title }}</li>
+<li class="breadcrumb-item"><a class="opacity-50 text-body-emphasis" href="{% url 'job_list' %}">Jobs</a></li>
+<li class="breadcrumb-item"><a class="opacity-50 text-body-emphasis" href="{{ job.client.get_absolute_url }}">{{ job.client }}</a></li>
+<li class="breadcrumb-item text-body-emphasis active" aria-current="page">{{ job.id }}:{{ job.title }}</li>
 {% endblock breadcrumbItem %}
 
 {% block content_classes %}pt-15 px-0 {% endblock content_classes %}

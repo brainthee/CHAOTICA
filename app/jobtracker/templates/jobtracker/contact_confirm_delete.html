@@ -6,12 +6,12 @@
 
 {% block breadcrumbItem %}
   {% if contact.company %}
-    <li class="breadcrumb-item text-sm">
+    <li class="breadcrumb-item">
       <a class="opacity-50 text-body-emphasis" href="{% url 'client_detail' contact.company.slug %}">{{ contact.company }}</a>
     </li>
   {% endif %}
-  <li class="breadcrumb-item text-sm opacity-50 text-body-emphasis">{{ contact }}</li>
-  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Delete</li>
+  <li class="breadcrumb-item opacity-50 text-body-emphasis">{{ contact }}</li>
+  <li class="breadcrumb-item text-body-emphasis active" aria-current="page">Delete</li>
 {% endblock %}
 
 {% block content %}

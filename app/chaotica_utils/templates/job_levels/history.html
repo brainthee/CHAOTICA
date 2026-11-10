@@ -13,7 +13,7 @@
 {% block breadcrumbItem %}
   <li class="breadcrumb-item">Operations</li>
   <li class="breadcrumb-item"><a href="{% url 'job_level_list' %}">Job Levels</a></li>
-  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">History</li>
+  <li class="breadcrumb-item text-body-emphasis active" aria-current="page">History</li>
 {% endblock %}
 
 {% block content %}
@@ -70,9 +70,9 @@
 
           {% if page_obj.object_list %}
             <div class="table-responsive">
-              <table class="table table-hover">
+              <table class="table table-hover table-sm align-middle fs-9">
                 <thead>
-                  <tr>
+                  <tr class="text-body-secondary">
                     <th>User</th>
                     <th>Job Level</th>
                     <th>Assigned Date</th>

@@ -12,12 +12,12 @@
 {% endblock %}
 
 {% block breadcrumbItem %}
-  <li class="breadcrumb-item text-sm">
+  <li class="breadcrumb-item">
     <a class="opacity-50 text-body-emphasis" href="{% url 'skill_list' %}">Skills</a>
   </li>
-  <li class="breadcrumb-item text-sm opacity-50 text-body-emphasis">{{ skill.category }}</li>
-  <li class="breadcrumb-item text-sm opacity-50 text-body-emphasis" aria-current="page">{{ skill.name }}</li>
-  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Delete Skill</li>
+  <li class="breadcrumb-item opacity-50 text-body-emphasis">{{ skill.category }}</li>
+  <li class="breadcrumb-item opacity-50 text-body-emphasis" aria-current="page">{{ skill.name }}</li>
+  <li class="breadcrumb-item text-body-emphasis active" aria-current="page">Delete Skill</li>
 {% endblock %}
 
 {% block content %}

@@ -15,7 +15,7 @@
   <li class="breadcrumb-item">Operations</li>
   <li class="breadcrumb-item"><a href="{% url 'organisationalunit_list' %}">Units</a></li>
   <li class="breadcrumb-item"><a href="{% url 'organisationalunit_detail' orgUnit.slug %}">{{ orgUnit.name }}</a></li>
-  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Import Members</li>
+  <li class="breadcrumb-item text-body-emphasis active" aria-current="page">Import Members</li>
 {% endblock %}
 
 {% block content %}
@@ -40,9 +40,9 @@
                 &ndash; fix them and re-upload just those rows.
               </p>
               <div class="table-responsive">
-                <table class="table table-sm mb-0">
+                <table class="table table-sm mb-0 align-middle fs-9">
                   <thead>
-                    <tr>
+                    <tr class="text-body-secondary">
                       <th scope="col">Row</th>
                       <th scope="col">Email</th>
                       <th scope="col">Reason</th>

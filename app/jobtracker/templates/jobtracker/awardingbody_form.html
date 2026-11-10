@@ -8,8 +8,8 @@
 
 
 {% block breadcrumbItem %}
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{% url 'qualification_list' %}">Qualifications</a></li>
-<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">{% if form.instance.pk %}Edit{% else %}New{% endif %} Awarding Body</li>
+<li class="breadcrumb-item"><a class="opacity-50 text-body-emphasis" href="{% url 'qualification_list' %}">Qualifications</a></li>
+<li class="breadcrumb-item text-body-emphasis active" aria-current="page">{% if form.instance.pk %}Edit{% else %}New{% endif %} Awarding Body</li>
 {% endblock breadcrumbItem %}
 
 {% block content %}

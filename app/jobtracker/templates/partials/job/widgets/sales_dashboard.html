@@ -51,10 +51,10 @@
   <!-- Margin vs target gauge -->
   <div class="col-12 col-xl-5">
     <div class="card h-100">
-      <div class="card-header pb-0"><h5 class="mb-0 fs-9">Margin vs target</h5></div>
+      <div class="card-header"><h4 class="mb-0">Margin vs target</h4></div>
       <div class="card-body">
         <div id="sales-margin-gauge" style="height:230px;"></div>
-        <p class="text-center text-body-tertiary fs-10 mb-0">
+        <p class="text-center text-body-tertiary fs-9 mb-0">
           Unit target: <strong>{{ target_profit|floatformat:1 }}%</strong>
           · This job:
           <strong class="{% if profit < 0 %}text-danger{% elif meets_target %}text-success{% else %}text-warning-emphasis{% endif %}">{{ profit_perc|floatformat:1 }}%</strong>
@@ -66,7 +66,7 @@
   <!-- Scoped effort breakdown -->
   <div class="col-12 col-xl-7">
     <div class="card h-100">
-      <div class="card-header pb-0"><h5 class="mb-0 fs-9">Scoped effort (hours)</h5></div>
+      <div class="card-header"><h4 class="mb-0">Scoped effort (hours)</h4></div>
       <div class="card-body">
         {% if effort %}
           <div id="sales-effort-bar" style="height:230px;"></div>
@@ -83,12 +83,12 @@
   <div class="col-12">
     <div class="card h-100">
       <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0 fs-9">Support-team cut</h5>
-        <span class="text-body-tertiary fs-10">{{ support_premium|floatformat:"-2" }}% of revenue{% if can_view_loaded_costs %} = £{{ support_pool|floatformat:0|intcomma }}{% endif %}</span>
+        <h4 class="mb-0">Support-team cut</h4>
+        <span class="text-body-tertiary fs-9">{{ support_premium|floatformat:"-2" }}% of revenue{% if can_view_loaded_costs %} = £{{ support_pool|floatformat:0|intcomma }}{% endif %}</span>
       </div>
       <div class="card-body p-0">
         <div class="table-responsive">
-          <table class="table table-sm fs-10 mb-0">
+          <table class="table table-sm fs-9 mb-0">
             <thead>
               <tr>
                 <th class="ps-3">Person</th>
@@ -138,7 +138,7 @@
       var chart = echarts.init(el);
       chart.setOption({
         series: [{
-          type: 'gauge', min: 0, max: max, radius: '100%', center: ['50%', '62%'],
+          type: 'gauge', min: 0, max: max, splitNumber: 5, radius: '100%', center: ['50%', '62%'],
           startAngle: 200, endAngle: -20,
           progress: { show: false },
           axisLine: { lineStyle: { width: 14, color: [
@@ -147,8 +147,8 @@
           pointer: { width: 5, length: '62%', itemStyle: { color: valColour } },
           axisTick: { show: false },
           splitLine: { length: 10, lineStyle: { color: muted, width: 1 } },
-          axisLabel: { color: muted, fontSize: 9, distance: 12,
-                       formatter: function (v) { return v + '%'; } },
+          axisLabel: { color: muted, fontSize: 12, distance: 12,
+                       formatter: function (v) { return Math.round(v) + '%'; } },
           anchor: { show: true, size: 8, itemStyle: { color: valColour } },
           detail: { valueAnimation: true, fontSize: 22, fontWeight: 'bold',
                     offsetCenter: [0, '38%'], color: valColour,
@@ -170,15 +170,15 @@
         grid: { left: 90, right: 30, top: 10, bottom: 20 },
         tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' },
                    valueFormatter: function (v) { return v + 'h'; } },
-        xAxis: { type: 'value', axisLabel: { color: muted, fontSize: 9 },
+        xAxis: { type: 'value', axisLabel: { color: muted, fontSize: 12 },
                  splitLine: { lineStyle: { color: muted, opacity: 0.2 } } },
         yAxis: { type: 'category', inverse: true, data: labels,
-                 axisLabel: { color: ink, fontSize: 10 },
+                 axisLabel: { color: ink, fontSize: 12 },
                  axisTick: { show: false }, axisLine: { show: false } },
         series: [{
           type: 'bar', data: vals, barWidth: '58%',
           itemStyle: { color: '#3874ff', borderRadius: [0, 4, 4, 0] },
-          label: { show: true, position: 'right', color: muted, fontSize: 9,
+          label: { show: true, position: 'right', color: muted, fontSize: 12,
                    formatter: '{c}h' }
         }]
       });

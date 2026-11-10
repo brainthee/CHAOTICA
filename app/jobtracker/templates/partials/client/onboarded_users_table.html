@@ -1,32 +1,32 @@
 {% load humanize %}
-<table class="table align-items-center mb-0">
+<table class="table mb-0 table-sm align-middle fs-9">
   <caption>Onboarded Users List</caption>
   <thead>
-    <tr>
-      <th class="text-uppercase px-3 text-secondary text-xxs font-weight-bolder opacity-7">User</th>
-      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Onboarded</th>
-      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Requirements Completed</th>
-      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Offboarded</th>
-      <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Status</th>
-      <th class=""></th>
+    <tr class="text-body-secondary">
+      <th class="px-3">User</th>
+      <th class="text-center">Onboarded</th>
+      <th class="text-center">Requirements Completed</th>
+      <th class="text-center">Offboarded</th>
+      <th class="text-center">Status</th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
     {% for onboarding in client.onboarded_users.all %}
       <tr>
-        <td class="align-middle text-start px-3 text-sm">
+        <td class="align-middle text-start px-3">
           {% include 'partials/users/user_table_display.html' with u=onboarding.user %}
         </td>
-        <td class="align-middle text-center text-sm">
-          <p class="text-xs text-secondary mb-0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ onboarding.onboarded }}">
+        <td class="align-middle text-center">
+          <p class="text-secondary mb-0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ onboarding.onboarded }}">
             {% if onboarding.onboarded %}
               {{ onboarding.onboarded|naturalday }}
             {% endif %}
           </p>
         </td>
-        <td class="align-middle text-center text-sm">
+        <td class="align-middle text-center">
           {% if onboarding.client.onboarding_reoccurring_renewal %}
-            <p class="text-xs text-secondary mb-0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ onboarding.reqs_completed }}">
+            <p class="text-secondary mb-0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ onboarding.reqs_completed }}">
               {% if onboarding.reqs_completed %}
                 {{ onboarding.reqs_completed|naturalday }}
               {% endif %}
@@ -35,21 +35,21 @@
             <span class="badge badge-phoenix badge-tag me-2 mb-1">N/A</span>
           {% endif %}
         </td>
-        <td class="align-middle text-center text-sm">
-          <p class="text-xs text-secondary mb-0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ onboarding.offboarded }}">
+        <td class="align-middle text-center">
+          <p class="text-secondary mb-0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ onboarding.offboarded }}">
             {% if onboarding.offboarded %}
               {{ onboarding.offboarded|naturalday }}
             {% endif %}
           </p>
         </td>
-        <td class="align-middle text-center text-sm">
+        <td class="align-middle text-center">
           {% include 'partials/client/onboarding_status_badge.html' with onboarding=onboarding %}
           {% if onboarding.is_due %}
             <br />
             <span class="badge badge-phoenix badge-phoenix-warning me-2 mb-1">Due in {{ onboarding.days_till_renewal }} days</span>
           {% endif %}
         </td>
-        <td class="align-middle text-center text-sm">
+        <td class="align-middle text-center">
           <div class="btn-reveal-trigger position-static">
             <button class="btn btn-sm dropdown-toggle dropdown-caret-none transition-none btn-reveal fs-10" type="button" data-bs-toggle="dropdown" data-boundary="window" aria-haspopup="true" aria-expanded="false" data-bs-reference="parent"><span class="fas fa-ellipsis-h fs-10"></span></button>
 

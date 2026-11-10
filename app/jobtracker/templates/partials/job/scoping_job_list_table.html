@@ -1,18 +1,18 @@
-  <table class="table table-responsive table-sm datatable align-items-center mb-0 mw-100"
+  <table class="table table-responsive table-sm datatable mb-0 mw-100 align-middle fs-9"
   id="jobTableAjax"
   >
     <caption>Jobs</caption>
     <thead>
-      <tr>
-        <th class="text-uppercase text-secondary text-xxs font-weight-bolder" scope="col" data-data="id" data-name="id">ID</th>
-        <th class="text-uppercase text-wrap text-break text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="title_link" style="word-wrap: break-word;" data-name="title">Name</th>
-        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="unit_link" data-name="unit.name">Unit</th>
-        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="client_link" data-name="client.name">Client</th>
-        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="scoped_by" data-name="scoped_by">Scoped</th>
-        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="scoped_signed_off_by" data-name="scoped_signed_off_by">Signed Off</th>
-        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="start_date" data-searchable=false data-orderable=false>Start</th>
-        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="delivery_date" data-searchable=false data-orderable=false>End</th>
-        <th class="text-uppercase col-1 text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="status_display" data-name="status" style="width:10%;">Status</th>
+      <tr class="text-body-secondary">
+        <th scope="col" data-data="id" data-name="id">ID</th>
+        <th class="text-wrap text-break ps-2" scope="col" data-data="title_link" style="word-wrap: break-word;" data-name="title">Name</th>
+        <th class="ps-2" scope="col" data-data="unit_link" data-name="unit.name">Unit</th>
+        <th class="ps-2" scope="col" data-data="client_link" data-name="client.name">Client</th>
+        <th class="ps-2" scope="col" data-data="scoped_by" data-name="scoped_by">Scoped</th>
+        <th class="ps-2" scope="col" data-data="scoped_signed_off_by" data-name="scoped_signed_off_by">Signed Off</th>
+        <th class="ps-2" scope="col" data-data="start_date" data-searchable=false data-orderable=false>Start</th>
+        <th class="ps-2" scope="col" data-data="delivery_date" data-searchable=false data-orderable=false>End</th>
+        <th class="col-1 ps-2" scope="col" data-data="status_display" data-name="status" style="width:10%;">Status</th>
       </tr>
     </thead>
     {% if job_list %}

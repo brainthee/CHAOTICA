@@ -11,10 +11,10 @@
 {% endblock %}
 
 {% block breadcrumbItem %}
-  <li class="breadcrumb-item text-sm">
+  <li class="breadcrumb-item">
     <a class="opacity-50 text-body-emphasis" href="{% url 'service_list' %}">Services</a>
   </li>
-  <li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">{{ service.name }}</li>
+  <li class="breadcrumb-item text-body-emphasis active" aria-current="page">{{ service.name }}</li>
 {% endblock %}
 
 {% block content_classes %}
@@ -264,8 +264,9 @@
                                   {% for user in breakdown.specialists %}
                                     <li>
                                       <a class="dropdown-item d-flex align-items-center" href="{{ user.get_absolute_url }}">
-                                        <img class="avatar avatar-xs rounded-circle me-2"
-                                             src="{{ user.get_avatar }}" alt="{{ user.get_full_name }}">
+                                        <span class="avatar avatar-s me-2">
+                                          <img class="rounded-circle" src="{{ user.get_avatar_url }}" alt="{{ user.get_full_name }}">
+                                        </span>
                                         {{ user.get_full_name }}
                                       </a>
                                     </li>
@@ -295,8 +296,9 @@
                                   {% for user in breakdown.independent_only %}
                                     <li>
                                       <a class="dropdown-item d-flex align-items-center" href="{{ user.get_absolute_url }}">
-                                        <img class="avatar avatar-xs rounded-circle me-2"
-                                             src="{{ user.get_avatar }}" alt="{{ user.get_full_name }}">
+                                        <span class="avatar avatar-s me-2">
+                                          <img class="rounded-circle" src="{{ user.get_avatar_url }}" alt="{{ user.get_full_name }}">
+                                        </span>
                                         {{ user.get_full_name }}
                                       </a>
                                     </li>
@@ -326,8 +328,9 @@
                                   {% for user in breakdown.support_only %}
                                     <li>
                                       <a class="dropdown-item d-flex align-items-center" href="{{ user.get_absolute_url }}">
-                                        <img class="avatar avatar-xs rounded-circle me-2"
-                                             src="{{ user.get_avatar }}" alt="{{ user.get_full_name }}">
+                                        <span class="avatar avatar-s me-2">
+                                          <img class="rounded-circle" src="{{ user.get_avatar_url }}" alt="{{ user.get_full_name }}">
+                                        </span>
                                         {{ user.get_full_name }}
                                       </a>
                                     </li>
@@ -357,8 +360,9 @@
                                   {% for user in breakdown.missing_skills %}
                                     <li>
                                       <a class="dropdown-item d-flex align-items-center" href="{{ user.get_absolute_url }}">
-                                        <img class="avatar avatar-xs rounded-circle me-2"
-                                             src="{{ user.get_avatar }}" alt="{{ user.get_full_name }}">
+                                        <span class="avatar avatar-s me-2">
+                                          <img class="rounded-circle" src="{{ user.get_avatar_url }}" alt="{{ user.get_full_name }}">
+                                        </span>
                                         {{ user.get_full_name }}
                                       </a>
                                     </li>
@@ -386,7 +390,7 @@
                             <div class="card border-info">
                               <div class="card-body">
                                 <div class="d-flex align-items-center justify-content-between mb-2">
-                                  <h6 class="mb-0">{{ skill.name }}</h6>
+                                  <h5 class="mb-0">{{ skill.name }}</h5>
                                   <span class="badge bg-info">{{ analysis.coverage_percentage }}%</span>
                                 </div>
                                 <div class="progress mb-2" style="height: 6px;">
@@ -509,7 +513,7 @@
             {% with coverage=service.get_skills_coverage_analysis %}
             <div class="row mb-4">
               <div class="col-12">
-                <h5 class="mb-3">Skills Coverage Analysis</h5>
+                <h4 class="mb-3">Skills Coverage Analysis</h4>
 
                 <!-- Coverage Summary -->
                 <div class="row g-3 mb-4">
@@ -558,13 +562,13 @@
                 <!-- Required Skills Analysis -->
                 <div class="row mb-4">
                   <div class="col-12">
-                    <h6 class="mb-3">Required Skills Analysis</h6>
+                    <h5 class="mb-3">Required Skills Analysis</h5>
                     <div class="row g-3">
                       {% for skill, analysis in coverage.required_skills_analysis.items %}
                         <div class="col-md-6">
                           <div class="card {% if analysis.critical %}border-danger{% elif analysis.coverage_percentage < 40 %}border-warning{% else %}border-success{% endif %}">
                             <div class="card-header d-flex justify-content-between align-items-center">
-                              <h6 class="mb-0">{{ skill.name }}</h6>
+                              <h5 class="mb-0">{{ skill.name }}</h5>
                               <div>
                                 {% if analysis.critical %}
                                   <span class="badge bg-danger">Critical</span>
@@ -632,7 +636,7 @@
                             <div class="card border-info">
                               <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
-                                  <h6 class="mb-0">{{ skill.name }}</h6>
+                                  <h5 class="mb-0">{{ skill.name }}</h5>
                                   <span class="badge bg-info">{{ analysis.coverage_percentage }}%</span>
                                 </div>
 
@@ -788,9 +792,9 @@
                         </div>
                         <div class="card-body">
                           <div class="table-responsive">
-                            <table class="table table-sm">
+                            <table class="table table-sm align-middle fs-9">
                               <thead>
-                                <tr>
+                                <tr class="text-body-secondary">
                                   <th>Client</th>
                                   <th>Phases</th>
                                   <th>On-Time Rate</th>
@@ -894,7 +898,7 @@
             <!-- Service Usage Analytics (phases on jobs you can see) -->
             <div class="row mb-4">
               <div class="col-12">
-                <h5 class="mb-3">Service Usage Overview</h5>
+                <h4 class="mb-3">Service Usage Overview</h4>
 
                 <!-- Key Metrics Cards -->
                 <div class="row g-3 mb-4">
@@ -970,7 +974,7 @@
                   <div class="col-md-6">
                     <div class="card">
                       <div class="card-header">
-                        <h6 class="mb-0">Top Clients</h6>
+                        <h5 class="mb-0">Top Clients</h5>
                       </div>
                       <div class="card-body">
                         {% for client in analytics.client_breakdown|slice:":5" %}
@@ -993,7 +997,7 @@
                   <div class="col-md-6">
                     <div class="card">
                       <div class="card-header">
-                        <h6 class="mb-0">Top Units</h6>
+                        <h5 class="mb-0">Top Units</h5>
                       </div>
                       <div class="card-body">
                         {% for unit in analytics.unit_breakdown|slice:":5" %}

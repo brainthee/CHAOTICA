@@ -9,12 +9,12 @@
 {% block content_classes %}pt-15 px-0 {% endblock content_classes %}
 
 {% block breadcrumbItem %}
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{% url 'client_list' %}">Clients</a></li>
-<li class="breadcrumb-item text-sm"><a class="opacity-50 text-body-emphasis" href="{{ frameworkagreement.client.get_absolute_url }}">{{ client }}</a></li>
-<li class="breadcrumb-item text-sm opacity-50 text-body-emphasis" aria-current="page">
+<li class="breadcrumb-item"><a class="opacity-50 text-body-emphasis" href="{% url 'client_list' %}">Clients</a></li>
+<li class="breadcrumb-item"><a class="opacity-50 text-body-emphasis" href="{{ frameworkagreement.client.get_absolute_url }}">{{ client }}</a></li>
+<li class="breadcrumb-item opacity-50 text-body-emphasis" aria-current="page">
   <a class="opacity-50 text-body-emphasis" href="{{ frameworkagreement.client.get_absolute_url }}#frameworks">Framework Agreements</a>
 </li>
-<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">{{ frameworkagreement.name }}</li>
+<li class="breadcrumb-item text-body-emphasis active" aria-current="page">{{ frameworkagreement.name }}</li>
 {% endblock breadcrumbItem %}
 
 {% block content %}
@@ -59,7 +59,7 @@
               <thead>
                 <tr>
                   <th class="w-25" scope="col"></th>
-                  <th class="" scope="col"></th>
+                  <th scope="col"></th>
                   <th class="w-75" scope="col"></th>
                 </tr>
               </thead>

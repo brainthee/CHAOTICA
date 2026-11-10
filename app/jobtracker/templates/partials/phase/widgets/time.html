@@ -2,7 +2,7 @@
 {% load static %}
 <div class="echart-doughnut-phase-time" style="min-height:320px"></div>
 
-   <table class="table align-items-center mb-0">
+   <table class="table mb-0">
     <caption>Scoped Time</caption>
       <tbody>
          {% for key,scopedHrs in phase.get_all_total_scoped_by_type.items %}
@@ -11,12 +11,12 @@
             <td>
                <div class="d-flex px-2 py-1">
                   <div class="d-flex flex-column justify-content-center">
-                     <h6 class="mb-0 text-sm">{{ scopedHrs.type }}</h6>
+                     <h6 class="mb-0">{{ scopedHrs.type }}</h6>
                   </div>
                </div>
             </td>
-            <td class="align-middle text-center text-sm">
-               <span class="text-xs font-weight-bold"> {{ scopedHrs.days }} Days <small class="text-body-tertiary">({{ scopedHrs.hrs }}h)</small></span>
+            <td class="align-middle text-center">
+               <span> {{ scopedHrs.days }} Days <small class="text-body-tertiary">({{ scopedHrs.hrs }}h)</small></span>
             </td>
          </tr>
          {% endif %}

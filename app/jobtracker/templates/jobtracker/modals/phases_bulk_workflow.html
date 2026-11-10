@@ -3,7 +3,7 @@
         <form method="post" action="{% url 'phases_bulk_workflow_execute' job.slug new_state %}" class="js-bulk-workflow-phases-form">
             {% csrf_token %}            
             <div class="modal-header {% if not has_eligible %}bg-warning{% endif %}">
-                <h6 class="modal-title {% if not has_eligible %}text-white{% endif %} font-weight-normal" 
+                <h6 class="modal-title {% if not has_eligible %}text-white{% endif %}" 
                     id="modal-title-default">
                         Bulk Move to {{ new_state_str }}
                 </h6>

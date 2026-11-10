@@ -7,7 +7,7 @@
 {% block headerBlock_css %}mb-6{% endblock headerBlock_css %}
 
 {% block breadcrumbItem %}
-<li class="breadcrumb-item text-sm text-body-emphasis active" aria-current="page">Users</li>
+<li class="breadcrumb-item text-body-emphasis active" aria-current="page">Users</li>
 {% endblock breadcrumbItem %}
 
 {% block content %}
@@ -41,17 +41,17 @@
           <h4>Pending Invites</h4>
         </div>
         <div class="card-body py-2 ">
-          <table class="table datatable align-items-center mb-0">
+          <table class="table datatable mb-0 table-sm align-middle fs-9">
             <caption>Pending Invites</caption>
             <thead>
-              <tr>
-                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+              <tr class="text-body-secondary">
+                <th class="ps-2">
                     E-mail
                 </th>
-                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                <th class="ps-2">
                     Invited
                 </th>
-                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                <th class="ps-2">
                     Sent by
                 </th>
                 <th></th>
@@ -72,7 +72,7 @@
                 <td>
                   {{ u.invited_by }}
                 </td>        
-                <td class="align-end text-end">
+                <td class="text-end">
                 </td>
               </tr>
             {% endfor %}        
@@ -89,26 +89,26 @@
   <div class="col-12">
      <div class="card p-2">
         <div class="card-body py-2 ">
-          <table class="table datatable align-items-center mb-0">
+          <table class="table datatable mb-0 table-sm align-middle fs-9">
             <caption>User List</caption>
             <thead>
-              <tr>
-                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+              <tr class="text-body-secondary">
+                <th>
                     Name
                 </th>
-                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                <th class="ps-2">
                     E-mail
                 </th>
-                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                <th class="ps-2">
                     Units
                 </th>
-                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                <th class="ps-2">
                     Global Roles
                 </th>
-                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                <th class="ps-2">
                     Joined
                 </th>
-                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                <th class="ps-2">
                     Last Login
                 </th>
                 <th>
@@ -159,7 +159,7 @@
                   {% endfor %}
                 </td>   
                 <td>
-                  <p class="text-xs font-weight-normal mb-0">
+                  <p class="mb-0">
                     {% for group in u.groups.all %}
                       {% include 'partials/globalRoleBadge.html' with group=group %}
                     {% empty %}
@@ -167,13 +167,13 @@
                     {% endfor %}
                     </p>
                 </td>           
-                <td class="align-end text-end" data-sort="{{ u.date_joined|date:'Y-m-d' }}">
+                <td class="text-end" data-sort="{{ u.date_joined|date:'Y-m-d' }}">
                   {{ u.date_joined }}
                 </td>   
-                <td class="align-end text-end" data-sort="{{ u.last_login|date:'Y-m-d' }}">
+                <td class="text-end" data-sort="{{ u.last_login|date:'Y-m-d' }}">
                   {{ u.last_login }}
                 </td>
-                <td class="align-end text-end">
+                <td class="text-end">
                   {% include 'partials/user/user_menu.html' with u=u %}
                 </td>
               </tr>

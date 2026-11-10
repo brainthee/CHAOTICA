@@ -1,4 +1,4 @@
-  <table class="table table-responsive table-sm datatable align-items-center mb-0 mw-100"
+  <table class="table table-responsive table-sm datatable mb-0 mw-100 align-middle fs-9"
   id="jobTableAjax"
   {% if not job_list and not disableAjax %}
   {# Every job you can see except archived ones (11; deleted are never listed). #}
@@ -8,15 +8,15 @@
   >
     <caption>Jobs</caption>
     <thead>
-      <tr>
-        <th class="text-uppercase text-secondary text-xxs font-weight-bolder" scope="col" data-data="job_id" data-v1-order="id">ID</th>
-        <th class="text-uppercase text-wrap text-break text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="title" data-v1-render="link" data-v1-order="title" style="word-wrap: break-word;">Name</th>
-        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="unit" data-v1-render="ref">Unit</th>
-        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="client" data-v1-render="ref">Client</th>
-        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="start_date" data-v1-order="start_date">Start</th>
-        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="delivery_date" data-v1-order="delivery_date">End</th>
-        <th class="text-uppercase text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="phase_count">Phases</th>
-        <th class="text-uppercase col-1 text-secondary text-xxs font-weight-bolder  ps-2" scope="col" data-data="status_display" data-v1-render="job-status" data-v1-order="status" style="width:10%;">Status</th>
+      <tr class="text-body-secondary">
+        <th scope="col" data-data="job_id" data-v1-order="id">ID</th>
+        <th class="text-wrap text-break ps-2" scope="col" data-data="title" data-v1-render="link" data-v1-order="title" style="word-wrap: break-word;">Name</th>
+        <th class="ps-2" scope="col" data-data="unit" data-v1-render="ref">Unit</th>
+        <th class="ps-2" scope="col" data-data="client" data-v1-render="ref">Client</th>
+        <th class="ps-2" scope="col" data-data="start_date" data-v1-order="start_date">Start</th>
+        <th class="ps-2" scope="col" data-data="delivery_date" data-v1-order="delivery_date">End</th>
+        <th class="ps-2" scope="col" data-data="phase_count">Phases</th>
+        <th class="col-1 ps-2" scope="col" data-data="status_display" data-v1-render="job-status" data-v1-order="status" style="width:10%;">Status</th>
       </tr>
     </thead>
     {% if job_list %}

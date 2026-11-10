@@ -88,9 +88,9 @@
       <h6>Selected Fields</h6>
       {% if selected_fields %}
         <div class="table-responsive">
-          <table class="table table-sm table-bordered">
+          <table class="table table-sm table-bordered align-middle fs-9">
             <thead>
-              <tr>
+              <tr class="text-body-secondary">
                 <th>Position</th>
                 <th>Field</th>
                 <th>Type</th>
@@ -117,9 +117,9 @@
       <h6>Filter Conditions</h6>
       {% if filter_conditions %}
         <div class="table-responsive">
-          <table class="table table-sm table-bordered">
+          <table class="table table-sm table-bordered align-middle fs-9">
             <thead>
-              <tr>
+              <tr class="text-body-secondary">
                 <th>Field</th>
                 <th>Condition</th>
                 <th>Value</th>
@@ -148,9 +148,9 @@
       <h6>Sort Order</h6>
       {% if sort_fields %}
         <div class="table-responsive">
-          <table class="table table-sm table-bordered">
+          <table class="table table-sm table-bordered align-middle fs-9">
             <thead>
-              <tr>
+              <tr class="text-body-secondary">
                 <th>Position</th>
                 <th>Field</th>
                 <th>Direction</th>
@@ -177,9 +177,9 @@
       <div class="mb-4">
         <h6>Sample Data</h6>
         <div class="table-responsive">
-          <table class="table table-sm table-bordered">
+          <table class="table table-sm table-bordered align-middle fs-9">
             <thead>
-              <tr>
+              <tr class="text-body-secondary">
                 {% for field in selected_fields %}
                   <th>{{ field.display_name }}</th>
                 {% endfor %}
