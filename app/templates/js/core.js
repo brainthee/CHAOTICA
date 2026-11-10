@@ -227,6 +227,19 @@ $(function() {
         });
     };
 
+    // Follow a modal's "next" URL. A same-page target that differs only by
+    // #hash (e.g. /settings/#connected-apps) is a fragment jump, not a
+    // navigation, so the page would never reload: reload explicitly.
+    function goNext(next) {
+        var target = new URL(next, location.href);
+        if (target.pathname === location.pathname && target.search === location.search) {
+            location.hash = target.hash;
+            location.reload();
+        } else {
+            location.href = next;
+        }
+    }
+
     function reloadWithTabContext() {
         const activeLink = document.querySelector('#sectionNav .nav-link.active');
         const tabTarget = activeLink
@@ -277,7 +290,7 @@ $(function() {
                 success: function(data) {
                     if (data.form_is_valid) {
                         if (data.next) {
-                            location.href = data.next
+                            goNext(data.next);
                         } else {
                             reloadWithTabContext();
                         }
@@ -336,7 +349,7 @@ $(function() {
             success: function(data) {
                 if (data.form_is_valid) {
                     if (data.next) {
-                        location.href = data.next
+                        goNext(data.next);
                     } else {
                         reloadWithTabContext();
                     }
@@ -375,7 +388,7 @@ $(function() {
             success: function(data) {
                 if (data.form_is_valid) {
                     if (data.next) {
-                        location.href = data.next
+                        goNext(data.next);
                     } else {
                         reloadWithTabContext();
                     }
@@ -407,7 +420,7 @@ $(function() {
             success: function(data) {
                 if (data.form_is_valid) {
                     if (data.next) {
-                        location.href = data.next
+                        goNext(data.next);
                     } else {
                         reloadWithTabContext();
                     }

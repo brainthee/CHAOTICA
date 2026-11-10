@@ -54,7 +54,7 @@ Menu.add_item(
     "user",
     MenuItem(
         "Onboarded Clients",
-        lambda request: reverse("view_onboarding", kwargs={"email": request.user}),
+        lambda request: reverse("view_onboarding", kwargs={"email": request.user.email}),
         check=lambda request: request.user.is_authenticated,
         icon="person-snowboarding",
         weight=2,
