@@ -5,7 +5,7 @@
 
 # Formatters / linters / static analysis
 autoflake==2.3.1
-black==25.1.0
+black==26.10.1
 mypy_extensions==1.1.0
 pyflakes==3.3.2
 pysonar==1.1.0.2035
