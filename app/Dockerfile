@@ -50,6 +50,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PORT=8000 \
     USE_REDIS=true \
     RUN_COLLECTSTATIC=true \
+    GUNICORN_WORKERS=3 \
     PATH="/opt/venv/bin:$PATH"
 
 EXPOSE ${PORT}
