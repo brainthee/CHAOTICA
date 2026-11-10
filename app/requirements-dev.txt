@@ -4,21 +4,21 @@
 -r requirements.txt
 
 # Formatters / linters / static analysis
-autoflake==2.3.1
+autoflake==2.4.0
 black==26.10.1
-mypy_extensions==1.1.0
-pyflakes==3.3.2
-pysonar==1.1.0.2035
+mypy_extensions==1.2.0
+pyflakes==4.1.0
+pysonar==1.11.0.6012
 
 # Packaging / dependency management
-build==1.2.2.post1
-pip-tools==7.4.1
-pyproject_hooks==1.2.0
+build==1.6.1
+pip-tools==7.6.2
+pyproject_hooks==1.3.3
 vcversioner==2.16.0.0
 
 # Testing helpers
-pyfakefs==5.8.0
-responses==0.25.6
+pyfakefs==6.3.2
+responses==0.26.3
 
 # Model/graph tooling
 graphviz==0.21
@@ -26,4 +26,4 @@ graphviz==0.21
 # In-browser SQL/query debugging.
 # NOTE: keep the debug_toolbar import in chaotica/urls.py guarded behind settings.DEBUG,
 # otherwise a prod image (which lacks this package) will fail to boot.
-django-debug-toolbar==5.2.0
+django-debug-toolbar==8.0.0
