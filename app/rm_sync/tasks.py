@@ -11,7 +11,7 @@ from logging import StreamHandler
 
 
 class task_sync_rm_schedule(CronJobBase):
-    RUN_EVERY_MINS = 5
+    RUN_EVERY_MINS = 15
     schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
     code = "rm_sync.task_sync_rm_schedule"
 
@@ -78,6 +78,14 @@ class task_sync_rm_schedule(CronJobBase):
         task_lock = RMTaskLock.objects.create(task_id=task_sync_rm_schedule.code)
         logger.info(f"Created task lock: {task_lock.task_id}")
 
+        # One RMClient for the whole run so its per-run memoisation (leave types and
+        # resolved projects) is shared across every user, instead of being rebuilt — and
+        # re-fetched over HTTP — for each record. See RMClient's docstring: it is meant to
+        # live for the duration of a single sync run.
+        from .client import RMClient
+
+        client = RMClient()
+
         try:
             # PUSH: CHAOTICA → RM. Skipped entirely while read-only, since it only writes.
             if config.RM_SYNC_READ_ONLY:
@@ -97,7 +105,7 @@ class task_sync_rm_schedule(CronJobBase):
                 try:
                     from .users import sync_rm_users
 
-                    sync_rm_users()
+                    sync_rm_users(client=client)
                 except Exception:
                     logger.exception("RM user import failed")
                 if not self._touch_lock(task_lock, logger):
@@ -107,7 +115,7 @@ class task_sync_rm_schedule(CronJobBase):
                     direction=RMSyncDirection.PULL
                 ):
                     try:
-                        sync_record.pull_records()
+                        sync_record.pull_records(client=client)
                     except Exception:
                         logger.exception("Inbound pull failed for %s", sync_record.user)
                     if not self._touch_lock(task_lock, logger):

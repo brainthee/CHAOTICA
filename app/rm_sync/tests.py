@@ -822,6 +822,51 @@ class SyncEntryPointTests(RMSyncTestBase):
         self.assertIsInstance(do.call_args[0][0], task_sync_rm_schedule)
 
 
+class TaskSharedClientTests(RMSyncTestBase):
+    """The cron ``do()`` must build ONE RMClient per run and thread it through
+    ``sync_rm_users`` and every ``pull_records`` call, so the client's per-run
+    memoisation (leave types + resolved projects) is shared across all users
+    instead of being rebuilt — and re-fetched over HTTP — for each record."""
+
+    def setUp(self):
+        super().setUp()
+        self.p1 = RMSyncRecord.objects.create(
+            user=_mk_user(email="pull1@example.com"), rm_id="11",
+            direction=RMSyncDirection.PULL,
+        )
+        self.p2 = RMSyncRecord.objects.create(
+            user=_mk_user(email="pull2@example.com"), rm_id="12",
+            direction=RMSyncDirection.PULL,
+        )
+
+    @override_config(
+        RM_SYNC_ENABLED=True, RM_SYNC_PULL_ENABLED=True, RM_SYNC_READ_ONLY=True
+    )
+    def test_single_client_threaded_through_pull_run(self):
+        from .tasks import task_sync_rm_schedule
+
+        clients_seen = []
+
+        def _capture_pull(self, client=None, dry_run=False):
+            clients_seen.append(client)
+
+        with patch("rm_sync.client.RMClient") as RMClientMock, patch(
+            "rm_sync.users.sync_rm_users"
+        ) as sync_users, patch.object(
+            RMSyncRecord, "pull_records", autospec=True, side_effect=_capture_pull
+        ):
+            task_sync_rm_schedule().do()
+
+        shared = RMClientMock.return_value
+        # Exactly one client constructed for the whole run...
+        self.assertEqual(RMClientMock.call_count, 1)
+        # ...handed to the user import...
+        sync_users.assert_called_once_with(client=shared)
+        # ...and to every PULL record, all the same instance.
+        self.assertEqual(len(clients_seen), 2)
+        self.assertTrue(all(c is shared for c in clients_seen))
+
+
 class TaskLockTests(RMSyncTestBase):
     @override_config(RM_SYNC_STALE_TIMEOUT=60)
     def test_lock_goes_stale_after_the_timeout_in_minutes(self):
