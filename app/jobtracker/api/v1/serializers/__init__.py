@@ -118,6 +118,12 @@ from .catalogue import (  # noqa: F401
     CoverageSummarySerializer,
     ServiceCoverageSerializer,
 )
+from .scoping import (  # noqa: F401
+    ScopingFieldSerializer,
+    ScopingTemplateSerializer,
+    ScopingCalcInputSerializer,
+    ScopingCalcResultSerializer,
+)
 from .dashboard import (  # noqa: F401
     QueueSerializer,
     ConsultantStatsSerializer,

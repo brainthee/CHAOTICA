@@ -32,3 +32,7 @@ from .catalogue import (  # noqa: F401
     QualificationViewSet,
     ServiceViewSet,
 )
+from .scoping import (  # noqa: F401
+    ScopingTemplateViewSet,
+    ScopingCalculateView,
+)
