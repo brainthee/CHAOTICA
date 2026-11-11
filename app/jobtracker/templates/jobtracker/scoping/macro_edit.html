@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block pageTitle %}Scoping Macro{% endblock %}
+{% block head_title %}Scoping Macro{% endblock %}
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item"><a class="opacity-50 text-body-emphasis" href="{% url 'scoping_template_list' %}">Scoping Templates</a></li>
+  <li class="breadcrumb-item"><a class="opacity-50 text-body-emphasis" href="{% url 'scoping_macro_list' %}">Macros</a></li>
+  <li class="breadcrumb-item text-body-emphasis active" aria-current="page">{% if macro %}{{ macro.name }}{% else %}New{% endif %}</li>
+{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-7">
+    <div class="card"><div class="card-body">
+      <h4 class="mb-3">{% if macro %}Edit macro{% else %}New macro{% endif %}</h4>
+      <form method="post">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <p class="fs-10 text-muted">The expression receives <code>testing_days</code> when used as a reporting step. Helpers: <code>ceil, floor, round, round_half_up, max, min, abs, bucket</code>.</p>
+        <a href="{% url 'scoping_macro_list' %}" class="btn btn-phoenix-secondary me-2">Cancel</a>
+        <button type="submit" class="btn btn-outline-success">Save</button>
+      </form>
+    </div></div>
+  </div>
+</div>
+{% endblock %}

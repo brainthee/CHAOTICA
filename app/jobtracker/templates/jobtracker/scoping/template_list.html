@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block pageTitle %}Scoping Templates{% endblock pageTitle %}
+{% block head_title %}Scoping Templates{% endblock head_title %}
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item text-body-emphasis active" aria-current="page">Scoping Templates</li>
+{% endblock breadcrumbItem %}
+
+{% block content %}
+<div class="row mb-4 gx-6 gy-3 mt-2 align-items-center">
+  <div class="col">
+    <h2 class="mb-0">Scoping Templates</h2>
+    <p class="text-muted mb-0">Reusable questionnaires &amp; effort calculators for services</p>
+  </div>
+  <div class="col-auto d-flex justify-content-end gap-2">
+    <a class="btn btn-phoenix-secondary" href="{% url 'scoping_macro_list' %}">
+      <i class="fa-solid fa-function me-2"></i>Macros
+    </a>
+    <a class="btn btn-phoenix-secondary" href="{% url 'scoping_import' %}">
+      <i class="fa-solid fa-file-import me-2"></i>Import
+    </a>
+    <a class="btn btn-phoenix-secondary" href="{% url 'scoping_template_export_all' %}">
+      <i class="fa-solid fa-file-export me-2"></i>Export all
+    </a>
+    <a class="btn btn-phoenix-primary px-4" href="{% url 'scoping_template_create' %}">
+      <i class="fa-solid fa-plus me-2"></i>New template
+    </a>
+  </div>
+</div>
+
+{% if templates %}
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-hover fs-9 mb-0">
+      <thead>
+        <tr>
+          <th class="ps-4">Name</th>
+          <th>Mode</th>
+          <th class="text-center">Fields</th>
+          <th class="text-center">Services</th>
+          <th class="text-center">Active</th>
+          <th class="text-end pe-4">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in templates %}
+        <tr>
+          <td class="ps-4">
+            <a class="fw-semibold" href="{% url 'scoping_template_edit' t.slug %}">{{ t.name }}</a>
+          </td>
+          <td>{{ t.get_calc_mode_display }}</td>
+          <td class="text-center">{{ t.fields.all|length }}</td>
+          <td class="text-center">{{ t.services.all|length }}</td>
+          <td class="text-center">
+            {% if t.is_active %}
+              <span class="badge badge-phoenix badge-phoenix-success">Active</span>
+            {% else %}
+              <span class="badge badge-phoenix badge-phoenix-secondary">Inactive</span>
+            {% endif %}
+          </td>
+          <td class="text-end pe-4">
+            <a class="btn btn-sm btn-phoenix-secondary" href="{% url 'scoping_template_edit' t.slug %}" title="Edit"><i class="fa-solid fa-pen"></i></a>
+            <a class="btn btn-sm btn-phoenix-secondary" href="{% url 'scoping_template_export' t.slug %}" title="Export"><i class="fa-solid fa-file-export"></i></a>
+            <a class="btn btn-sm btn-phoenix-danger" href="{% url 'scoping_template_delete' t.slug %}" title="Delete"><i class="fa-solid fa-trash"></i></a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="card">
+  <div class="card-body text-center py-6">
+    <i class="fa-solid fa-ruler-combined fs-5 text-body-tertiary mb-3"></i>
+    <h5>No scoping templates yet</h5>
+    <p class="text-muted">Create one from scratch, or import a scoping pack.</p>
+    <a class="btn btn-phoenix-primary" href="{% url 'scoping_template_create' %}">
+      <i class="fa-solid fa-plus me-2"></i>New template
+    </a>
+  </div>
+</div>
+{% endif %}
+{% endblock content %}

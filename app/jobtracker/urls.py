@@ -1,5 +1,6 @@
 from django.urls import include, path
 from . import views
+from . import views_scoping
 from .feeds import schedule_feed_view, family_feed_view
 from rest_framework import routers
 from chaotica_utils.api import AuditEventViewSet
@@ -715,6 +716,72 @@ urlpatterns = [
         "ops/service/<str:slug>/delete/",
         views.ServiceDeleteView.as_view(),
         name="service_delete",
+    ),
+    # Scoping templates (dynamic Service scoping)
+    path(
+        "ops/scoping/",
+        views_scoping.ScopingTemplateListView.as_view(),
+        name="scoping_template_list",
+    ),
+    path(
+        "ops/scoping/create/",
+        views_scoping.scoping_template_edit,
+        name="scoping_template_create",
+    ),
+    path(
+        "ops/scoping/import/",
+        views_scoping.scoping_import,
+        name="scoping_import",
+    ),
+    path(
+        "ops/scoping/export/",
+        views_scoping.scoping_template_export,
+        name="scoping_template_export_all",
+    ),
+    path(
+        "ops/scoping/macros/",
+        views_scoping.ScopingMacroListView.as_view(),
+        name="scoping_macro_list",
+    ),
+    path(
+        "ops/scoping/macros/create/",
+        views_scoping.scoping_macro_edit,
+        name="scoping_macro_create",
+    ),
+    path(
+        "ops/scoping/macros/<str:slug>/edit/",
+        views_scoping.scoping_macro_edit,
+        name="scoping_macro_edit",
+    ),
+    path(
+        "ops/scoping/macros/<str:slug>/delete/",
+        views_scoping.ScopingMacroDeleteView.as_view(),
+        name="scoping_macro_delete",
+    ),
+    path(
+        "ops/scoping/<str:slug>/",
+        views_scoping.scoping_template_edit,
+        name="scoping_template_detail",
+    ),
+    path(
+        "ops/scoping/<str:slug>/edit/",
+        views_scoping.scoping_template_edit,
+        name="scoping_template_edit",
+    ),
+    path(
+        "ops/scoping/<str:slug>/calc/",
+        views_scoping.scoping_template_calc,
+        name="scoping_template_calc",
+    ),
+    path(
+        "ops/scoping/<str:slug>/export/",
+        views_scoping.scoping_template_export,
+        name="scoping_template_export",
+    ),
+    path(
+        "ops/scoping/<str:slug>/delete/",
+        views_scoping.ScopingTemplateDeleteView.as_view(),
+        name="scoping_template_delete",
     ),
     # Checklists
     path("ops/workflow_tasks/", views.WFTaskListView.as_view(), name="wf_tasks_list"),

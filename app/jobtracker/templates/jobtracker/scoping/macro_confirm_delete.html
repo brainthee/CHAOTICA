@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block pageTitle %}Delete Macro{% endblock %}
+{% block head_title %}Delete Macro{% endblock %}
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item"><a class="opacity-50 text-body-emphasis" href="{% url 'scoping_macro_list' %}">Macros</a></li>
+  <li class="breadcrumb-item text-body-emphasis active" aria-current="page">Delete</li>
+{% endblock %}
+{% block content %}
+<div class="card"><div class="card-body">
+  <h4 class="mb-3">Delete macro</h4>
+  <p>Are you sure you want to delete <strong>{{ object.name }}</strong>?</p>
+  {% if object.templates.all %}
+    <div class="alert alert-warning">This macro is used by {{ object.templates.all|length }} template(s); they will fall back to their reporting expression.</div>
+  {% endif %}
+  <form method="post">
+    {% csrf_token %}
+    <a href="{% url 'scoping_macro_list' %}" class="btn btn-phoenix-secondary me-2">Cancel</a>
+    <button type="submit" class="btn btn-danger">Delete</button>
+  </form>
+</div></div>
+{% endblock %}

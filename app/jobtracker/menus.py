@@ -103,6 +103,17 @@ Menu.add_item(
 Menu.add_item(
     "ops",
     PermMenuItem(
+        "Scoping Templates",
+        reverse("scoping_template_list"),
+        check=lambda request: request.user.is_authenticated,
+        perm="jobtracker.manage_scoping",
+        icon="ruler-combined",
+        weight=1,
+    ),
+)
+Menu.add_item(
+    "ops",
+    PermMenuItem(
         "Qualifications",
         reverse("qualification_list"),
         check=lambda request: request.user.is_authenticated,

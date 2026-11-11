@@ -134,6 +134,8 @@ requests==2.34.2
 s3transfer==0.19.3
 sentry-sdk==2.74.0
 setuptools==84.2.1
+# Sandboxed arithmetic evaluator for data-driven Service scoping formulas
+simpleeval==1.0.8
 six==1.17.0
 soupsieve==4.1
 sqlparse==0.6.1
