@@ -58,6 +58,14 @@ class Service(models.Model):
         "Is Core Service", help_text="If checked, this service is considered critical",
         default=False
     )
+    scoping_template = models.ForeignKey(
+        "jobtracker.ScopingTemplate",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="services",
+        help_text="Scoping questionnaire used when this service is added to a phase",
+    )
     data = JSONField(verbose_name="Data", null=True, blank=True, default=dict)
 
     class Meta:

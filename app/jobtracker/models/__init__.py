@@ -1,4 +1,13 @@
 from .common import Link, WorkflowTask, Feedback
+from .scoping import (
+    ScopingTemplate,
+    ScopingField,
+    ScopingMacro,
+    ScopingFieldType,
+    ScopingCalcRole,
+    SizingCombine,
+    CalcMode,
+)
 from .service import Service
 from .financial import BillingCode, BillingCodeAssignment
 from .client import Client, ClientOnboarding, Contact, Address, FrameworkAgreement
