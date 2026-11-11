@@ -146,6 +146,26 @@ class DetailPageRenderTests(PhaseScopingBase):
     """Smoke-render the restructured detail pages (template syntax, url tags,
     json_script, the new scoping tab and section pencils)."""
 
+    def test_scoped_hours_empty_state(self):
+        # Fresh phase with no hours must show the empty message, not a blank card.
+        resp = self.http.get(
+            reverse("phase_detail", kwargs={
+                "job_slug": self.job.slug, "slug": self.phase.slug
+            })
+        )
+        self.assertContains(resp, "No hours scoped yet")
+
+    def test_scoped_hours_shows_values(self):
+        self.phase.delivery_hours = 15
+        self.phase.save()
+        resp = self.http.get(
+            reverse("phase_detail", kwargs={
+                "job_slug": self.job.slug, "slug": self.phase.slug
+            })
+        )
+        self.assertContains(resp, "Delivery")
+        self.assertNotContains(resp, "No hours scoped yet")
+
     def test_phase_detail_renders_with_scoping_tab(self):
         resp = self.http.get(
             reverse("phase_detail", kwargs={
