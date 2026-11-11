@@ -8,7 +8,7 @@ from django.views import View
 from django.db.models import Q
 from django.contrib import messages
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.views.generic.edit import CreateView, DeleteView
 from django.urls import reverse_lazy
 from chaotica_utils.views import log_system_activity, ChaoticaBaseView
 from chaotica_utils.mixins import ObjectActivityMixin
@@ -476,19 +476,6 @@ def view_phase_schedule_util(request, job_slug, slug):
         "utilisation": get_schedule_utilisation(job, phase),
     }
     return render(request, "partials/scheduler/schedule_util.html", context)
-
-
-class PhaseUpdateView(UnitPermissionRequiredMixin, PhaseBaseView, UpdateView):
-    permission_required = "jobtracker.can_update_job"
-    form_class = PhaseForm
-    template_name = "jobtracker/phase_form.html"
-    fields = None
-
-    def get_form_kwargs(self):
-        kwargs = super(PhaseUpdateView, self).get_form_kwargs()
-        if "job_slug" in self.kwargs:
-            kwargs["job"] = get_object_or_404(Job, slug=self.kwargs["job_slug"])
-        return kwargs
 
 
 # --------------------------------------------------------------------------- #

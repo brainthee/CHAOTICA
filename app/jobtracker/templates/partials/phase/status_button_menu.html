@@ -1,7 +1,20 @@
 <ul class="dropdown-menu shadow dropdown-menu-down">
+  {% if phase.status <= 7 %}
   <li>
-    <a href="{% url 'phase_update' phase.job.slug phase.slug %}" class="dropdown-item">Edit Phase</a>
+    <button data-url="{% url 'phase_section_edit' phase.job.slug phase.slug 'details' %}" class="dropdown-item js-load-modal-form">Edit Details</button>
   </li>
+  <li>
+    <button data-url="{% url 'phase_section_edit' phase.job.slug phase.slug 'scheduling' %}" class="dropdown-item js-load-modal-form">Edit Scheduling</button>
+  </li>
+  <li>
+    <button data-url="{% url 'phase_section_edit' phase.job.slug phase.slug 'hours' %}" class="dropdown-item js-load-modal-form">Edit Scoped Hours</button>
+  </li>
+  {% endif %}
+  {% if phase.status >= 7 and phase.status <= 15 %}
+  <li>
+    <button data-url="{% url 'phase_edit_delivery' phase.job.slug phase.slug %}" class="dropdown-item js-load-modal-form">Edit Deliverables</button>
+  </li>
+  {% endif %}
   <li>
     <button data-url="{% url 'phase_clone' phase.job.slug phase.slug %}" class="dropdown-item js-load-modal-form">Clone Phase</button>
   </li>

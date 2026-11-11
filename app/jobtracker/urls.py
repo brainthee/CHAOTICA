@@ -455,11 +455,6 @@ urlpatterns = [
         name="phases_bulk_qa_execute",
     ),
     path(
-        "job/<str:job_slug>/phase/<str:slug>/update/",
-        views.PhaseUpdateView.as_view(),
-        name="phase_update",
-    ),
-    path(
         "job/<str:job_slug>/phase/<str:slug>/edit/delivery",
         views.phase_edit_delivery,
         name="phase_edit_delivery",
