@@ -3,13 +3,16 @@
       <div class="row">
          <div class="col my-auto">
             <div class="h-100">
-               <h4 class="mb-0">
-                  Deliverables
-               </h4>
+               <h4 class="mb-0">Deliverables</h4>
             </div>
          </div>
          <div class="col-lg-4 text-end">
-
+            {% if can_edit_deliverables %}
+            <a href="#" data-url="{% url 'phase_edit_delivery' phase.job.slug phase.slug %}"
+               class="btn btn-phoenix-secondary btn-sm js-load-modal-form" title="Edit deliverables">
+               <span class="fa fa-pen me-1"></span>Edit
+            </a>
+            {% endif %}
          </div>
       </div>
    </div>
@@ -17,46 +20,47 @@
 
       <div class="row">
          <div class="col">
-            <div class="input-group">
-               <div class="row w-100 ">
-                  <div class="col-9">
-                     <label>{{ config.PHASE_LABEL_DELIVERABLE }}</label>
-                  </div>
-                  <div class="col-3 text-end">
-                  </div>
-               </div>
-               <input type="text" class="form-control" readonly value="{{ phase.linkDeliverable }}">
-            </div>
+            <label class="fs-9 mb-1">{{ config.PHASE_LABEL_DELIVERABLE }}</label>
+            <input type="text" class="form-control" readonly value="{{ phase.linkDeliverable }}">
          </div>
       </div>
 
       <div class="row mt-4">
          <div class="col">
-            <div class="input-group">
-               <div class="row w-100 ">
-                  <div class="col-9">
-                     <label>{{ config.PHASE_LABEL_REPORT_DATA }}</label>
-                  </div>
-                  <div class="col-3 text-end">
-                  </div>
-               </div>
-               <input type="text" class="form-control" readonly value="{{ phase.linkReportData }}">
-            </div>
+            <label class="fs-9 mb-1">{{ config.PHASE_LABEL_REPORT_DATA }}</label>
+            <input type="text" class="form-control" readonly value="{{ phase.linkReportData }}">
          </div>
       </div>
 
       <div class="row mt-4">
          <div class="col">
-            <div class="input-group">
-               <div class="row w-100 ">
-                  <div class="col-9">
-                     <label>{{ config.PHASE_LABEL_TECH_DATA }}</label>
-                  </div>
-                  <div class="col-3 text-end">
-                  </div>
-               </div>
-               <input type="text" class="form-control" readonly value="{{ phase.linkTechData }}">
-            </div>
+            <label class="fs-9 mb-1">{{ config.PHASE_LABEL_TECH_DATA }}</label>
+            <input type="text" class="form-control" readonly value="{{ phase.linkTechData }}">
+         </div>
+      </div>
+
+      <hr class="my-4">
+
+      <div class="row g-3">
+         <div class="col-6 col-md-3">
+            <label class="fs-9 text-muted mb-1">Number of reports</label>
+            <div class="fw-bold">{{ phase.number_of_reports|default:"0" }}</div>
+         </div>
+         <div class="col-6 col-md-3">
+            <label class="fs-9 text-muted mb-1">Left on client site</label>
+            <div class="fw-bold">{% if phase.report_to_be_left_on_client_site %}Yes{% else %}No{% endif %}</div>
+         </div>
+         <div class="col-6 col-md-2">
+            <label class="fs-9 text-muted mb-1">Due to Tech QA</label>
+            <div class="fw-bold">{{ phase.due_to_techqa_set|date:"Y-m-d"|default:"—" }}</div>
+         </div>
+         <div class="col-6 col-md-2">
+            <label class="fs-9 text-muted mb-1">Due to Pres QA</label>
+            <div class="fw-bold">{{ phase.due_to_presqa_set|date:"Y-m-d"|default:"—" }}</div>
+         </div>
+         <div class="col-6 col-md-2">
+            <label class="fs-9 text-muted mb-1">Desired delivery</label>
+            <div class="fw-bold">{{ phase.desired_delivery_date|date:"Y-m-d"|default:"—" }}</div>
          </div>
       </div>
    </div>

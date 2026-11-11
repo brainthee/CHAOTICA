@@ -242,6 +242,11 @@ urlpatterns = [
     path("job/<str:slug>/team/export/", views.job_team_export, name="job_team_export"),
     path("job/<str:slug>/edit/scope", views.job_edit_scope, name="job_edit_scope"),
     path(
+        "job/<str:slug>/edit/section/<str:section>/",
+        views.job_section_edit,
+        name="job_section_edit",
+    ),
+    path(
         "job/<str:slug>/update/scope",
         views.JobUpdateScopeView.as_view(),
         name="job_update_scope",
@@ -458,6 +463,21 @@ urlpatterns = [
         "job/<str:job_slug>/phase/<str:slug>/edit/delivery",
         views.phase_edit_delivery,
         name="phase_edit_delivery",
+    ),
+    path(
+        "job/<str:job_slug>/phase/<str:slug>/edit/section/<str:section>/",
+        views.phase_section_edit,
+        name="phase_section_edit",
+    ),
+    path(
+        "job/<str:job_slug>/phase/<str:slug>/scoping/",
+        views.phase_scoping_update,
+        name="phase_scoping_update",
+    ),
+    path(
+        "job/<str:job_slug>/phase/<str:slug>/scoping/calc/",
+        views.phase_scoping_calc,
+        name="phase_scoping_calc",
     ),
     # path('job/<str:job_slug>/phase/<str:slug>/edit/qa', views.phase_edit_qa, name='phase_edit_qa'),
     path(

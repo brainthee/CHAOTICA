@@ -1,0 +1,76 @@
+{% load crispy_forms_tags %}
+{% comment %}
+Generic modal-content partial for the unified section-based inline editors.
+
+Rendered by the section-edit views (job_section_edit / phase_section_edit /
+phase_edit_delivery) and injected into #mainModalContent by the js-load-modal-form
+flow in core.js. The form posts back to the same URL (request.get_full_path);
+the view returns {form_is_valid, html_form} and core.js reloads the tab context.
+
+Context:
+  section_title   - heading shown in the modal header
+  form            - the bound/unbound ModelForm to render
+  section_template- (optional) inner template path; defaults to {% crispy form %}
+{% endcomment %}
+<div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content">
+        <form method="post" action="{{ request.get_full_path }}" class="js-submit-modal-form">
+            {% csrf_token %}
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-title-default">{{ section_title }}</h5>
+                <button type="button" class="btn-close text-body-emphasis"
+                    data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {% if section_template %}
+                    {% include section_template %}
+                {% else %}
+                    {% crispy form %}
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-phoenix-primary mb-0">Save</button>
+                <button type="button" class="btn btn-light shadow-none mb-0" data-bs-dismiss="modal">Close</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Initialise any TinyMCE editors that arrived with this modal body. Runs on
+// injection (jQuery .html() executes inline scripts); DOMContentLoaded has long
+// since fired for AJAX-loaded content, so we init directly.
+(function () {
+    if (!window.tinymce || !window.phoenix) { return; }
+    var utils = window.phoenix.utils;
+    var getColor = utils.getColor, getData = utils.getData, getItemFromStore = utils.getItemFromStore;
+    var merge = window._.merge;
+    document.querySelectorAll('.modal-body .tinymce').forEach(function (el) {
+        if (el.id && window.tinymce.get(el.id)) { return; }  // already initialised
+        var options = merge(
+            {
+                selector: '.tinymce',
+                height: '35vh',
+                skin: 'oxide',
+                license_key: 'gpl',
+                menubar: false,
+                promotion: false,
+                statusbar: false,
+                plugins: 'advlist autolink lists link charmap preview anchor searchreplace visualblocks code',
+                directionality: getItemFromStore('phoenixIsRTL') ? 'rtl' : 'ltr',
+                content_style:
+                    '.mce-content-body { color: ' + getColor('emphasis-color') +
+                    '; background-color: ' + getColor('tinymce-bg') + '; }',
+                toolbar: [
+                    { name: 'history', items: ['undo', 'redo'] },
+                    { name: 'formatting', items: ['bold', 'italic', 'underline'] },
+                    { name: 'list', items: ['numlist', 'bullist'] },
+                    { name: 'link', items: ['link'] }
+                ]
+            },
+            getData(el, 'tinymce')
+        );
+        window.tinymce.init(options);
+    });
+})();
+</script>

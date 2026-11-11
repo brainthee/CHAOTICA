@@ -22,6 +22,9 @@ from ..forms import (
     PhaseScopeFeedbackInlineForm,
     PhaseTechQAInlineForm,
     PhaseForm,
+    PhaseDetailsSectionForm,
+    PhaseSchedulingSectionForm,
+    PhaseHoursSectionForm,
     LinkForm,
 )
 from ..enums import FeedbackType, PhaseStatuses, TimeSlotDeliveryRole, JobStatuses, LinkType
@@ -111,12 +114,6 @@ class PhaseDetailView(
     def get_context_data(self, **kwargs):
         context = super(PhaseDetailView, self).get_context_data(**kwargs)
 
-        phase_deliver_inline_form = PhaseDeliverInlineForm(instance=context["phase"])
-        context["phase_deliver_inline_form"] = phase_deliver_inline_form
-
-        info_form = PhaseForm(instance=context["phase"])
-        context["info_form"] = info_form
-
         context["entity_type"] = "Phase"
         context["entity_id"] = context["phase"].id
 
@@ -137,7 +134,34 @@ class PhaseDetailView(
         context["concurrent_phases"] = concurrent_phases(phase)
         context["missing_billing_code"] = phase_missing_billing_code(phase)
 
+        # Deliverable links + report metadata stay editable In Progress → Delivered.
+        context["can_edit_deliverables"] = (
+            phase.status in PhaseStatuses.DELIVERABLE_EDITABLE_STATUSES
+        )
+        # Whether the status permits editing the general phase fields at all
+        # (drives the section-edit pencils on the detail cards).
+        context["can_edit_phase_fields"] = bool(
+            PhaseStatuses.CHANGEABLE_FIELDS[phase.status][1]
+        )
+
+        # Scoping tab: the service's template (if any), the answers captured on
+        # this phase, and the last applied result.
+        data = phase.data or {}
+        template = phase.service.scoping_template if phase.service_id else None
+        context["scoping_template"] = template
+        context["scoping_answers"] = data.get("scoping_answers") or {}
+        context["scoping_result"] = data.get("scoping_result") or None
+        context["scoping_justification"] = data.get("scoping_justification") or []
+        context["can_edit_scoping"] = self._scoping_hours_editable(phase)
+
         return context
+
+    @staticmethod
+    def _scoping_hours_editable(phase):
+        """Scoping may write delivery/reporting hours only while those hours are
+        still editable for the phase's status (same lock as PhaseForm)."""
+        changeable = PhaseStatuses.CHANGEABLE_FIELDS[phase.status][1]
+        return "delivery_hours" in changeable and "reporting_hours" in changeable
 
 
 class PhaseCreateView(UnitPermissionRequiredMixin, PhaseBaseView, CreateView):
@@ -467,25 +491,213 @@ class PhaseUpdateView(UnitPermissionRequiredMixin, PhaseBaseView, UpdateView):
         return kwargs
 
 
+# --------------------------------------------------------------------------- #
+# Unified section-based inline editor                                            #
+# --------------------------------------------------------------------------- #
+
+#: section key -> (form class, modal title, optional inner template path)
+PHASE_SECTION_FORMS = {
+    "details": (PhaseDetailsSectionForm, "Phase Details", None),
+    "scheduling": (PhaseSchedulingSectionForm, "Scheduling", None),
+    "hours": (
+        PhaseHoursSectionForm,
+        "Scoped Hours",
+        "partials/phase/forms/hours_fields_table.html",
+    ),
+}
+
+
+@job_permission_required_or_403("jobtracker.can_update_job", (Phase, "slug", "slug"))
+def phase_section_edit(request, job_slug, slug, section):
+    """Edit one section of a phase in the shared #mainModal.
+
+    GET renders the section form into the modal; POST validates, saves, logs the
+    changed fields and returns ``{form_is_valid, html_form}`` for the
+    js-load-modal-form / js-submit-modal-form flow in core.js.
+    """
+    if section not in PHASE_SECTION_FORMS:
+        return HttpResponseBadRequest("Unknown section.")
+    form_cls, title, section_template = PHASE_SECTION_FORMS[section]
+
+    job = get_object_or_404(Job, slug=job_slug)
+    phase = get_object_or_404(Phase, job=job, slug=slug)
+    data = {"form_is_valid": False}
+
+    if request.method == "POST":
+        form = form_cls(request.POST, instance=phase)
+        if form.is_valid():
+            form.save()
+            data["form_is_valid"] = True
+            if form.changed_data:
+                log_system_activity(
+                    phase,
+                    "{} edited ({})".format(title, ", ".join(form.changed_data)),
+                    author=request.user,
+                )
+    else:
+        form = form_cls(instance=phase)
+
+    context = {
+        "form": form,
+        "job": job,
+        "phase": phase,
+        "section_title": title,
+        "section_template": section_template,
+    }
+    data["html_form"] = loader.render_to_string(
+        "partials/shared/section_form_modal.html", context, request=request
+    )
+    return JsonResponse(data)
+
+
+def _phase_scoping_template(phase):
+    """The scoping template attached to the phase's service, or None."""
+    if not phase.service_id:
+        return None
+    return phase.service.scoping_template
+
+
+@job_permission_required_or_403("jobtracker.can_update_job", (Phase, "slug", "slug"))
+def phase_scoping_calc(request, job_slug, slug):
+    """Live-evaluate the phase's service scoping template against posted answers.
+
+    Mirrors ``views_scoping.scoping_template_calc`` but keys off the phase's
+    service template rather than a template slug. Returns the engine result dict
+    as JSON for the Scoping tab's live preview.
+    """
+    import json
+
+    from ..scoping_engine import evaluate
+
+    phase = get_object_or_404(Phase, slug=slug, job__slug=job_slug)
+    template = _phase_scoping_template(phase)
+    if template is None:
+        return JsonResponse(
+            {"errors": ["No scoping template attached to this service."]}, status=400
+        )
+    try:
+        answers = json.loads(request.body.decode("utf-8") or "{}").get("answers", {})
+    except (ValueError, AttributeError):
+        answers = {}
+    return JsonResponse(evaluate(template, answers))
+
+
+@job_permission_required_or_403("jobtracker.can_update_job", (Phase, "slug", "slug"))
+def phase_scoping_update(request, job_slug, slug):
+    """Save scoping answers onto the phase; optionally apply them to hours.
+
+    POST ``answers`` (JSON or form fields) is stored in
+    ``phase.data['scoping_answers']``. With ``apply=1`` the engine is run and the
+    resulting delivery/reporting hours are written onto the phase, with the
+    justification/errors stored in ``phase.data``. Applying to hours is only
+    permitted while those hours are editable for the phase's status.
+    """
+    import json
+
+    from ..scoping_engine import evaluate
+
+    job = get_object_or_404(Job, slug=job_slug)
+    phase = get_object_or_404(Phase, job=job, slug=slug)
+    template = _phase_scoping_template(phase)
+
+    if request.method != "POST":
+        return HttpResponseBadRequest()
+    if template is None:
+        return HttpResponseBadRequest("No scoping template attached to this service.")
+
+    # Answers may arrive as a JSON body (live panel) or posted form fields.
+    answers = {}
+    if request.content_type and "application/json" in request.content_type:
+        try:
+            answers = json.loads(request.body.decode("utf-8") or "{}").get(
+                "answers", {}
+            )
+        except (ValueError, AttributeError):
+            answers = {}
+        apply = bool(json.loads(request.body.decode("utf-8") or "{}").get("apply"))
+    else:
+        for field in template.fields.all():
+            if field.slug in request.POST:
+                answers[field.slug] = request.POST.get(field.slug)
+        apply = request.POST.get("apply") in ("1", "true", "on", "True")
+
+    data = dict(phase.data or {})
+    data["scoping_answers"] = answers
+
+    result = None
+    if apply:
+        changeable = PhaseStatuses.CHANGEABLE_FIELDS[phase.status][1]
+        if "delivery_hours" not in changeable or "reporting_hours" not in changeable:
+            return HttpResponseBadRequest(
+                "Phase hours are locked in this status and can't be set from scoping."
+            )
+        result = evaluate(template, answers)
+        if not result["errors"]:
+            phase.delivery_hours = result["delivery_hours"]
+            phase.reporting_hours = result["reporting_hours"]
+        data["scoping_result"] = result
+        data["scoping_justification"] = result["justification"]
+        data["scoping_errors"] = result["errors"]
+
+    phase.data = data
+    phase.save()
+
+    detail = "applied to hours" if (apply and result and not result["errors"]) else "saved"
+    log_system_activity(
+        phase, "Scoping answers {}".format(detail), author=request.user
+    )
+
+    if request.headers.get("x-requested-with") == "XMLHttpRequest" or (
+        request.content_type and "application/json" in request.content_type
+    ):
+        return JsonResponse(
+            {"form_is_valid": True, "result": result}
+        )
+    return HttpResponseRedirect(
+        reverse("phase_detail", kwargs={"job_slug": job_slug, "slug": slug})
+        + "#scoping"
+    )
+
+
 @job_permission_required_or_403("jobtracker.can_update_job", (Phase, "slug", "slug"))
 def phase_edit_delivery(request, job_slug, slug):
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
     data = dict()
+    data["form_is_valid"] = False
+
+    # Deliverable links + report metadata are editable from In Progress through
+    # to Delivered; outside that window the phase is read-only here.
+    if phase.status not in PhaseStatuses.DELIVERABLE_EDITABLE_STATUSES:
+        return HttpResponseBadRequest(
+            "Deliverables can't be edited in this phase status."
+        )
+
     if request.method == "POST":
         form = PhaseDeliverInlineForm(request.POST, instance=phase)
         if form.is_valid():
             form.save()
             data["form_is_valid"] = True
-            return redirect("phase_detail", job_slug, slug)
-        else:
-            data["form_is_valid"] = False
+            if form.changed_data:
+                log_system_activity(
+                    phase,
+                    "Deliverables edited ({})".format(", ".join(form.changed_data)),
+                    author=request.user,
+                )
     else:
         form = PhaseDeliverInlineForm(instance=phase)
 
-    context = {"form": form}
+    context = {
+        "form": form,
+        "job": job,
+        "phase": phase,
+        "section_title": "Deliverables",
+        "section_action": reverse(
+            "phase_edit_delivery", kwargs={"job_slug": job_slug, "slug": slug}
+        ),
+    }
     data["html_form"] = loader.render_to_string(
-        "jobtracker/modals/feedback_form.html", context, request=request
+        "partials/shared/section_form_modal.html", context, request=request
     )
     return JsonResponse(data)
 

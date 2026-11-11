@@ -68,7 +68,7 @@
       <a class="nav-link" id="deliverables-tab" data-bs-toggle="tab" data-bs-target="#deliverables" role="tab" aria-controls="tab-deliverables" aria-selected="false" tabindex="-1">
         <span class="fa-solid fa-clipboard me-2 tab-icon-color"></span>Deliverables
 
-      {% if phase.status == 7 or phase.status == 10 or phase.status == 13 %}
+      {% if can_edit_deliverables %}
 
         {% if not phase.can_to_pending_tech_qa %}
             <span class="ms-1 text-warning" data-feather="alert-triangle" style="height:12.8px;width:12.8px;"></span>
@@ -78,6 +78,11 @@
 
       {% endif %}
 
+      </a>
+    </li>
+    <li class="nav-item text-nowrap me-2" role="presentation">
+      <a class="nav-link" id="scoping-tab" data-bs-toggle="tab" data-bs-target="#scoping" role="tab" aria-controls="tab-scoping" aria-selected="false" tabindex="-1">
+        <span class="fa-solid fa-ruler-combined me-2 tab-icon-color"></span>Scoping
       </a>
     </li>
     <li class="nav-item text-nowrap me-2" role="presentation">
@@ -101,6 +106,7 @@
       <div class="row">
         <div class="col-12 col-md-9 pt-0 p-2 ps-6 border-1">
           {% include 'partials/phase/widgets/info.html' %}
+          {% include 'partials/phase/widgets/hours.html' %}
         </div>
 
         <div class="col-12 col-md-3 px-0 border-start-xxl border-300 border-top-0">
@@ -164,14 +170,13 @@
     <div class="tab-pane p-2 fade" id="dates" role="tabpanel" aria-labelledby="dates-tab">
       {% include 'partials/phase/dates_view.html' %}          
     </div>
-    <div class="tab-pane p-2 fade" id="deliverables" role="tabpanel" aria-labelledby="deliverables-tab">    
-      {% if phase.status == 7 or phase.status == 10 or phase.status == 13 %}
-      {% include 'partials/phase/forms/deliverable_links.html' %}
-      {% else %}
+    <div class="tab-pane p-2 fade" id="deliverables" role="tabpanel" aria-labelledby="deliverables-tab">
       {% include 'partials/phase/widgets/deliverable_links.html' %}
-      {% endif %}
     </div>
-    <div class="tab-pane p-2 fade" id="feedback" role="tabpanel" aria-labelledby="feedback-tab">    
+    <div class="tab-pane p-2 fade" id="scoping" role="tabpanel" aria-labelledby="scoping-tab">
+      {% include 'partials/phase/scoping.html' %}
+    </div>
+    <div class="tab-pane p-2 fade" id="feedback" role="tabpanel" aria-labelledby="feedback-tab">
       {% include 'partials/phase/widgets/feedback.html' %}
     </div>
     <div class="tab-pane p-2 fade" id="notes" role="tabpanel" aria-labelledby="notes-tab">
@@ -187,12 +192,6 @@
 {% endblock content %}
 
 {% block extra_js %}
-<script>
-
-$("#scopePhaseForm").dirty({preventLeaving: true});
-
-</script>
-
 <script src="{% static 'vendors/vis-timeline/vis-timeline-graph2d.min.js' %}"></script>
 <script>
   window.SCHEDULER_CONFIG = {

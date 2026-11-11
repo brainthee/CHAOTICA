@@ -1,0 +1,151 @@
+{% comment %}
+Phase scoping capture tab. Renders the service's scoping-template questions
+(prefilled from phase.data['scoping_answers']), live-previews testing/reporting
+days + hours via phase_scoping_calc, and applies the result to the phase's
+delivery/reporting hours via phase_scoping_update.
+{% endcomment %}
+{% if not scoping_template %}
+  <div class="card">
+    <div class="card-body text-center py-5">
+      <span class="fa-solid fa-ruler-combined fs-5 text-body-tertiary mb-3 d-block"></span>
+      <h5 class="mb-2">No scoping template</h5>
+      <p class="text-muted mb-3">
+        This phase's service{% if phase.service %}
+        (<a href="{{ phase.service.get_absolute_url }}">{{ phase.service.name }}</a>){% endif %}
+        has no scoping template attached, so there are no questions to answer.
+      </p>
+    </div>
+  </div>
+{% else %}
+  <div class="row g-4">
+    <div class="col-12 col-lg-6">
+      <div class="card h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0"><i class="fa-solid fa-ruler-combined me-2"></i>{{ scoping_template.name }}</h4>
+            <small class="text-muted">{{ scoping_template.fields.all|length }} question(s)</small>
+          </div>
+          <div id="phase-scope-inputs">
+            {% for f in scoping_template.fields.all %}
+            <div class="mb-3">
+              <label class="form-label fs-9 mb-1">{{ f.label }}{% if f.required %} <span class="text-danger">*</span>{% endif %}</label>
+              {% if f.field_type == 1 %}
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input phase-scope-answer" data-slug="{{ f.slug }}" data-type="1">
+                </div>
+              {% elif f.field_type == 2 %}
+                <select class="form-select form-select-sm phase-scope-answer" data-slug="{{ f.slug }}" data-type="2">
+                  <option value="">—</option>
+                  {% for opt in f.options %}<option value="{{ opt.value }}">{{ opt.label }}</option>{% endfor %}
+                </select>
+              {% else %}
+                <input type="{% if f.field_type == 0 %}number{% else %}text{% endif %}" step="any"
+                  class="form-control form-control-sm phase-scope-answer" data-slug="{{ f.slug }}" data-type="{{ f.field_type }}"
+                  value="{{ f.default }}">
+              {% endif %}
+              {% if f.help_text %}<div class="fs-10 text-muted">{{ f.help_text }}</div>{% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {{ scoping_answers|json_script:"phase-scope-saved-answers" }}
+          <div class="d-flex flex-wrap gap-2 mt-3">
+            <button type="button" class="btn btn-sm btn-phoenix-secondary" id="phase-scope-calc"><i class="fa-solid fa-play me-1"></i>Calculate</button>
+            <button type="button" class="btn btn-sm btn-phoenix-primary" id="phase-scope-save"><i class="fa-solid fa-floppy-disk me-1"></i>Save answers</button>
+            {% if can_edit_scoping %}
+            <button type="button" class="btn btn-sm btn-phoenix-success" id="phase-scope-apply"><i class="fa-solid fa-wand-magic-sparkles me-1"></i>Apply to hours</button>
+            {% else %}
+            <span class="fs-10 text-muted align-self-center">Hours are locked in this phase status.</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+      <div class="card h-100">
+        <div class="card-body">
+          <h4 class="mb-3"><i class="fa-solid fa-flask me-2"></i>Result</h4>
+          <div class="row g-2 mb-3">
+            <div class="col-6"><div class="card bg-body-emphasis"><div class="card-body text-center py-2"><h4 class="mb-0" id="pr-testing-days">{% if scoping_result %}{{ scoping_result.testing_days }}{% else %}–{% endif %}</h4><p class="fs-10 mb-0 text-muted">Testing days</p></div></div></div>
+            <div class="col-6"><div class="card bg-body-emphasis"><div class="card-body text-center py-2"><h4 class="mb-0" id="pr-reporting-days">{% if scoping_result %}{{ scoping_result.reporting_days }}{% else %}–{% endif %}</h4><p class="fs-10 mb-0 text-muted">Reporting days</p></div></div></div>
+            <div class="col-6"><div class="card bg-body-emphasis"><div class="card-body text-center py-2"><h4 class="mb-0" id="pr-delivery-hours">{% if scoping_result %}{{ scoping_result.delivery_hours }}{% else %}–{% endif %}</h4><p class="fs-10 mb-0 text-muted">Delivery hrs</p></div></div></div>
+            <div class="col-6"><div class="card bg-body-emphasis"><div class="card-body text-center py-2"><h4 class="mb-0" id="pr-reporting-hours">{% if scoping_result %}{{ scoping_result.reporting_hours }}{% else %}–{% endif %}</h4><p class="fs-10 mb-0 text-muted">Reporting hrs</p></div></div></div>
+          </div>
+          <div id="pr-errors" class="alert alert-danger d-none"></div>
+          <h6 class="fs-9 mb-1">Based on</h6>
+          <ul class="fs-10 mb-0" id="pr-justification">
+            {% for line in scoping_justification %}<li>{{ line }}</li>{% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    function getCookie(name){var m=document.cookie.match('(^|;)\\s*'+name+'\\s*=\\s*([^;]+)');return m?m.pop():'';}
+    var calcUrl = "{% url 'phase_scoping_calc' phase.job.slug phase.slug %}";
+    var saveUrl = "{% url 'phase_scoping_update' phase.job.slug phase.slug %}";
+
+    function collect() {
+      var answers = {};
+      document.querySelectorAll('.phase-scope-answer').forEach(function (el) {
+        answers[el.dataset.slug] = el.dataset.type === '1' ? el.checked : el.value;
+      });
+      return answers;
+    }
+    // Prefill from previously-saved answers.
+    (function prefill() {
+      var node = document.getElementById('phase-scope-saved-answers');
+      if (!node) return;
+      var saved;
+      try { saved = JSON.parse(node.textContent) || {}; } catch (e) { return; }
+      document.querySelectorAll('.phase-scope-answer').forEach(function (el) {
+        if (!(el.dataset.slug in saved)) return;
+        var v = saved[el.dataset.slug];
+        if (el.dataset.type === '1') { el.checked = (v === true || v === 'true' || v === 'on' || v === 1); }
+        else { el.value = v; }
+      });
+    })();
+    function render(d) {
+      document.getElementById('pr-testing-days').textContent = d.testing_days;
+      document.getElementById('pr-reporting-days').textContent = d.reporting_days;
+      document.getElementById('pr-delivery-hours').textContent = d.delivery_hours;
+      document.getElementById('pr-reporting-hours').textContent = d.reporting_hours;
+      var eb = document.getElementById('pr-errors');
+      if (d.errors && d.errors.length) { eb.classList.remove('d-none'); eb.innerHTML = d.errors.join('<br>'); }
+      else { eb.classList.add('d-none'); }
+      var ul = document.getElementById('pr-justification'); ul.innerHTML = '';
+      (d.justification || []).forEach(function (line) { var li = document.createElement('li'); li.textContent = line; ul.appendChild(li); });
+    }
+    function post(url, body) {
+      return fetch(url, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken'), 'X-Requested-With': 'XMLHttpRequest'},
+        body: JSON.stringify(body)
+      });
+    }
+
+    var calcBtn = document.getElementById('phase-scope-calc');
+    if (calcBtn) calcBtn.addEventListener('click', function () {
+      post(calcUrl, {answers: collect()}).then(function (r) { return r.json(); }).then(render);
+    });
+
+    var saveBtn = document.getElementById('phase-scope-save');
+    if (saveBtn) saveBtn.addEventListener('click', function () {
+      post(saveUrl, {answers: collect(), apply: false}).then(function (r) {
+        if (r.ok) { location.reload(); }
+      });
+    });
+
+    var applyBtn = document.getElementById('phase-scope-apply');
+    if (applyBtn) applyBtn.addEventListener('click', function () {
+      post(saveUrl, {answers: collect(), apply: true}).then(function (r) { return r.json().then(function (d) { return {ok: r.ok, d: d}; }); })
+        .then(function (res) {
+          if (res.ok && res.d.result && res.d.result.errors && res.d.result.errors.length) { render(res.d.result); }
+          else if (res.ok) { location.reload(); }
+        });
+    });
+  })();
+  </script>
+{% endif %}

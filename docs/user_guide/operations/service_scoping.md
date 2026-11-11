@@ -66,6 +66,46 @@ last **saved** version of the template.
 Days are converted to hours using the `DEFAULT_HOURS_IN_DAY` setting (Settings
 page; default 7.5).
 
+## Scoping a phase
+
+Once a service has a scoping template, every phase that uses that service gets a
+**Scoping** tab on its detail page.
+
+1. Open the phase and go to the **Scoping** tab. If the phase's service has no
+   template attached you'll see an empty state linking to the service.
+2. Answer the questions (they are pre-filled from the last saved answers).
+3. **Calculate** shows a live preview of testing/reporting days and the
+   resulting delivery/reporting hours, with a "based on" breakdown.
+4. **Save answers** stores your answers on the phase without touching its hours.
+5. **Apply to hours** additionally writes the calculated **delivery** and
+   **reporting** hours onto the phase and records the justification.
+
+Applying to hours is only available while the phase's hours are still editable
+for its status (up to and including *In Progress*). In later statuses the button
+is hidden and the saved answers are kept for reference only.
+
+## Editing deliverables and report details
+
+Deliverable links (deliverable / report data / technical data) **and** the
+report metadata (number of reports, "left on client site", desired delivery
+date, due-to-Tech-QA and due-to-Pres-QA dates) stay editable from **In Progress**
+all the way through to **Delivered**. Use the **Edit** pencil on the phase's
+*Deliverables* tab. Scheduling and service fields still lock once a phase starts;
+only deliverables/report details remain open until the report is delivered.
+
+## API
+
+The scoping engine is available over the versioned API (`/api/v1/`) so external
+tools can fetch a questionnaire and score a scope:
+
+- `GET /api/v1/scoping-templates/` — list active templates.
+- `GET /api/v1/scoping-templates/{id}/` — one template with its fields/options.
+- `POST /api/v1/scoping/calculate/` — body `{"template": <id|slug>, "answers":
+  {slug: value}}`; returns `{testing_days, reporting_days, delivery_hours,
+  reporting_hours, justification, errors}`.
+
+All three require authentication. See the API docs at `/api/v1/schema/swagger-ui/`.
+
 ## Import / export (scoping packs)
 
 - **Export** a single template (or all templates) to a `.json` pack from the

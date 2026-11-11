@@ -12,7 +12,16 @@
                </div>
             </div>
             <div class="col-lg-4 text-end">
-                   <a href="{% url 'phase_update' phase.job.slug phase.slug %}" class="btn btn-outline-secondary ">Edit Phase</a>
+               {% if can_edit_phase_fields %}
+                  <a href="#" data-url="{% url 'phase_section_edit' phase.job.slug phase.slug 'details' %}"
+                     class="btn btn-phoenix-secondary btn-sm js-load-modal-form" title="Edit details">
+                     <span class="fa fa-pen me-1"></span>Details
+                  </a>
+                  <a href="#" data-url="{% url 'phase_section_edit' phase.job.slug phase.slug 'scheduling' %}"
+                     class="btn btn-phoenix-secondary btn-sm js-load-modal-form" title="Edit scheduling">
+                     <span class="fa fa-pen me-1"></span>Scheduling
+                  </a>
+               {% endif %}
             </div>
       </div>
    </div>

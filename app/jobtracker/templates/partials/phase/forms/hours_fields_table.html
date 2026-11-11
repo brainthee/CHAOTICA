@@ -1,0 +1,52 @@
+{% load crispy_forms_tags %}
+{% comment %}
+Scoped-hours editor for the Hours section modal. Values are stored and edited in
+hours (the full-page create form keeps the days/hours toggle; the modal is
+hours-only so form.serialize() in core.js always posts real hour values).
+{% endcomment %}
+<table class="table table-sm mb-0 align-middle">
+  <thead>
+    <tr>
+      <th class="col-form-label ps-1">Type</th>
+      <th class="col-form-label text-end pe-1">Hours</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td class="ps-1">Delivery</td><td class="pt-3 pe-1">{{ form.delivery_hours|as_crispy_field }}</td></tr>
+    <tr><td class="ps-1">Reporting</td><td class="pt-3 pe-1">{{ form.reporting_hours|as_crispy_field }}</td></tr>
+    <tr><td class="ps-1">Management</td><td class="pt-3 pe-1">{{ form.mgmt_hours|as_crispy_field }}</td></tr>
+    <tr><td class="ps-1">QA</td><td class="pt-3 pe-1">{{ form.qa_hours|as_crispy_field }}</td></tr>
+    <tr><td class="ps-1">Oversight</td><td class="pt-3 pe-1">{{ form.oversight_hours|as_crispy_field }}</td></tr>
+    <tr><td class="ps-1">Debrief</td><td class="pt-3 pe-1">{{ form.debrief_hours|as_crispy_field }}</td></tr>
+    <tr><td class="ps-1">Contingency</td><td class="pt-3 pe-1">{{ form.contingency_hours|as_crispy_field }}</td></tr>
+    <tr><td class="ps-1">Other</td><td class="pt-3 pe-1">{{ form.other_hours|as_crispy_field }}</td></tr>
+  </tbody>
+  <tfoot>
+    <tr class="fw-bold">
+      <td class="ps-1">Total</td>
+      <td class="text-end pe-1">
+        <span id="hours-total">0</span> hrs
+        <small class="text-muted ms-2">(<span id="hours-total-days">0</span> days)</small>
+      </td>
+    </tr>
+  </tfoot>
+</table>
+
+<script>
+(function () {
+    var hoursPerDay = {{ phase.get_hours_in_day|default:"7.5" }};
+    function updateTotals() {
+        var total = 0;
+        document.querySelectorAll('.modal-body .time-input').forEach(function (el) {
+            total += parseFloat(el.value) || 0;
+        });
+        var t = document.getElementById('hours-total');
+        var d = document.getElementById('hours-total-days');
+        if (t) { t.textContent = total.toFixed(1); }
+        if (d) { d.textContent = (hoursPerDay ? total / hoursPerDay : 0).toFixed(2); }
+    }
+    // Make the inline oninput="updateTotals()" on each field resolve here.
+    window.updateTotals = updateTotals;
+    updateTotals();
+})();
+</script>
