@@ -382,10 +382,12 @@ class QualificationResource(resources.ModelResource):
 class QualificationSkillResource(resources.ModelResource):
     """The qualification -> skill -> suggested-rating map (one row per link)."""
 
+    # Quals are keyed on short_name: the human-facing code (OSCP, GCFA…), which is
+    # what mapping spreadsheets use. Qualification.name holds the long title.
     qualification = fields.Field(
         column_name="qualification",
         attribute="qualification",
-        widget=ForeignKeyWidget(Qualification, field="name"),
+        widget=ForeignKeyWidget(Qualification, field="short_name"),
     )
     skill = fields.Field(
         column_name="skill",
