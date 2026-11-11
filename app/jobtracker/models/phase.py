@@ -768,9 +768,19 @@ class Phase(models.Model):
             id=self.get_id(), client=self.job.client, title=self.title
         )
 
+    def next_phase_number(self):
+        """The next free phase number for this phase's job.
+
+        Uses ``max + 1`` rather than ``count + 1`` so gaps in the numbering
+        (from hard-deleted phases, manual edits or clones) can't produce a value
+        that collides with an existing phase (``unique_together(job, phase_number)``).
+        """
+        current_max = self.job.phases.aggregate(m=models.Max("phase_number"))["m"]
+        return (current_max or 0) + 1
+
     def save(self, *args, **kwargs):
         if not self.phase_number:
-            self.phase_number = self.job.phases.all().count() + 1
+            self.phase_number = self.next_phase_number()
         if not self.phase_id:
             self.phase_id = self.get_id()
         # lets increment the phase_number

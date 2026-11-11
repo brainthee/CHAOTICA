@@ -212,7 +212,39 @@ class JobContactsEditTests(PhaseScopingBase):
         self.assertEqual(resp.status_code, 403)
 
 
-class DeliverableUnlockTests(PhaseScopingBase):
+class PhaseNumberingTests(PhaseScopingBase):
+    def test_auto_number_is_max_plus_one_not_count_plus_one(self):
+        # self.phase is number 1. Create a gap at 3; a new auto-numbered phase
+        # must become 4 (max+1), not 3 (count+1) which would collide.
+        Phase.objects.create(
+            job=self.job, title="p3", phase_number=3, service=self.service
+        )
+        p = Phase.objects.create(job=self.job, title="auto", service=self.service)
+        self.assertEqual(p.phase_number, 4)
+
+    def test_create_view_renumbers_clashing_submission(self):
+        from jobtracker.enums import JobStatuses
+
+        # Job must be in Scoping–In Progress to accept new phases.
+        self.job.status = JobStatuses.IN_PROGRESS
+        self.job.save(update_fields=["status"])
+        existing = self.phase.phase_number  # 1
+        payload = {
+            "phase_number": existing,  # deliberately clashes
+            "title": "Clashing phase",
+            "service": self.service.pk,
+            "delivery_hours": 0, "reporting_hours": 0, "mgmt_hours": 0,
+            "qa_hours": 0, "oversight_hours": 0, "debrief_hours": 0,
+            "contingency_hours": 0, "other_hours": 0,
+        }
+        resp = self.http.post(
+            reverse("phase_create", kwargs={"job_slug": self.job.slug}), data=payload
+        )
+        # Must not 500; a new phase exists with a distinct number.
+        self.assertIn(resp.status_code, (200, 302), resp.content)
+        if resp.status_code == 302:
+            new = self.job.phases.exclude(pk=self.phase.pk).get(title="Clashing phase")
+            self.assertNotEqual(new.phase_number, existing)
     def test_form_editable_through_delivered(self):
         for status in range(PhaseStatuses.IN_PROGRESS, PhaseStatuses.DELIVERED + 1):
             self.phase.status = status

@@ -188,8 +188,28 @@ class PhaseCreateView(UnitPermissionRequiredMixin, PhaseBaseView, CreateView):
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
-        form.instance.job = Job.objects.get(slug=self.kwargs["job_slug"])
-        form.instance.save()
+        from django.db import transaction
+
+        # Serialise concurrent adds for the same job (select_for_update on the
+        # job row) and never let a stale/edited phase_number collide with an
+        # existing one — PhaseForm excludes ``job`` so the form's unique_together
+        # check can't catch it, which otherwise surfaced as an IntegrityError.
+        with transaction.atomic():
+            job = Job.objects.select_for_update().get(slug=self.kwargs["job_slug"])
+            form.instance.job = job
+            taken = set(job.phases.values_list("phase_number", flat=True))
+            submitted = form.instance.phase_number
+            if not submitted or submitted in taken:
+                form.instance.phase_number = (max(taken) + 1) if taken else 1
+                if submitted and submitted in taken:
+                    messages.info(
+                        self.request,
+                        "Phase number {} was already in use; this phase was "
+                        "numbered {} instead.".format(
+                            submitted, form.instance.phase_number
+                        ),
+                    )
+            form.instance.save()
         log_system_activity(form.instance, "Created")
         return super(PhaseCreateView, self).form_valid(form)
 

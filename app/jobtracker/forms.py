@@ -52,7 +52,7 @@ from crispy_forms.bootstrap import (
 from crispy_forms.layout import Layout, Row, Column, Field, Div, HTML, Submit
 from crispy_bootstrap5.bootstrap5 import FloatingField
 from django_select2 import forms as s2forms
-from django.db.models import Q
+from django.db.models import Q, Max
 from django.db.models.functions import Lower
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
@@ -2160,9 +2160,12 @@ class PhaseForm(forms.ModelForm):
             self, PhaseStatuses.CHANGEABLE_FIELDS[self.instance.status][1]
         )
         if job:
-            self.fields["phase_number"].initial = (
-                Phase.objects.filter(job=job).count() + 1
-            )
+            # max + 1 (not count + 1) so a gap in the numbering doesn't default
+            # to an already-used value — see Phase.next_phase_number().
+            current_max = Phase.objects.filter(job=job).aggregate(
+                m=Max("phase_number")
+            )["m"]
+            self.fields["phase_number"].initial = (current_max or 0) + 1
 
         # Loop and set CSS
         for scope_field in [
