@@ -98,7 +98,9 @@ def import_pack(data, overwrite=False):
 
     report = []
 
-    # Macros first so templates can reference them.
+    # Macros first so templates can reference them. Update in place when they
+    # already exist so dependent templates keep their FK (delete+recreate would
+    # SET_NULL every reporting_macro link).
     macro_by_slug = {}
     for m in data.get("macros", []):
         slug = m.get("slug") or slugify(m.get("name", ""))
@@ -108,15 +110,20 @@ def import_pack(data, overwrite=False):
             report.append("Macro '{}' already exists — skipped".format(existing.name))
             continue
         if existing:
-            existing.delete()
-        macro = ScopingMacro.objects.create(
-            name=m["name"],
-            slug=slug,
-            description=m.get("description", ""),
-            expression=m.get("expression", ""),
-        )
-        macro_by_slug[slug] = macro
-        report.append("Macro '{}' imported".format(macro.name))
+            existing.name = m["name"]
+            existing.description = m.get("description", "")
+            existing.expression = m.get("expression", "")
+            existing.save()
+            macro_by_slug[slug] = existing
+            report.append("Macro '{}' updated".format(existing.name))
+        else:
+            macro = ScopingMacro.objects.create(
+                name=m["name"], slug=slug,
+                description=m.get("description", ""),
+                expression=m.get("expression", ""),
+            )
+            macro_by_slug[slug] = macro
+            report.append("Macro '{}' imported".format(macro.name))
 
     for t in data.get("templates", []):
         slug = t.get("slug") or slugify(t.get("name", ""))
@@ -124,25 +131,34 @@ def import_pack(data, overwrite=False):
         if existing and not overwrite:
             report.append("Template '{}' already exists — skipped".format(existing.name))
             continue
-        if existing:
-            existing.delete()
 
         reporting_macro = None
         if t.get("reporting_macro"):
             reporting_macro = macro_by_slug.get(t["reporting_macro"]) or \
                 ScopingMacro.objects.filter(slug=t["reporting_macro"]).first()
 
-        template = ScopingTemplate.objects.create(
-            name=t["name"],
-            slug=slug,
-            description=t.get("description", ""),
-            is_active=t.get("is_active", True),
-            calc_mode=t.get("calc_mode", 0),
-            sizing_combine=t.get("sizing_combine", 0),
-            testing_expression=t.get("testing_expression", ""),
-            reporting_expression=t.get("reporting_expression", "testing_days / 4"),
-            reporting_macro=reporting_macro,
-        )
+        fields_data = {
+            "name": t["name"],
+            "description": t.get("description", ""),
+            "is_active": t.get("is_active", True),
+            "calc_mode": t.get("calc_mode", 0),
+            "sizing_combine": t.get("sizing_combine", 0),
+            "testing_expression": t.get("testing_expression", ""),
+            "reporting_expression": t.get("reporting_expression", "testing_days / 4"),
+            "reporting_macro": reporting_macro,
+        }
+        if existing:
+            # Update in place so attached Services keep their link; replace fields.
+            for k, v in fields_data.items():
+                setattr(existing, k, v)
+            existing.save()
+            existing.fields.all().delete()
+            template = existing
+            verb = "updated"
+        else:
+            template = ScopingTemplate.objects.create(slug=slug, **fields_data)
+            verb = "imported"
+
         for f in t.get("fields", []):
             ScopingField.objects.create(
                 template=template,
@@ -159,7 +175,7 @@ def import_pack(data, overwrite=False):
                 weight=f.get("weight"),
             )
         report.append(
-            "Template '{}' imported ({} fields)".format(template.name, len(t.get("fields", [])))
+            "Template '{}' {} ({} fields)".format(template.name, verb, len(t.get("fields", [])))
         )
     return report
 

@@ -193,6 +193,37 @@ class ScopingImportExportTests(TestCase):
         with self.assertRaises(ValueError):
             import_pack({"not": "a pack"})
 
+    def test_reimport_overwrite_preserves_shared_macro_links(self):
+        # Two templates sharing one macro; re-importing with overwrite must not
+        # orphan the first template's macro FK (regression: delete+recreate -> SET_NULL).
+        macro = ScopingMacro.objects.create(name="Rep", expression="ceil(testing_days/4)")
+        for n in ("Alpha", "Beta"):
+            t = ScopingTemplate.objects.create(
+                name=n, calc_mode=CalcMode.EXPRESSION,
+                testing_expression="1", reporting_macro=macro,
+            )
+            ScopingField.objects.create(template=t, label="X", slug="x")
+        pack = build_pack(list(ScopingTemplate.objects.all()))
+
+        import_pack(pack, overwrite=True)
+        import_pack(pack, overwrite=True)  # twice, to be sure
+
+        for slug in ("alpha", "beta"):
+            self.assertIsNotNone(
+                ScopingTemplate.objects.get(slug=slug).reporting_macro,
+                "macro link lost for {}".format(slug),
+            )
+        self.assertEqual(ScopingMacro.objects.filter(slug="rep").count(), 1)
+
+    def test_reimport_overwrite_preserves_service_link(self):
+        t = self._make_template()
+        svc = Service.objects.create(name="Attached", scoping_template=t)
+        pack = build_pack([t])
+        import_pack(pack, overwrite=True)
+        svc.refresh_from_db()
+        self.assertIsNotNone(svc.scoping_template)
+        self.assertEqual(svc.scoping_template.slug, "firewall-review")
+
 
 class ScopingViewTests(TestCase):
     """Smoke-test the management UI renders and the calc endpoint responds."""
