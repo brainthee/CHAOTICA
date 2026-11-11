@@ -6,14 +6,7 @@
                <h4 class="mb-0">Deliverables</h4>
             </div>
          </div>
-         <div class="col-lg-4 text-end">
-            {% if can_edit_deliverables %}
-            <a href="{% url 'phase_edit' phase.job.slug phase.slug %}?section=deliverables"
-               class="btn btn-phoenix-secondary btn-sm" title="Edit deliverables">
-               <span class="fa fa-pen me-1"></span>Edit
-            </a>
-            {% endif %}
-         </div>
+         <div class="col-lg-4 text-end"></div>
       </div>
    </div>
    <div class="card-body p-3">
@@ -52,15 +45,15 @@
          </div>
          <div class="col-6 col-md-2">
             <label class="fs-9 text-muted mb-1">Due to Tech QA</label>
-            <div class="fw-bold">{{ phase.due_to_techqa_set|date:"Y-m-d"|default:"—" }}</div>
+            <div class="fw-bold">{{ phase.due_to_techqa|date:"d M Y"|default:"—" }}</div>
          </div>
          <div class="col-6 col-md-2">
             <label class="fs-9 text-muted mb-1">Due to Pres QA</label>
-            <div class="fw-bold">{{ phase.due_to_presqa_set|date:"Y-m-d"|default:"—" }}</div>
+            <div class="fw-bold">{{ phase.due_to_presqa|date:"d M Y"|default:"—" }}</div>
          </div>
          <div class="col-6 col-md-2">
-            <label class="fs-9 text-muted mb-1">Desired delivery</label>
-            <div class="fw-bold">{{ phase.desired_delivery_date|date:"Y-m-d"|default:"—" }}</div>
+            <label class="fs-9 text-muted mb-1">Delivery</label>
+            <div class="fw-bold">{{ phase.delivery_date|date:"d M Y"|default:"—" }}</div>
          </div>
       </div>
    </div>

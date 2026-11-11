@@ -138,6 +138,10 @@ class PhaseDetailView(
         context["can_edit_deliverables"] = (
             phase.status in PhaseStatuses.DELIVERABLE_EDITABLE_STATUSES
         )
+        if context["can_edit_deliverables"]:
+            context["phase_deliver_inline_form"] = PhaseDeliverInlineForm(
+                instance=phase
+            )
         # Whether the status permits editing the general phase fields at all
         # (drives the section-edit pencils on the detail cards).
         context["can_edit_phase_fields"] = bool(
@@ -512,19 +516,14 @@ def _phase_section_defs():
     def fields_editable(phase):
         return bool(PhaseStatuses.CHANGEABLE_FIELDS[phase.status][1])
 
-    def deliverables_editable(phase):
-        return phase.status in PhaseStatuses.DELIVERABLE_EDITABLE_STATUSES
-
+    # Deliverables are edited inline on their own detail tab (phase_edit_delivery),
+    # not here, so they stay a quick, frequent edit during delivery.
     return [
         ("details", "Details", PhaseDetailsSectionForm, None, fields_editable),
         ("scheduling", "Scheduling", PhaseSchedulingSectionForm, None, fields_editable),
         (
             "hours", "Scoped Hours", PhaseHoursSectionForm,
             "partials/phase/forms/scoping_panel.html", fields_editable,
-        ),
-        (
-            "deliverables", "Deliverables", PhaseDeliverInlineForm, None,
-            deliverables_editable,
         ),
     ]
 
@@ -711,6 +710,40 @@ def phase_scoping_update(request, job_slug, slug):
         reverse("phase_detail", kwargs={"job_slug": job_slug, "slug": slug})
         + "#scoping"
     )
+
+
+@job_permission_required_or_403("jobtracker.can_update_job", (Phase, "slug", "slug"))
+def phase_edit_delivery(request, job_slug, slug):
+    """Inline save of the Deliverables tab (links + report metadata + target
+    dates). Rendered inline on the phase detail page; POST saves and returns to
+    the Deliverables tab. Editable from In Progress through Delivered only."""
+    job = get_object_or_404(Job, slug=job_slug)
+    phase = get_object_or_404(Phase, job=job, slug=slug)
+    back = (
+        reverse("phase_detail", kwargs={"job_slug": job_slug, "slug": slug})
+        + "#deliverables"
+    )
+    if phase.status not in PhaseStatuses.DELIVERABLE_EDITABLE_STATUSES:
+        return HttpResponseBadRequest(
+            "Deliverables can't be edited in this phase status."
+        )
+    if request.method == "POST":
+        form = PhaseDeliverInlineForm(request.POST, instance=phase)
+        if form.is_valid():
+            form.save()
+            if form.changed_data:
+                log_system_activity(
+                    phase,
+                    "Deliverables edited ({})".format(", ".join(form.changed_data)),
+                    author=request.user,
+                )
+            messages.success(request, "Deliverables saved.")
+        else:
+            messages.error(
+                request,
+                "Deliverables not saved — check the links are valid URLs.",
+            )
+    return HttpResponseRedirect(back)
 
 
 def phase_feedback_edit(request, job_slug, slug, pk):

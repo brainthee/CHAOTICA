@@ -171,7 +171,11 @@
       {% include 'partials/phase/dates_view.html' %}          
     </div>
     <div class="tab-pane p-2 fade" id="deliverables" role="tabpanel" aria-labelledby="deliverables-tab">
+      {% if can_edit_deliverables %}
+      {% include 'partials/phase/forms/deliverable_links.html' %}
+      {% else %}
       {% include 'partials/phase/widgets/deliverable_links.html' %}
+      {% endif %}
     </div>
     <div class="tab-pane p-2 fade" id="scoping" role="tabpanel" aria-labelledby="scoping-tab">
       {% include 'partials/phase/scoping.html' %}

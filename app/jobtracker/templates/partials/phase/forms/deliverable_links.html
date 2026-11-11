@@ -1,0 +1,18 @@
+{% load crispy_forms_tags %}
+{% comment %}Inline-editable deliverables (links + report metadata + target dates).{% endcomment %}
+{{ phase_deliver_inline_form.media }}
+<div class="card" id="deliverables">
+  <div class="card-header">
+    <h4 class="mb-0">Deliverables</h4>
+  </div>
+  <form method="post" action="{% url 'phase_edit_delivery' phase.job.slug phase.slug %}" id="deliverableForm">
+    {% csrf_token %}
+    <div class="card-body">
+      {% crispy phase_deliver_inline_form %}
+    </div>
+    <div class="card-footer d-flex justify-content-end">
+      <button type="submit" class="btn btn-phoenix-primary btn-sm">Save deliverables</button>
+    </div>
+  </form>
+</div>
+<script>$("#deliverableForm").dirty({preventLeaving: true});</script>

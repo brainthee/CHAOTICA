@@ -2316,6 +2316,22 @@ class PhaseDeliverInlineForm(forms.ModelForm):
             )
             self.fields[date_field].required = False
 
+        # Show the effective (scheduled-or-desired) date as help text so the
+        # dates aren't "missing" when only a scheduled date exists; editing the
+        # field sets a manual target that overrides the schedule.
+        def _eff(value):
+            return value.strftime("%d %b %Y") if value else "not scheduled"
+
+        self.fields["due_to_techqa_set"].help_text = "Effective: {}".format(
+            _eff(getattr(self.instance, "due_to_techqa", None))
+        )
+        self.fields["due_to_presqa_set"].help_text = "Effective: {}".format(
+            _eff(getattr(self.instance, "due_to_presqa", None))
+        )
+        self.fields["desired_delivery_date"].help_text = "Effective: {}".format(
+            _eff(getattr(self.instance, "delivery_date", None))
+        )
+
         # Lock everything once the phase is no longer in a deliverable-editable
         # status (before In Progress, or cancelled/postponed/deleted/archived).
         if self.instance.status not in PhaseStatuses.DELIVERABLE_EDITABLE_STATUSES:

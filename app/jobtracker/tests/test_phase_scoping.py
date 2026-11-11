@@ -287,9 +287,8 @@ class PhaseNumberingTests(PhaseScopingBase):
 
     def test_report_metadata_round_trips(self):
         resp = self.http.post(
-            self._url("phase_edit"),
+            self._url("phase_edit_delivery"),
             data={
-                "section": "deliverables",
                 "linkDeliverable": "https://x/deliverable",
                 "linkTechData": "https://x/tech",
                 "linkReportData": "https://x/report",
@@ -304,12 +303,23 @@ class PhaseNumberingTests(PhaseScopingBase):
         self.assertTrue(self.phase.report_to_be_left_on_client_site)
         self.assertEqual(self.phase.linkDeliverable, "https://x/deliverable")
 
+    def test_inline_deliverables_form_rendered_on_tab(self):
+        resp = self.http.get(
+            reverse("phase_detail", kwargs={
+                "job_slug": self.job.slug, "slug": self.phase.slug
+            })
+        )
+        # Inline editable form posts to phase_edit_delivery (not a link away).
+        self.assertContains(resp, reverse("phase_edit_delivery", kwargs={
+            "job_slug": self.job.slug, "slug": self.phase.slug
+        }))
+
     def test_edit_delivery_blocked_outside_window(self):
         self.phase.status = PhaseStatuses.DRAFT
         self.phase.save()
         resp = self.http.post(
-            self._url("phase_edit"),
-            data={"section": "deliverables", "number_of_reports": 9},
+            self._url("phase_edit_delivery"),
+            data={"number_of_reports": 9},
         )
         self.assertEqual(resp.status_code, 400)
 
@@ -318,7 +328,8 @@ class PhaseEditPageTests(PhaseScopingBase):
     def test_get_renders_all_sections(self):
         resp = self.http.get(self._url("phase_edit"))
         self.assertEqual(resp.status_code, 200, resp.content)
-        for section in ("Details", "Scheduling", "Scoped Hours", "Deliverables"):
+        # Deliverables are edited inline on their own tab, not on this page.
+        for section in ("Details", "Scheduling", "Scoped Hours"):
             self.assertContains(resp, section)
 
     def test_get_honours_active_section(self):

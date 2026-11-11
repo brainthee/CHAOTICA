@@ -449,6 +449,11 @@ urlpatterns = [
         name="phase_edit",
     ),
     path(
+        "job/<str:job_slug>/phase/<str:slug>/edit/delivery",
+        views.phase_edit_delivery,
+        name="phase_edit_delivery",
+    ),
+    path(
         "job/<str:job_slug>/phase/<str:slug>/scoping/",
         views.phase_scoping_update,
         name="phase_scoping_update",
