@@ -5,7 +5,7 @@
 # The build toolchain (compilers, -dev headers, git) lives ONLY in this stage
 # and is discarded, so it never bloats the runtime image.
 ##############################################################################
-FROM debian:12-slim AS builder
+FROM debian:13-slim AS builder
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
@@ -34,7 +34,7 @@ RUN pip install -r requirements.txt \
 ##############################################################################
 # Stage 2 — runtime: slim image with only what is needed to RUN the app.
 ##############################################################################
-FROM debian:12-slim
+FROM debian:13-slim
 LABEL maintainer="Adrian Lewis <brainthee@gmail.com>"
 
 ARG UID=1005

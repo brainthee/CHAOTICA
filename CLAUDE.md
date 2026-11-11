@@ -108,7 +108,7 @@ Key runtime packages include:
 - Security tools (django-clamav)
 
 ### Docker image
-The `app/Dockerfile` is a **multi-stage** build on `debian:12-slim`: a builder stage
+The `app/Dockerfile` is a **multi-stage** build on `debian:13-slim` (Python 3.13): a builder stage
 compiles wheels into `/opt/venv` (with the compiler toolchain), and the runtime stage
 copies that venv into a slim image with only runtime system packages. On AWS Elastic
 Beanstalk the container runs as a single-container monolith (gunicorn + in-container redis

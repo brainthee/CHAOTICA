@@ -9,8 +9,8 @@ beautifulsoup4==4.15.0
 betterpath==0.2.2
 billiard==4.3.2
 bleach==5.0.1  # NOTE: held <6 by django-bleach (pins bleach[css]>=5,<6); revisit when django-bleach supports bleach 6.
-boto3==1.43.127
-botocore==1.43.127
+boto3==1.44.0
+botocore==1.44.0
 business_duration==0.68
 celery==5.7.0
 channels==4.3.2
@@ -31,14 +31,14 @@ cryptography==50.0.2
 cssselect2==0.10.1
 defusedxml==0.7.1
 diff-match-patch==20241021
-Django==5.2.19
+Django==5.2.19  # NOTE: pinned to 5.2.x LTS — the git-pinned django-cron fork (jorenham) requires django<6.0, so 6.x is blocked until that fork supports it. 5.2.19 is the latest 5.2 LTS.
 django-appconf==1.2.0
 django-auth-adfs==1.16.0
 django-autocomplete-light==5.0.0
 django-bleach==3.1.0
 django-bootstrap-datepicker-plus==6.0.0
 django-celery-beat==2.9.0
-django-cities-light==3.10.2  # NOTE: held at 3.10.2 — 3.11 ships a migration that indexes the TEXT column search_names without a key length; MySQL rejects it (error 1170), breaking migrate on prod/test.
+django-cities-light==3.10.2  # NOTE: held at 3.10.2 — 3.11's migration 0013 sets db_index=True on the TEXT column search_names without a key length; MySQL rejects it (error 1170), breaking migrate on prod/test. Re-validated 2026-11-11 under Django 6.0.10 / py3.13: still fails.
 django-clamav @ git+https://github.com/QueraTeam/django-clamav.git@c1f54cd7ab8cdac32774fd7b983331be9fe3b838
 django-colorfield==0.14.0
 django-constance==4.5.0
@@ -82,7 +82,7 @@ docutils==0.23
 et_xmlfile==2.0.0
 # Runtime (not dev-only): generate_demo_data runs inside the prod image to seed the
 # public demo nightly. Moving it to requirements-dev broke every demo reset.
-Faker==40.52.0
+Faker==40.54.0
 fonttools==4.68.0
 frozenlist==1.8.0
 geographiclib==2.1
