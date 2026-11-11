@@ -273,7 +273,10 @@ class PhaseNumberingTests(PhaseScopingBase):
                 form.fields["linkDeliverable"].disabled,
                 "status %s should be editable" % status,
             )
-            self.assertFalse(form.fields["number_of_reports"].disabled)
+            # Deliverables form is links only — report metadata lives on Scheduling.
+            self.assertEqual(
+                set(form.fields), {"linkDeliverable", "linkTechData", "linkReportData"}
+            )
 
     def test_form_readonly_outside_window(self):
         for status in (PhaseStatuses.DRAFT, PhaseStatuses.CANCELLED,
@@ -285,23 +288,35 @@ class PhaseNumberingTests(PhaseScopingBase):
                 "status %s should be read-only" % status,
             )
 
-    def test_report_metadata_round_trips(self):
+    def test_links_round_trip(self):
         resp = self.http.post(
             self._url("phase_edit_delivery"),
             data={
                 "linkDeliverable": "https://x/deliverable",
                 "linkTechData": "https://x/tech",
                 "linkReportData": "https://x/report",
-                "number_of_reports": 3,
-                "report_to_be_left_on_client_site": "on",
-                "desired_delivery_date": "2026-12-01",
             },
         )
         self.assertEqual(resp.status_code, 302, resp.content)  # redirect on save
         self.phase.refresh_from_db()
+        self.assertEqual(self.phase.linkDeliverable, "https://x/deliverable")
+        self.assertEqual(self.phase.linkReportData, "https://x/report")
+
+    def test_report_metadata_on_scheduling_section(self):
+        # number_of_reports + report dates moved to the Scheduling section.
+        resp = self.http.post(
+            self._url("phase_edit"),
+            data={
+                "section": "scheduling",
+                "number_of_reports": 3,
+                "report_to_be_left_on_client_site": "on",
+                "due_to_techqa_set": "2026-12-01",
+            },
+        )
+        self.assertEqual(resp.status_code, 302, resp.content)
+        self.phase.refresh_from_db()
         self.assertEqual(self.phase.number_of_reports, 3)
         self.assertTrue(self.phase.report_to_be_left_on_client_site)
-        self.assertEqual(self.phase.linkDeliverable, "https://x/deliverable")
 
     def test_inline_deliverables_form_rendered_on_tab(self):
         resp = self.http.get(

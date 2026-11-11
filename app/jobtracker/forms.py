@@ -2287,13 +2287,14 @@ class ScopeInlineForm(forms.ModelForm):
 
 
 class PhaseDeliverInlineForm(forms.ModelForm):
-    """Deliverable links + report metadata.
+    """The three deliverable links.
 
     Unlike the scheduling/service fields (locked at In Progress via
-    ``CHANGEABLE_FIELDS``), these stay editable from In Progress all the way
-    through to Delivered — testers keep deliverable locations and report details
-    current right up until the report is delivered. Governed by
-    :attr:`PhaseStatuses.DELIVERABLE_EDITABLE_STATUSES`.
+    ``CHANGEABLE_FIELDS``), the deliverable links stay editable from In Progress
+    all the way through to Delivered — testers keep deliverable locations current
+    right up until the report is delivered. Governed by
+    :attr:`PhaseStatuses.DELIVERABLE_EDITABLE_STATUSES`. Report counts and QA/
+    delivery target dates live on the Scheduling section, not here.
     """
 
     def __init__(self, *args, **kwargs):
@@ -2306,54 +2307,15 @@ class PhaseDeliverInlineForm(forms.ModelForm):
         self.fields["linkTechData"].label = config.PHASE_LABEL_TECH_DATA
         self.fields["linkReportData"].label = config.PHASE_LABEL_REPORT_DATA
 
-        for date_field in (
-            "desired_delivery_date",
-            "due_to_techqa_set",
-            "due_to_presqa_set",
-        ):
-            self.fields[date_field].widget = DatePickerInput(
-                options={"format": "YYYY-MM-DD", "allowInputToggle": True}
-            )
-            self.fields[date_field].required = False
-
-        # Show the effective (scheduled-or-desired) date as help text so the
-        # dates aren't "missing" when only a scheduled date exists; editing the
-        # field sets a manual target that overrides the schedule.
-        def _eff(value):
-            return value.strftime("%d %b %Y") if value else "not scheduled"
-
-        self.fields["due_to_techqa_set"].help_text = "Effective: {}".format(
-            _eff(getattr(self.instance, "due_to_techqa", None))
-        )
-        self.fields["due_to_presqa_set"].help_text = "Effective: {}".format(
-            _eff(getattr(self.instance, "due_to_presqa", None))
-        )
-        self.fields["desired_delivery_date"].help_text = "Effective: {}".format(
-            _eff(getattr(self.instance, "delivery_date", None))
-        )
-
-        # Lock everything once the phase is no longer in a deliverable-editable
-        # status (before In Progress, or cancelled/postponed/deleted/archived).
+        # Lock once the phase is no longer in a deliverable-editable status
+        # (before In Progress, or cancelled/postponed/deleted/archived).
         if self.instance.status not in PhaseStatuses.DELIVERABLE_EDITABLE_STATUSES:
             apply_status_lock(self, [])
 
         self.helper.layout = Layout(
-            HTML('<h5 class="mb-3">Deliverable links</h5>'),
             Row(Div(Field("linkDeliverable"), css_class="col-12"), css_class="g-3"),
             Row(Div(Field("linkReportData"), css_class="col-12"), css_class="g-3"),
             Row(Div(Field("linkTechData"), css_class="col-12"), css_class="g-3"),
-            HTML('<h5 class="mt-4 mb-3">Report details</h5>'),
-            Row(
-                Div(Field("number_of_reports"), css_class="col-12 col-md-6"),
-                Div(Field("report_to_be_left_on_client_site"), css_class="col-12 col-md-6 d-flex align-items-end"),
-                css_class="g-3",
-            ),
-            Row(
-                Div(Field("due_to_techqa_set"), css_class="col-12 col-md-4"),
-                Div(Field("due_to_presqa_set"), css_class="col-12 col-md-4"),
-                Div(Field("desired_delivery_date"), css_class="col-12 col-md-4"),
-                css_class="g-3",
-            ),
         )
 
     class Meta:
@@ -2362,11 +2324,6 @@ class PhaseDeliverInlineForm(forms.ModelForm):
             "linkDeliverable",
             "linkTechData",
             "linkReportData",
-            "number_of_reports",
-            "report_to_be_left_on_client_site",
-            "desired_delivery_date",
-            "due_to_techqa_set",
-            "due_to_presqa_set",
         ]
 
 
@@ -2808,10 +2765,16 @@ class PhaseSchedulingSectionForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.helper.form_tag = False
-        for date_field in ("desired_start_date", "desired_delivery_date"):
+        for date_field in (
+            "desired_start_date",
+            "desired_delivery_date",
+            "due_to_techqa_set",
+            "due_to_presqa_set",
+        ):
             self.fields[date_field].widget = DatePickerInput(
                 options={"format": "YYYY-MM-DD", "allowInputToggle": True}
             )
+            self.fields[date_field].required = False
         apply_status_lock(
             self, PhaseStatuses.CHANGEABLE_FIELDS[self.instance.status][1]
         )
@@ -2822,8 +2785,18 @@ class PhaseSchedulingSectionForm(forms.ModelForm):
                 css_class="g-3",
             ),
             Row(
-                Div(Field("is_testing_onsite"), css_class="col-12 col-md-6"),
-                Div(Field("is_reporting_onsite"), css_class="col-12 col-md-6"),
+                Div(Field("due_to_techqa_set"), css_class="col-12 col-md-6"),
+                Div(Field("due_to_presqa_set"), css_class="col-12 col-md-6"),
+                css_class="g-3",
+            ),
+            Row(
+                Div(Field("is_testing_onsite"), css_class="col-12 col-md-4"),
+                Div(Field("is_reporting_onsite"), css_class="col-12 col-md-4"),
+                Div(Field("report_to_be_left_on_client_site"), css_class="col-12 col-md-4"),
+                css_class="g-3",
+            ),
+            Row(
+                Div(Field("number_of_reports"), css_class="col-12 col-md-4"),
                 css_class="g-3",
             ),
             Row(Div(Field("location"), css_class="col-12"), css_class="g-3"),
@@ -2840,6 +2813,10 @@ class PhaseSchedulingSectionForm(forms.ModelForm):
         fields = [
             "desired_start_date",
             "desired_delivery_date",
+            "due_to_techqa_set",
+            "due_to_presqa_set",
+            "number_of_reports",
+            "report_to_be_left_on_client_site",
             "is_testing_onsite",
             "is_reporting_onsite",
             "location",

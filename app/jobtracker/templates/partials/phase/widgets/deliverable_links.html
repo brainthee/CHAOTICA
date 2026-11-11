@@ -31,30 +31,5 @@
             <input type="text" class="form-control" readonly value="{{ phase.linkTechData }}">
          </div>
       </div>
-
-      <hr class="my-4">
-
-      <div class="row g-3">
-         <div class="col-6 col-md-3">
-            <label class="fs-9 text-muted mb-1">Number of reports</label>
-            <div class="fw-bold">{{ phase.number_of_reports|default:"0" }}</div>
-         </div>
-         <div class="col-6 col-md-3">
-            <label class="fs-9 text-muted mb-1">Left on client site</label>
-            <div class="fw-bold">{% if phase.report_to_be_left_on_client_site %}Yes{% else %}No{% endif %}</div>
-         </div>
-         <div class="col-6 col-md-2">
-            <label class="fs-9 text-muted mb-1">Due to Tech QA</label>
-            <div class="fw-bold">{{ phase.due_to_techqa|date:"d M Y"|default:"—" }}</div>
-         </div>
-         <div class="col-6 col-md-2">
-            <label class="fs-9 text-muted mb-1">Due to Pres QA</label>
-            <div class="fw-bold">{{ phase.due_to_presqa|date:"d M Y"|default:"—" }}</div>
-         </div>
-         <div class="col-6 col-md-2">
-            <label class="fs-9 text-muted mb-1">Delivery</label>
-            <div class="fw-bold">{{ phase.delivery_date|date:"d M Y"|default:"—" }}</div>
-         </div>
-      </div>
    </div>
  </div>
