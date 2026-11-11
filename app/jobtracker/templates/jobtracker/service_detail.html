@@ -214,6 +214,9 @@
           <li class="nav-item text-nowrap me-2" role="presentation">
             <a class="nav-link" id="skills-coverage-tab" data-bs-toggle="tab" href="#skills-coverage" role="tab" aria-controls="tab-skills-coverage" aria-selected="false" tabindex="-1"><span class="fa-solid fa-chart-bar me-2 tab-icon-color"></span>Skills Coverage</a>
           </li>
+          <li class="nav-item text-nowrap me-2" role="presentation">
+            <a class="nav-link" id="scoping-tab" data-bs-toggle="tab" href="#scoping" role="tab" aria-controls="tab-scoping" aria-selected="false" tabindex="-1"><span class="fa-solid fa-ruler-combined me-2 tab-icon-color"></span>Scoping</a>
+          </li>
           {% comment %} <li class="nav-item text-nowrap me-2" role="presentation">
             <a class="nav-link" id="performance-tab" data-bs-toggle="tab" href="#performance" role="tab" aria-controls="tab-performance" aria-selected="false" tabindex="-1"><span class="fa-solid fa-chart-line me-2 tab-icon-color"></span>Performance</a>
           </li> {% endcomment %}
@@ -226,6 +229,149 @@
         </ul>
 
         <div class="tab-content" id="myTabContent">
+          <div class="tab-pane fade" id="scoping" role="tabpanel" aria-labelledby="scoping-tab">
+            <div class="row g-4 mb-3">
+              <div class="col-12 col-lg-5">
+                <div class="card h-100">
+                  <div class="card-body">
+                    <h4 class="mb-3"><i class="fa-solid fa-ruler-combined me-2"></i>Scoping template</h4>
+                    {% if service.scoping_template %}
+                      <h5 class="mb-1">{{ service.scoping_template.name }}</h5>
+                      <p class="text-muted fs-9 mb-3">
+                        {{ service.scoping_template.get_calc_mode_display }} ·
+                        {{ service.scoping_template.fields.all|length }} question(s) ·
+                        shared by {{ service.scoping_template.services.all|length }} service(s)
+                      </p>
+                      {% if can_manage_scoping %}
+                      <div class="d-flex flex-wrap gap-2 mb-3">
+                        <a class="btn btn-sm btn-phoenix-primary" href="{% url 'scoping_template_edit' service.scoping_template.slug %}"><i class="fa-solid fa-pen me-1"></i>Build / edit questions</a>
+                        <form method="post" action="{% url 'service_scoping_update' service.slug %}" onsubmit="return confirm('Detach this scoping template from the service?');">
+                          {% csrf_token %}
+                          <input type="hidden" name="action" value="detach">
+                          <button class="btn btn-sm btn-phoenix-danger" type="submit"><i class="fa-solid fa-link-slash me-1"></i>Detach</button>
+                        </form>
+                      </div>
+                      <form method="post" action="{% url 'service_scoping_update' service.slug %}" class="d-flex gap-2 align-items-end">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="attach">
+                        <div class="flex-grow-1">
+                          <label class="form-label fs-10 mb-1">Change template</label>
+                          <select name="template" class="form-select form-select-sm">
+                            {% for t in scoping_templates %}
+                              <option value="{{ t.pk }}" {% if t.pk == service.scoping_template.pk %}selected{% endif %}>{{ t.name }}</option>
+                            {% endfor %}
+                          </select>
+                        </div>
+                        <button class="btn btn-sm btn-phoenix-secondary" type="submit">Change</button>
+                      </form>
+                      {% else %}
+                      <p class="fs-9 text-muted">You don't have permission to manage scoping templates.</p>
+                      {% endif %}
+                    {% else %}
+                      <p class="text-muted">No scoping template is attached to this service yet.</p>
+                      {% if can_manage_scoping %}
+                      <form method="post" action="{% url 'service_scoping_update' service.slug %}" class="mb-3">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="attach">
+                        <label class="form-label fs-10 mb-1">Attach an existing template</label>
+                        <div class="d-flex gap-2">
+                          <select name="template" class="form-select form-select-sm">
+                            <option value="">—</option>
+                            {% for t in scoping_templates %}<option value="{{ t.pk }}">{{ t.name }}</option>{% endfor %}
+                          </select>
+                          <button class="btn btn-sm btn-phoenix-secondary" type="submit">Attach</button>
+                        </div>
+                      </form>
+                      <form method="post" action="{% url 'service_scoping_update' service.slug %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="create">
+                        <button class="btn btn-sm btn-phoenix-primary" type="submit"><i class="fa-solid fa-plus me-1"></i>Create a template for this service</button>
+                      </form>
+                      {% else %}
+                      <p class="fs-9 text-muted">You don't have permission to manage scoping templates.</p>
+                      {% endif %}
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+
+              {% if service.scoping_template and service.scoping_template.fields.all %}
+              <div class="col-12 col-lg-7">
+                <div class="card h-100">
+                  <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                      <h4 class="mb-0"><i class="fa-solid fa-flask me-2"></i>Test scope</h4>
+                      <small class="text-muted">Uses the saved template</small>
+                    </div>
+                    <div class="row g-3">
+                      <div class="col-12 col-xl-6" id="svc-scope-inputs">
+                        {% for f in service.scoping_template.fields.all %}
+                        <div class="mb-2">
+                          <label class="form-label fs-10 mb-1">{{ f.label }}{% if f.required %} <span class="text-danger">*</span>{% endif %}</label>
+                          {% if f.field_type == 1 %}
+                            <div class="form-check"><input type="checkbox" class="form-check-input svc-scope-answer" data-slug="{{ f.slug }}" data-type="1"></div>
+                          {% elif f.field_type == 2 %}
+                            <select class="form-select form-select-sm svc-scope-answer" data-slug="{{ f.slug }}" data-type="2">
+                              <option value="">—</option>
+                              {% for opt in f.options %}<option value="{{ opt.value }}">{{ opt.label }}</option>{% endfor %}
+                            </select>
+                          {% else %}
+                            <input type="{% if f.field_type == 0 %}number{% else %}text{% endif %}" step="any" class="form-control form-control-sm svc-scope-answer" data-slug="{{ f.slug }}" data-type="{{ f.field_type }}" value="{{ f.default }}">
+                          {% endif %}
+                        </div>
+                        {% endfor %}
+                        <button type="button" class="btn btn-sm btn-phoenix-primary mt-2" id="svc-run-test"><i class="fa-solid fa-play me-1"></i>Calculate</button>
+                      </div>
+                      <div class="col-12 col-xl-6">
+                        <div id="svc-test-results" class="d-none">
+                          <div class="row g-2 mb-2">
+                            <div class="col-6"><div class="card bg-body-emphasis"><div class="card-body text-center py-2"><h4 class="mb-0" id="svc-r-testing-days">–</h4><p class="fs-10 mb-0 text-muted">Testing days</p></div></div></div>
+                            <div class="col-6"><div class="card bg-body-emphasis"><div class="card-body text-center py-2"><h4 class="mb-0" id="svc-r-reporting-days">–</h4><p class="fs-10 mb-0 text-muted">Reporting days</p></div></div></div>
+                            <div class="col-6"><div class="card bg-body-emphasis"><div class="card-body text-center py-2"><h4 class="mb-0" id="svc-r-delivery-hours">–</h4><p class="fs-10 mb-0 text-muted">Delivery hrs</p></div></div></div>
+                            <div class="col-6"><div class="card bg-body-emphasis"><div class="card-body text-center py-2"><h4 class="mb-0" id="svc-r-reporting-hours">–</h4><p class="fs-10 mb-0 text-muted">Reporting hrs</p></div></div></div>
+                          </div>
+                          <div id="svc-r-errors" class="alert alert-danger d-none"></div>
+                          <ul class="fs-10 mb-0" id="svc-r-justification"></ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {% endif %}
+            </div>
+
+            {% if service.scoping_template and service.scoping_template.fields.all %}
+            <script>
+            (function () {
+              function getCookie(name){var m=document.cookie.match('(^|;)\\s*'+name+'\\s*=\\s*([^;]+)');return m?m.pop():'';}
+              var btn = document.getElementById('svc-run-test');
+              if(!btn) return;
+              btn.addEventListener('click', function(){
+                var answers={};
+                document.querySelectorAll('.svc-scope-answer').forEach(function(el){
+                  answers[el.dataset.slug] = el.dataset.type==='1' ? el.checked : el.value;
+                });
+                fetch("{% url 'scoping_template_calc' service.scoping_template.slug %}", {
+                  method:'POST',
+                  headers:{'Content-Type':'application/json','X-CSRFToken':getCookie('csrftoken')},
+                  body:JSON.stringify({answers:answers})
+                }).then(function(r){return r.json();}).then(function(d){
+                  document.getElementById('svc-test-results').classList.remove('d-none');
+                  document.getElementById('svc-r-testing-days').textContent=d.testing_days;
+                  document.getElementById('svc-r-reporting-days').textContent=d.reporting_days;
+                  document.getElementById('svc-r-delivery-hours').textContent=d.delivery_hours;
+                  document.getElementById('svc-r-reporting-hours').textContent=d.reporting_hours;
+                  var eb=document.getElementById('svc-r-errors');
+                  if(d.errors&&d.errors.length){eb.classList.remove('d-none');eb.innerHTML=d.errors.join('<br>');}else{eb.classList.add('d-none');}
+                  var ul=document.getElementById('svc-r-justification');ul.innerHTML='';
+                  (d.justification||[]).forEach(function(line){var li=document.createElement('li');li.textContent=line;ul.appendChild(li);});
+                });
+              });
+            })();
+            </script>
+            {% endif %}
+          </div>
           <div class="tab-pane fade" id="activity" role="tabpanel" aria-labelledby="activity-tab">
             {% include 'partials/audit_activity.html' %}
           </div>

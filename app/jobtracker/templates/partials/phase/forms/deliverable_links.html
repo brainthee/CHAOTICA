@@ -1,72 +1,18 @@
 {% load crispy_forms_tags %}
-<div class="card" id="basic-info">
-    <form method="post" id="deliverableForm" action="{% url 'phase_edit_delivery' phase.job.slug phase.slug %}" 
-    class="js-submit-modal-form">
-        <div class="card-header">
-            <div class="row">
-                <div class="col my-auto">
-                    <div class="h-100">
-                    <h4 class="mb-0">
-                        Deliverables
-                    </h4>
-                    </div>
-                </div>
-                <div class="col-lg-4 text-end">
-                    <button type="submit" class="btn btn-outline-success btn-sm">Save</button> 
-                </div>
-            </div>
-        </div>
-        <div class="card-body p-3">
-            {% csrf_token %}
-            <div class="row">
-                <div class="input-group">
-                    <div class="row w-100 ">
-                        <div class="col-9">
-                            <label>{{ config.PHASE_LABEL_DELIVERABLE }}</label>
-                        </div>
-                        <div class="col-3 text-end">
-                        </div>
-                    </div>
-                    <div class="row w-100 ">
-                    {{ phase_deliver_inline_form.linkDeliverable|as_crispy_field }}
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="input-group">
-                    <div class="row w-100 ">
-                        <div class="col-9">
-                            <label>{{ config.PHASE_LABEL_REPORT_DATA }}</label>
-                        </div>
-                        <div class="col-3 text-end">
-                        </div>
-                    </div>
-                    <div class="row w-100 ">
-                    {{ phase_deliver_inline_form.linkReportData|as_crispy_field }}
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="input-group">
-                    <div class="row w-100 ">
-                        <div class="col-9">
-                            <label>{{ config.PHASE_LABEL_TECH_DATA }}</label>
-                        </div>
-                        <div class="col-3 text-end">
-                        </div>
-                    </div>
-                    <div class="row w-100 ">
-                    {{ phase_deliver_inline_form.linkTechData|as_crispy_field }}
-                    </div>
-                </div>
-            </div>
-        </div>
-   </form>
- </div>
-
-
-<script> 
-    $("#deliverableForm").dirty({preventLeaving: true});
-</script>
+{% comment %}Inline-editable deliverables (links + report metadata + target dates).{% endcomment %}
+{{ phase_deliver_inline_form.media }}
+<div class="card" id="deliverables">
+  <div class="card-header">
+    <h4 class="mb-0">Deliverables</h4>
+  </div>
+  <form method="post" action="{% url 'phase_edit_delivery' phase.job.slug phase.slug %}" id="deliverableForm">
+    {% csrf_token %}
+    <div class="card-body">
+      {% crispy phase_deliver_inline_form %}
+    </div>
+    <div class="card-footer d-flex justify-content-end">
+      <button type="submit" class="btn btn-phoenix-primary btn-sm">Save deliverables</button>
+    </div>
+  </form>
+</div>
+<script>$("#deliverableForm").dirty({preventLeaving: true});</script>

@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block pageTitle %}Delete Scoping Template{% endblock %}
+{% block head_title %}Delete Scoping Template{% endblock %}
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item"><a class="opacity-50 text-body-emphasis" href="{% url 'scoping_template_list' %}">Scoping Templates</a></li>
+  <li class="breadcrumb-item text-body-emphasis active" aria-current="page">Delete</li>
+{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <h4 class="mb-3">Delete scoping template</h4>
+    <p>Are you sure you want to delete <strong>{{ object.name }}</strong>?</p>
+    {% if object.services.all %}
+      <div class="alert alert-warning">
+        This template is attached to {{ object.services.all|length }} service(s). They will keep their captured data but lose the questionnaire.
+      </div>
+    {% endif %}
+    <form method="post">
+      {% csrf_token %}
+      <a href="{% url 'scoping_template_list' %}" class="btn btn-phoenix-secondary me-2">Cancel</a>
+      <button type="submit" class="btn btn-danger">Delete</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

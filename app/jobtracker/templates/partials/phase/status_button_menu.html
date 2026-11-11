@@ -1,6 +1,6 @@
 <ul class="dropdown-menu shadow dropdown-menu-down">
   <li>
-    <a href="{% url 'phase_update' phase.job.slug phase.slug %}" class="dropdown-item">Edit Phase</a>
+    <a href="{% url 'phase_edit' phase.job.slug phase.slug %}" class="dropdown-item">Edit Phase</a>
   </li>
   <li>
     <button data-url="{% url 'phase_clone' phase.job.slug phase.slug %}" class="dropdown-item js-load-modal-form">Clone Phase</button>

@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block pageTitle %}Import Scoping Pack{% endblock %}
+{% block head_title %}Import Scoping Pack{% endblock %}
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item"><a class="opacity-50 text-body-emphasis" href="{% url 'scoping_template_list' %}">Scoping Templates</a></li>
+  <li class="breadcrumb-item text-body-emphasis active" aria-current="page">Import</li>
+{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-6">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="mb-3">Import a scoping pack</h4>
+        <p class="text-muted fs-9">Upload a JSON pack previously exported from CHAOTICA. Templates and their macros will be created. Organisation-specific scoping rules live only in these packs — never in the codebase.</p>
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          {{ form|crispy }}
+          <a href="{% url 'scoping_template_list' %}" class="btn btn-phoenix-secondary me-2">Cancel</a>
+          <button type="submit" class="btn btn-outline-success"><i class="fa-solid fa-file-import me-2"></i>Import</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

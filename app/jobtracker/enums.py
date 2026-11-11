@@ -891,6 +891,24 @@ class PhaseStatuses:
     #: Phases that can be reopened back to In Progress.
     REOPENABLE_STATUSES = [COMPLETED, DELIVERED]
 
+    #: Phases whose deliverable links + report metadata stay editable: from
+    #: In Progress all the way through to Delivered (7–15). Scheduling/service
+    #: fields still lock at In Progress (see CHANGEABLE_FIELDS), but testers
+    #: need to keep deliverable locations and report details current right up
+    #: until the report is actually delivered. Cancelled/postponed/deleted/
+    #: archived and pre-In-Progress phases are read-only.
+    DELIVERABLE_EDITABLE_STATUSES = [
+        IN_PROGRESS,
+        PENDING_TQA,
+        QA_TECH,
+        QA_TECH_AUTHOR_UPDATES,
+        PENDING_PQA,
+        QA_PRES,
+        QA_PRES_AUTHOR_UPDATES,
+        COMPLETED,
+        DELIVERED,
+    ]
+
     #: Phases that should carry a billing code (booked time is being coded):
     #: Schedule Tentative through Completed.
     CODE_REQUIRED_STATUSES = [

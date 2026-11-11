@@ -52,7 +52,7 @@ from crispy_forms.bootstrap import (
 from crispy_forms.layout import Layout, Row, Column, Field, Div, HTML, Submit
 from crispy_bootstrap5.bootstrap5 import FloatingField
 from django_select2 import forms as s2forms
-from django.db.models import Q
+from django.db.models import Q, Max
 from django.db.models.functions import Lower
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
@@ -1993,12 +1993,27 @@ class ChangeTimeSlotDateModalForm(forms.ModelForm):
         return cleaned_data
 
 
+def apply_status_lock(form, changeable_fields):
+    """Disable every form field whose name is not in ``changeable_fields``.
+
+    Centralises the status-based read-only behaviour previously duplicated
+    inline in :class:`JobForm` and :class:`PhaseForm`. ``changeable_fields`` is
+    the list of field names the current status permits editing (typically
+    ``<Statuses>.CHANGEABLE_FIELDS[status][1]``, or any explicit allow-list such
+    as the deliverable-editable set).
+    """
+    for name in form.fields:
+        if name not in changeable_fields:
+            form.fields[name].disabled = True
+
+
 class JobForm(forms.ModelForm):
     account_manager = forms.ModelChoiceField(
         queryset=User.objects.filter(is_active=True),
         widget=s2forms.ModelSelect2Widget(
             attrs={
                 "class": "select2-widget",
+                "data-width": "100%",
                 "data-minimum-input-length": 3,
                 "data-ajax--url": "/autocomplete/users",
                 "data-ajax--cache": "true",
@@ -2018,6 +2033,7 @@ class JobForm(forms.ModelForm):
         widget=s2forms.ModelSelect2Widget(
             attrs={
                 "class": "select2-widget",
+                "data-width": "100%",
                 "data-minimum-input-length": 3,
                 "data-ajax--url": "/autocomplete/users",
                 "data-ajax--cache": "true",
@@ -2036,6 +2052,7 @@ class JobForm(forms.ModelForm):
         widget=s2forms.ModelSelect2Widget(
             attrs={
                 "class": "select2-widget",
+                "data-width": "100%",
                 "data-minimum-input-length": 2,
                 "data-ajax--url": "/autocomplete/clients",
                 "data-ajax--cache": "true",
@@ -2050,6 +2067,7 @@ class JobForm(forms.ModelForm):
         widget=s2forms.ModelSelect2MultipleWidget(
             attrs={
                 "class": "select2-widget",
+                "data-width": "100%",
                 "data-minimum-input-length": 2,
                 "data-ajax--url": "/autocomplete/services",
                 "data-ajax--cache": "true",
@@ -2063,6 +2081,7 @@ class JobForm(forms.ModelForm):
         widget=s2forms.Select2Widget(
             attrs={
                 "class": "select2-widget",
+                "data-width": "100%",
             },
         ),
     )
@@ -2086,10 +2105,7 @@ class JobForm(forms.ModelForm):
         self.helper = FormHelper(self)
 
         # Set fields not in CHANGEABLE_FIELDS to readonly
-        for field in self.fields:
-            self.fields[field].label = ""
-            if field not in JobStatuses.CHANGEABLE_FIELDS[self.instance.status][1]:
-                self.fields[field].disabled = True
+        apply_status_lock(self, JobStatuses.CHANGEABLE_FIELDS[self.instance.status][1])
 
         self.fields["unit"].queryset = OrganisationalUnit.objects.filter(
             pk__in=self.user.unit_memberships.filter(
@@ -2111,7 +2127,22 @@ class JobForm(forms.ModelForm):
         exclude = ["created_by"]
 
 
+def _service_select2():
+    """Searchable, full-width select2 for the Phase.service picker."""
+    return s2forms.Select2Widget(
+        attrs={
+            "class": "select2-widget",
+            "data-width": "100%",
+            "data-placeholder": "Choose a service…",
+        }
+    )
+
+
 class PhaseForm(forms.ModelForm):
+
+    service = forms.ModelChoiceField(
+        queryset=Service.objects.all(), widget=_service_select2()
+    )
 
     def __init__(self, *args, **kwargs):
         job = None
@@ -2120,17 +2151,21 @@ class PhaseForm(forms.ModelForm):
         super(PhaseForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
         self.fields["service"].required = True
-        # Set fields not in CHANGEABLE_FIELDS to readonly
+        # Hide labels for the *hours fields as we render them nicer in a table
         for field in self.fields:
             if field.endswith("hours"):
-                # Hide labels for the *hours fields as we render them nicer in a table
                 self.fields[field].label = ""
-            if field not in PhaseStatuses.CHANGEABLE_FIELDS[self.instance.status][1]:
-                self.fields[field].disabled = True
+        # Set fields not in CHANGEABLE_FIELDS to readonly
+        apply_status_lock(
+            self, PhaseStatuses.CHANGEABLE_FIELDS[self.instance.status][1]
+        )
         if job:
-            self.fields["phase_number"].initial = (
-                Phase.objects.filter(job=job).count() + 1
-            )
+            # max + 1 (not count + 1) so a gap in the numbering doesn't default
+            # to an already-used value — see Phase.next_phase_number().
+            current_max = Phase.objects.filter(job=job).aggregate(
+                m=Max("phase_number")
+            )["m"]
+            self.fields["phase_number"].initial = (current_max or 0) + 1
 
         # Loop and set CSS
         for scope_field in [
@@ -2198,6 +2233,39 @@ class ScopeInlineForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(ScopeInlineForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
+        # Rendered via {% crispy %} inside the focused edit page's own <form>.
+        self.helper.form_tag = False
+        self.helper.layout = Layout(
+            HTML('<h5 class="mb-2">Overview</h5>'),
+            Row(Div(Field("overview"), css_class="col-12"), css_class="g-3"),
+            HTML('<h5 class="mt-4 mb-2">Kit</h5>'),
+            Row(
+                Div(Field("additional_kit_required"), css_class="col-12 col-md-6"),
+                Div(Field("kit_sourced_by_client"), css_class="col-12 col-md-6"),
+                css_class="g-3",
+            ),
+            Row(Div(Field("additional_kit_info"), css_class="col-12"), css_class="g-3"),
+            HTML('<h5 class="mt-4 mb-2">Flags</h5>'),
+            Row(
+                Div(Field("bespoke_project"), css_class="col-6 col-md-3"),
+                Div(Field("report_to_third_party"), css_class="col-6 col-md-3"),
+                Div(Field("is_time_limited"), css_class="col-6 col-md-3"),
+                Div(Field("retest_included"), css_class="col-6 col-md-3"),
+                css_class="g-3",
+            ),
+            Row(
+                Div(Field("technically_complex_test"), css_class="col-6 col-md-3"),
+                Div(Field("high_risk"), css_class="col-6 col-md-3"),
+                css_class="g-3",
+            ),
+            Row(Div(Field("reasons_for_high_risk"), css_class="col-12"), css_class="g-3"),
+            HTML('<h5 class="mt-4 mb-2">Restrictions</h5>'),
+            Row(
+                Div(Field("is_restricted"), css_class="col-12 col-md-6"),
+                Div(Field("restricted_detail"), css_class="col-12 col-md-6"),
+                css_class="g-3",
+            ),
+        )
 
     class Meta:
         model = Job
@@ -2219,13 +2287,36 @@ class ScopeInlineForm(forms.ModelForm):
 
 
 class PhaseDeliverInlineForm(forms.ModelForm):
+    """The three deliverable links.
+
+    Unlike the scheduling/service fields (locked at In Progress via
+    ``CHANGEABLE_FIELDS``), the deliverable links stay editable from In Progress
+    all the way through to Delivered — testers keep deliverable locations current
+    right up until the report is delivered. Governed by
+    :attr:`PhaseStatuses.DELIVERABLE_EDITABLE_STATUSES`. Report counts and QA/
+    delivery target dates live on the Scheduling section, not here.
+    """
 
     def __init__(self, *args, **kwargs):
+        from constance import config
+
         super(PhaseDeliverInlineForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper(self)
-        self.fields["linkDeliverable"].label = False
-        self.fields["linkTechData"].label = False
-        self.fields["linkReportData"].label = False
+        self.helper.form_tag = False
+        self.fields["linkDeliverable"].label = config.PHASE_LABEL_DELIVERABLE
+        self.fields["linkTechData"].label = config.PHASE_LABEL_TECH_DATA
+        self.fields["linkReportData"].label = config.PHASE_LABEL_REPORT_DATA
+
+        # Lock once the phase is no longer in a deliverable-editable status
+        # (before In Progress, or cancelled/postponed/deleted/archived).
+        if self.instance.status not in PhaseStatuses.DELIVERABLE_EDITABLE_STATUSES:
+            apply_status_lock(self, [])
+
+        self.helper.layout = Layout(
+            Row(Div(Field("linkDeliverable"), css_class="col-12"), css_class="g-3"),
+            Row(Div(Field("linkReportData"), css_class="col-12"), css_class="g-3"),
+            Row(Div(Field("linkTechData"), css_class="col-12"), css_class="g-3"),
+        )
 
     class Meta:
         model = Phase
@@ -2427,6 +2518,358 @@ class ScopeForm(forms.ModelForm):
             "technically_complex_test",
             "high_risk",
             "reasons_for_high_risk",
+        ]
+
+
+# ---------------------------------------------------------------------------
+# Section forms for the unified, inline section-based detail editors.
+#
+# JobForm / PhaseForm above remain for the full-page *create* views. On the
+# detail pages each editable card is driven by one of these small per-section
+# ModelForms, loaded into the shared #mainModal via js-load-modal-form. They
+# reuse apply_status_lock() so every section respects the same status-based
+# field locking as the monolithic forms.
+# ---------------------------------------------------------------------------
+
+
+def _user_select2():
+    return s2forms.ModelSelect2Widget(
+        attrs={
+            "class": "select2-widget",
+            "data-width": "100%",
+            "data-minimum-input-length": 3,
+            "data-ajax--url": "/autocomplete/users",
+            "data-ajax--cache": "true",
+            "data-ajax--type": "GET",
+        },
+        search_fields=[
+            "first_name__icontains",
+            "last_name__icontains",
+            "email__icontains",
+        ],
+    )
+
+
+class JobDetailsSectionForm(forms.ModelForm):
+    """Job 'Details' card: identity, unit, dates and overview."""
+
+    unit = forms.ModelChoiceField(
+        queryset=OrganisationalUnit.objects.all(),
+        widget=s2forms.Select2Widget(
+            attrs={"class": "select2-widget", "data-width": "100%"}
+        ),
+    )
+    overview = forms.CharField(
+        required=False,
+        label="Overview",
+        widget=TinyMCE(
+            attrs={
+                "class": "tinymce",
+                "data-tinymce": '{"height":"15rem","placeholder":"Write a description here..."}',
+                "rows": 5,
+            },
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user")
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_tag = False
+        self.fields["unit"].queryset = OrganisationalUnit.objects.filter(
+            pk__in=self.user.unit_memberships.filter(
+                roles__permissions__codename="can_add_job"
+            )
+            .values_list("unit")
+            .distinct()
+        )
+        apply_status_lock(self, JobStatuses.CHANGEABLE_FIELDS[self.instance.status][1])
+        self.helper.layout = Layout(
+            Row(Div(Field("title"), css_class="col-12"), css_class="g-3"),
+            Row(
+                Div(Field("external_id"), css_class="col-12 col-md-4"),
+                Div(Field("revenue"), css_class="col-12 col-md-4"),
+                Div(Field("unit"), css_class="col-12 col-md-4"),
+                css_class="g-3",
+            ),
+            Row(
+                Div(Field("desired_start_date"), css_class="col-12 col-md-6"),
+                Div(Field("desired_delivery_date"), css_class="col-12 col-md-6"),
+                css_class="g-3",
+            ),
+            Row(Div(Field("overview"), css_class="col-12"), css_class="g-3"),
+        )
+
+    class Meta:
+        model = Job
+        fields = [
+            "title",
+            "external_id",
+            "revenue",
+            "unit",
+            "desired_start_date",
+            "desired_delivery_date",
+            "overview",
+        ]
+        widgets = {
+            "desired_start_date": DatePickerInput(),
+            "desired_delivery_date": DatePickerInput(
+                range_from="desired_start_date",
+                options={"format": "YYYY-MM-DD", "allowInputToggle": True},
+            ),
+        }
+
+
+class JobContactsSectionForm(forms.ModelForm):
+    """Job 'Client & Contacts' card: client, POCs and account managers."""
+
+    client = forms.ModelChoiceField(
+        queryset=Client.objects.all(),
+        widget=s2forms.ModelSelect2Widget(
+            attrs={
+                "class": "select2-widget",
+                "data-width": "100%",
+                "data-minimum-input-length": 2,
+                "data-ajax--url": "/autocomplete/clients",
+                "data-ajax--cache": "true",
+                "data-ajax--type": "GET",
+            },
+        ),
+    )
+    account_manager = forms.ModelChoiceField(
+        queryset=User.objects.filter(is_active=True), widget=_user_select2()
+    )
+    dep_account_manager = forms.ModelChoiceField(
+        required=False,
+        queryset=User.objects.filter(is_active=True),
+        widget=_user_select2(),
+    )
+    # Searchable single-select POC + tag-style multi-select for additional
+    # contacts, so contacts can be added/removed inline.
+    primary_client_poc = forms.ModelChoiceField(
+        required=False,
+        queryset=Contact.objects.all(),
+        widget=s2forms.Select2Widget(
+            attrs={"class": "select2-widget", "data-width": "100%"}
+        ),
+    )
+    additional_contacts = forms.ModelMultipleChoiceField(
+        required=False,
+        queryset=Contact.objects.all(),
+        widget=s2forms.Select2MultipleWidget(
+            attrs={
+                "class": "select2-widget",
+                "data-width": "100%",
+                "data-placeholder": "Add contacts…",
+            }
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user")
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_tag = False
+        # POCs belong to the job's client.
+        if self.instance and self.instance.client_id:
+            poc_qs = Contact.objects.filter(company=self.instance.client)
+        else:
+            poc_qs = Contact.objects.all()
+        self.fields["primary_client_poc"].queryset = poc_qs
+        self.fields["additional_contacts"].queryset = poc_qs
+
+        # POC fields aren't in CHANGEABLE_FIELDS; allow them whenever the client
+        # itself is editable for this status.
+        changeable = list(JobStatuses.CHANGEABLE_FIELDS[self.instance.status][1])
+        if "client" in changeable:
+            changeable += ["primary_client_poc", "additional_contacts"]
+        apply_status_lock(self, changeable)
+        self.helper.layout = Layout(
+            Row(
+                Div(Field("client"), css_class="col-12 col-md-6"),
+                Div(Field("primary_client_poc"), css_class="col-12 col-md-6"),
+                css_class="g-3",
+            ),
+            Row(Div(Field("additional_contacts"), css_class="col-12"), css_class="g-3"),
+            Row(
+                Div(Field("account_manager"), css_class="col-12 col-md-6"),
+                Div(Field("dep_account_manager"), css_class="col-12 col-md-6"),
+                css_class="g-3",
+            ),
+        )
+
+    class Meta:
+        model = Job
+        fields = [
+            "client",
+            "primary_client_poc",
+            "additional_contacts",
+            "account_manager",
+            "dep_account_manager",
+        ]
+
+
+class PhaseDetailsSectionForm(forms.ModelForm):
+    """Phase 'Details' card: identity, service and scope-text fields."""
+
+    service = forms.ModelChoiceField(
+        queryset=Service.objects.all(), widget=_service_select2()
+    )
+
+    def __init__(self, *args, **kwargs):
+        kwargs.pop("job", None)
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_tag = False
+        self.fields["service"].required = True
+        apply_status_lock(
+            self, PhaseStatuses.CHANGEABLE_FIELDS[self.instance.status][1]
+        )
+        self.helper.layout = Layout(
+            Row(
+                Div(Field("phase_number"), css_class="col-6 col-md-3"),
+                Div(Field("title"), css_class="col-6 col-md-9"),
+                css_class="g-3",
+            ),
+            Row(Div(Field("service"), css_class="col-12"), css_class="g-3"),
+            Row(Div(Field("description"), css_class="col-12"), css_class="g-3"),
+            Row(
+                Div(Field("test_target"), css_class="col-12 col-md-6"),
+                Div(Field("comm_reqs"), css_class="col-12 col-md-6"),
+                css_class="g-3",
+            ),
+        )
+
+    class Meta:
+        model = Phase
+        fields = [
+            "phase_number",
+            "title",
+            "service",
+            "description",
+            "test_target",
+            "comm_reqs",
+        ]
+        widgets = {
+            "description": forms.Textarea(attrs={"class": "tinymce"}),
+            "comm_reqs": forms.Textarea(attrs={"class": "tinymce"}),
+            "test_target": forms.Textarea(attrs={"class": "tinymce"}),
+        }
+
+
+class PhaseSchedulingSectionForm(forms.ModelForm):
+    """Phase 'Scheduling' card: dates, onsite flags, location, restrictions."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs.pop("job", None)
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_tag = False
+        for date_field in (
+            "desired_start_date",
+            "desired_delivery_date",
+            "due_to_techqa_set",
+            "due_to_presqa_set",
+        ):
+            self.fields[date_field].widget = DatePickerInput(
+                options={"format": "YYYY-MM-DD", "allowInputToggle": True}
+            )
+            self.fields[date_field].required = False
+        apply_status_lock(
+            self, PhaseStatuses.CHANGEABLE_FIELDS[self.instance.status][1]
+        )
+        self.helper.layout = Layout(
+            Row(
+                Div(Field("desired_start_date"), css_class="col-12 col-md-6"),
+                Div(Field("desired_delivery_date"), css_class="col-12 col-md-6"),
+                css_class="g-3",
+            ),
+            Row(
+                Div(Field("due_to_techqa_set"), css_class="col-12 col-md-6"),
+                Div(Field("due_to_presqa_set"), css_class="col-12 col-md-6"),
+                css_class="g-3",
+            ),
+            Row(
+                Div(Field("is_testing_onsite"), css_class="col-12 col-md-4"),
+                Div(Field("is_reporting_onsite"), css_class="col-12 col-md-4"),
+                Div(Field("report_to_be_left_on_client_site"), css_class="col-12 col-md-4"),
+                css_class="g-3",
+            ),
+            Row(
+                Div(Field("number_of_reports"), css_class="col-12 col-md-4"),
+                css_class="g-3",
+            ),
+            Row(Div(Field("location"), css_class="col-12"), css_class="g-3"),
+            Row(
+                Div(Field("scheduling_requirements"), css_class="col-12 col-md-6"),
+                Div(Field("prerequisites"), css_class="col-12 col-md-6"),
+                css_class="g-3",
+            ),
+            Row(Div(Field("restrictions"), css_class="col-12"), css_class="g-3"),
+        )
+
+    class Meta:
+        model = Phase
+        fields = [
+            "desired_start_date",
+            "desired_delivery_date",
+            "due_to_techqa_set",
+            "due_to_presqa_set",
+            "number_of_reports",
+            "report_to_be_left_on_client_site",
+            "is_testing_onsite",
+            "is_reporting_onsite",
+            "location",
+            "restrictions",
+            "scheduling_requirements",
+            "prerequisites",
+        ]
+        widgets = {
+            "location": forms.Textarea(attrs={"class": "tinymce"}),
+            "restrictions": forms.Textarea(attrs={"class": "tinymce"}),
+            "scheduling_requirements": forms.Textarea(attrs={"class": "tinymce"}),
+            "prerequisites": forms.Textarea(attrs={"class": "tinymce"}),
+        }
+
+
+class PhaseHoursSectionForm(forms.ModelForm):
+    """Phase 'Hours' card: the eight scoped-hours fields."""
+
+    HOURS_FIELDS = [
+        "delivery_hours",
+        "reporting_hours",
+        "mgmt_hours",
+        "qa_hours",
+        "oversight_hours",
+        "debrief_hours",
+        "contingency_hours",
+        "other_hours",
+    ]
+
+    def __init__(self, *args, **kwargs):
+        kwargs.pop("job", None)
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.form_tag = False
+        for field in self.HOURS_FIELDS:
+            self.fields[field].label = ""
+            self.fields[field].widget.attrs["class"] = "time-input"
+            self.fields[field].widget.attrs["oninput"] = "updateTotals()"
+        apply_status_lock(
+            self, PhaseStatuses.CHANGEABLE_FIELDS[self.instance.status][1]
+        )
+
+    class Meta:
+        model = Phase
+        fields = [
+            "delivery_hours",
+            "reporting_hours",
+            "mgmt_hours",
+            "qa_hours",
+            "oversight_hours",
+            "debrief_hours",
+            "contingency_hours",
+            "other_hours",
         ]
 
 

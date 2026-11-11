@@ -14,6 +14,7 @@ from rest_framework import routers
 
 from . import views
 from .views import dashboard, platform
+from .views.scoping import ScopingCalculateView
 from .auth import ThrottledObtainAuthToken
 
 app_name = "api_v1"
@@ -47,6 +48,9 @@ router.register(
 )
 router.register(r"services", views.ServiceViewSet, basename="service")
 router.register(r"awarding-bodies", views.AwardingBodyViewSet, basename="awarding-body")
+router.register(
+    r"scoping-templates", views.ScopingTemplateViewSet, basename="scoping-template"
+)
 
 urlpatterns = [
     path("meta/", platform.MetaView.as_view(), name="meta"),
@@ -85,6 +89,11 @@ urlpatterns = [
     ),
     path("search/", platform.SearchView.as_view(), name="search"),
     path("search/goto/", platform.SearchGotoView.as_view(), name="search-goto"),
+    path(
+        "scoping/calculate/",
+        ScopingCalculateView.as_view(),
+        name="scoping-calculate",
+    ),
     path("", include(router.urls)),
     # Token issuance for programmatic clients (POST username/password -> token).
     path("auth/token/", ThrottledObtainAuthToken.as_view(), name="token"),

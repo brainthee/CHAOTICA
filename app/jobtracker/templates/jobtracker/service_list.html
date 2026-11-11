@@ -25,7 +25,13 @@
     <h2 class="mb-0">Services</h2>
     <p class="text-muted mb-0">{{ risk_stats.total_core_services }} core services, {{ risk_stats.core_at_risk }} at risk</p>
   </div>
-  <div class="col-3 d-flex justify-content-end">
+  <div class="col-auto ms-auto d-flex justify-content-end gap-2">
+    {% if perms.jobtracker.manage_scoping %}
+    <a class="btn btn-phoenix-secondary" href="{% url 'scoping_template_list' %}">
+      <i class="fa-solid fa-ruler-combined me-2"></i>
+      Scoping Templates
+    </a>
+    {% endif %}
     <a class="btn btn-phoenix-primary px-5" href="{% url 'service_create' %}">
       <i class="fa-solid fa-plus me-2"></i>
       Add new Service

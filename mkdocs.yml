@@ -59,6 +59,7 @@ nav:
     - Operations:
       - Managing Leave: user_guide/operations/managing_leave.md
       - Services: user_guide/operations/services.md
+      - Service Scoping: user_guide/operations/service_scoping.md
       - Loaded Cost Rates: user_guide/operations/loaded_cost_rates.md
     - Workflows:
       - Quality Assurance: user_guide/workflows/quality_assurance.md

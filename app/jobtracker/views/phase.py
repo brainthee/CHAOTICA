@@ -8,7 +8,7 @@ from django.views import View
 from django.db.models import Q
 from django.contrib import messages
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from django.views.generic.edit import CreateView, DeleteView
 from django.urls import reverse_lazy
 from chaotica_utils.views import log_system_activity, ChaoticaBaseView
 from chaotica_utils.mixins import ObjectActivityMixin
@@ -22,6 +22,9 @@ from ..forms import (
     PhaseScopeFeedbackInlineForm,
     PhaseTechQAInlineForm,
     PhaseForm,
+    PhaseDetailsSectionForm,
+    PhaseSchedulingSectionForm,
+    PhaseHoursSectionForm,
     LinkForm,
 )
 from ..enums import FeedbackType, PhaseStatuses, TimeSlotDeliveryRole, JobStatuses, LinkType
@@ -111,12 +114,6 @@ class PhaseDetailView(
     def get_context_data(self, **kwargs):
         context = super(PhaseDetailView, self).get_context_data(**kwargs)
 
-        phase_deliver_inline_form = PhaseDeliverInlineForm(instance=context["phase"])
-        context["phase_deliver_inline_form"] = phase_deliver_inline_form
-
-        info_form = PhaseForm(instance=context["phase"])
-        context["info_form"] = info_form
-
         context["entity_type"] = "Phase"
         context["entity_id"] = context["phase"].id
 
@@ -137,7 +134,38 @@ class PhaseDetailView(
         context["concurrent_phases"] = concurrent_phases(phase)
         context["missing_billing_code"] = phase_missing_billing_code(phase)
 
+        # Deliverable links + report metadata stay editable In Progress → Delivered.
+        context["can_edit_deliverables"] = (
+            phase.status in PhaseStatuses.DELIVERABLE_EDITABLE_STATUSES
+        )
+        if context["can_edit_deliverables"]:
+            context["phase_deliver_inline_form"] = PhaseDeliverInlineForm(
+                instance=phase
+            )
+        # Whether the status permits editing the general phase fields at all
+        # (drives the section-edit pencils on the detail cards).
+        context["can_edit_phase_fields"] = bool(
+            PhaseStatuses.CHANGEABLE_FIELDS[phase.status][1]
+        )
+
+        # Scoping tab: the service's template (if any), the answers captured on
+        # this phase, and the last applied result.
+        data = phase.data or {}
+        template = phase.service.scoping_template if phase.service_id else None
+        context["scoping_template"] = template
+        context["scoping_answers"] = data.get("scoping_answers") or {}
+        context["scoping_result"] = data.get("scoping_result") or None
+        context["scoping_justification"] = data.get("scoping_justification") or []
+        context["can_edit_scoping"] = self._scoping_hours_editable(phase)
+
         return context
+
+    @staticmethod
+    def _scoping_hours_editable(phase):
+        """Scoping may write delivery/reporting hours only while those hours are
+        still editable for the phase's status (same lock as PhaseForm)."""
+        changeable = PhaseStatuses.CHANGEABLE_FIELDS[phase.status][1]
+        return "delivery_hours" in changeable and "reporting_hours" in changeable
 
 
 class PhaseCreateView(UnitPermissionRequiredMixin, PhaseBaseView, CreateView):
@@ -164,8 +192,28 @@ class PhaseCreateView(UnitPermissionRequiredMixin, PhaseBaseView, CreateView):
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
-        form.instance.job = Job.objects.get(slug=self.kwargs["job_slug"])
-        form.instance.save()
+        from django.db import transaction
+
+        # Serialise concurrent adds for the same job (select_for_update on the
+        # job row) and never let a stale/edited phase_number collide with an
+        # existing one — PhaseForm excludes ``job`` so the form's unique_together
+        # check can't catch it, which otherwise surfaced as an IntegrityError.
+        with transaction.atomic():
+            job = Job.objects.select_for_update().get(slug=self.kwargs["job_slug"])
+            form.instance.job = job
+            taken = set(job.phases.values_list("phase_number", flat=True))
+            submitted = form.instance.phase_number
+            if not submitted or submitted in taken:
+                form.instance.phase_number = (max(taken) + 1) if taken else 1
+                if submitted and submitted in taken:
+                    messages.info(
+                        self.request,
+                        "Phase number {} was already in use; this phase was "
+                        "numbered {} instead.".format(
+                            submitted, form.instance.phase_number
+                        ),
+                    )
+            form.instance.save()
         log_system_activity(form.instance, "Created")
         return super(PhaseCreateView, self).form_valid(form)
 
@@ -454,40 +502,248 @@ def view_phase_schedule_util(request, job_slug, slug):
     return render(request, "partials/scheduler/schedule_util.html", context)
 
 
-class PhaseUpdateView(UnitPermissionRequiredMixin, PhaseBaseView, UpdateView):
-    permission_required = "jobtracker.can_update_job"
-    form_class = PhaseForm
-    template_name = "jobtracker/phase_form.html"
-    fields = None
+# --------------------------------------------------------------------------- #
+# Focused phase edit page                                                        #
+# --------------------------------------------------------------------------- #
 
-    def get_form_kwargs(self):
-        kwargs = super(PhaseUpdateView, self).get_form_kwargs()
-        if "job_slug" in self.kwargs:
-            kwargs["job"] = get_object_or_404(Job, slug=self.kwargs["job_slug"])
-        return kwargs
+def _phase_section_defs():
+    """Ordered sections for the focused phase editor.
+
+    Each entry: (key, label, form class, inner-template-or-None, editable(phase)).
+    ``editable`` decides whether the section's Save is offered for the phase's
+    status (fields are also disabled by the forms themselves when locked).
+    """
+    def fields_editable(phase):
+        return bool(PhaseStatuses.CHANGEABLE_FIELDS[phase.status][1])
+
+    # Deliverables are edited inline on their own detail tab (phase_edit_delivery),
+    # not here, so they stay a quick, frequent edit during delivery.
+    return [
+        ("details", "Details", PhaseDetailsSectionForm, None, fields_editable),
+        ("scheduling", "Scheduling", PhaseSchedulingSectionForm, None, fields_editable),
+        (
+            "hours", "Scoped Hours", PhaseHoursSectionForm,
+            "partials/phase/forms/scoping_panel.html", fields_editable,
+        ),
+    ]
+
+
+@job_permission_required_or_403("jobtracker.can_update_job", (Phase, "slug", "slug"))
+def phase_edit(request, job_slug, slug):
+    """Focused, single-page phase editor with a left section nav.
+
+    One surface for all phase editing (Details, Scheduling, Scoped Hours,
+    Deliverables). Each section is its own form (reusing the per-section
+    ModelForms) and saves independently via a hidden ``section`` field; on save
+    we return to this page on the same section. Replaces the old full-page
+    PhaseUpdateView and the per-card edit modals.
+    """
+    job = get_object_or_404(Job, slug=job_slug)
+    phase = get_object_or_404(Phase, job=job, slug=slug)
+    defs = _phase_section_defs()
+    posted = request.POST.get("section") if request.method == "POST" else None
+
+    sections = []
+    active = request.GET.get("section") or posted or defs[0][0]
+    for key, label, form_cls, inner, editable_fn in defs:
+        editable = editable_fn(phase)
+        if request.method == "POST" and key == posted:
+            if not editable:
+                return HttpResponseBadRequest(
+                    "This section is locked in the phase's current status."
+                )
+            form = form_cls(request.POST, instance=phase)
+            if form.is_valid():
+                form.save()
+                if form.changed_data:
+                    log_system_activity(
+                        phase,
+                        "{} edited ({})".format(label, ", ".join(form.changed_data)),
+                        author=request.user,
+                    )
+                messages.success(request, "{} saved.".format(label))
+                return HttpResponseRedirect(
+                    reverse(
+                        "phase_edit", kwargs={"job_slug": job_slug, "slug": slug}
+                    )
+                    + "?section={}".format(key)
+                )
+            active = key  # re-show this (invalid) section
+        else:
+            form = form_cls(instance=phase)
+        sections.append(
+            {
+                "key": key,
+                "label": label,
+                "form": form,
+                "inner": inner,
+                "editable": editable,
+            }
+        )
+
+    if active not in {s["key"] for s in sections}:
+        active = sections[0]["key"]
+
+    from django import forms as djforms
+
+    media = djforms.Media()
+    for s in sections:
+        media = media + s["form"].media
+
+    return render(
+        request,
+        "jobtracker/phase_edit.html",
+        {
+            "job": job,
+            "phase": phase,
+            "sections": sections,
+            "active_section": active,
+            "form_media": media,
+        },
+    )
+
+
+def _phase_scoping_template(phase):
+    """The scoping template attached to the phase's service, or None."""
+    if not phase.service_id:
+        return None
+    return phase.service.scoping_template
+
+
+@job_permission_required_or_403("jobtracker.can_update_job", (Phase, "slug", "slug"))
+def phase_scoping_calc(request, job_slug, slug):
+    """Live-evaluate the phase's service scoping template against posted answers.
+
+    Mirrors ``views_scoping.scoping_template_calc`` but keys off the phase's
+    service template rather than a template slug. Returns the engine result dict
+    as JSON for the Scoping tab's live preview.
+    """
+    import json
+
+    from ..scoping_engine import evaluate
+
+    phase = get_object_or_404(Phase, slug=slug, job__slug=job_slug)
+    template = _phase_scoping_template(phase)
+    if template is None:
+        return JsonResponse(
+            {"errors": ["No scoping template attached to this service."]}, status=400
+        )
+    try:
+        answers = json.loads(request.body.decode("utf-8") or "{}").get("answers", {})
+    except (ValueError, AttributeError):
+        answers = {}
+    return JsonResponse(evaluate(template, answers))
+
+
+@job_permission_required_or_403("jobtracker.can_update_job", (Phase, "slug", "slug"))
+def phase_scoping_update(request, job_slug, slug):
+    """Save scoping answers onto the phase; optionally apply them to hours.
+
+    POST ``answers`` (JSON or form fields) is stored in
+    ``phase.data['scoping_answers']``. With ``apply=1`` the engine is run and the
+    resulting delivery/reporting hours are written onto the phase, with the
+    justification/errors stored in ``phase.data``. Applying to hours is only
+    permitted while those hours are editable for the phase's status.
+    """
+    import json
+
+    from ..scoping_engine import evaluate
+
+    job = get_object_or_404(Job, slug=job_slug)
+    phase = get_object_or_404(Phase, job=job, slug=slug)
+    template = _phase_scoping_template(phase)
+
+    if request.method != "POST":
+        return HttpResponseBadRequest()
+    if template is None:
+        return HttpResponseBadRequest("No scoping template attached to this service.")
+
+    # Answers may arrive as a JSON body (live panel) or posted form fields.
+    answers = {}
+    if request.content_type and "application/json" in request.content_type:
+        try:
+            answers = json.loads(request.body.decode("utf-8") or "{}").get(
+                "answers", {}
+            )
+        except (ValueError, AttributeError):
+            answers = {}
+        apply = bool(json.loads(request.body.decode("utf-8") or "{}").get("apply"))
+    else:
+        for field in template.fields.all():
+            if field.slug in request.POST:
+                answers[field.slug] = request.POST.get(field.slug)
+        apply = request.POST.get("apply") in ("1", "true", "on", "True")
+
+    data = dict(phase.data or {})
+    data["scoping_answers"] = answers
+
+    result = None
+    if apply:
+        changeable = PhaseStatuses.CHANGEABLE_FIELDS[phase.status][1]
+        if "delivery_hours" not in changeable or "reporting_hours" not in changeable:
+            return HttpResponseBadRequest(
+                "Phase hours are locked in this status and can't be set from scoping."
+            )
+        result = evaluate(template, answers)
+        if not result["errors"]:
+            phase.delivery_hours = result["delivery_hours"]
+            phase.reporting_hours = result["reporting_hours"]
+        data["scoping_result"] = result
+        data["scoping_justification"] = result["justification"]
+        data["scoping_errors"] = result["errors"]
+
+    phase.data = data
+    phase.save()
+
+    detail = "applied to hours" if (apply and result and not result["errors"]) else "saved"
+    log_system_activity(
+        phase, "Scoping answers {}".format(detail), author=request.user
+    )
+
+    if request.headers.get("x-requested-with") == "XMLHttpRequest" or (
+        request.content_type and "application/json" in request.content_type
+    ):
+        return JsonResponse(
+            {"form_is_valid": True, "result": result}
+        )
+    return HttpResponseRedirect(
+        reverse("phase_detail", kwargs={"job_slug": job_slug, "slug": slug})
+        + "#scoping"
+    )
 
 
 @job_permission_required_or_403("jobtracker.can_update_job", (Phase, "slug", "slug"))
 def phase_edit_delivery(request, job_slug, slug):
+    """Inline save of the Deliverables tab (links + report metadata + target
+    dates). Rendered inline on the phase detail page; POST saves and returns to
+    the Deliverables tab. Editable from In Progress through Delivered only."""
     job = get_object_or_404(Job, slug=job_slug)
     phase = get_object_or_404(Phase, job=job, slug=slug)
-    data = dict()
+    back = (
+        reverse("phase_detail", kwargs={"job_slug": job_slug, "slug": slug})
+        + "#deliverables"
+    )
+    if phase.status not in PhaseStatuses.DELIVERABLE_EDITABLE_STATUSES:
+        return HttpResponseBadRequest(
+            "Deliverables can't be edited in this phase status."
+        )
     if request.method == "POST":
         form = PhaseDeliverInlineForm(request.POST, instance=phase)
         if form.is_valid():
             form.save()
-            data["form_is_valid"] = True
-            return redirect("phase_detail", job_slug, slug)
+            if form.changed_data:
+                log_system_activity(
+                    phase,
+                    "Deliverables edited ({})".format(", ".join(form.changed_data)),
+                    author=request.user,
+                )
+            messages.success(request, "Deliverables saved.")
         else:
-            data["form_is_valid"] = False
-    else:
-        form = PhaseDeliverInlineForm(instance=phase)
-
-    context = {"form": form}
-    data["html_form"] = loader.render_to_string(
-        "jobtracker/modals/feedback_form.html", context, request=request
-    )
-    return JsonResponse(data)
+            messages.error(
+                request,
+                "Deliverables not saved — check the links are valid URLs.",
+            )
+    return HttpResponseRedirect(back)
 
 
 def phase_feedback_edit(request, job_slug, slug, pk):

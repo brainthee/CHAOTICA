@@ -1,0 +1,46 @@
+{% comment %}Read-only scoped-hours card with a section-edit pencil (Hours modal).{% endcomment %}
+<div class="card mt-3" id="scoped-hours">
+   <div class="card-header">
+      <div class="row">
+         <div class="col my-auto">
+            <h4 class="mb-0">Scoped Hours</h4>
+         </div>
+         <div class="col-lg-4 text-end">
+            {% if can_edit_phase_fields %}
+            <a href="{% url 'phase_edit' phase.job.slug phase.slug %}?section=hours"
+               class="btn btn-phoenix-secondary btn-sm" title="Edit scoped hours">
+               <span class="fa fa-pen me-1"></span>Edit
+            </a>
+            {% endif %}
+         </div>
+      </div>
+   </div>
+   <div class="card-body p-0">
+      {% if phase.get_total_scoped_hours > 0 %}
+      <table class="table table-sm fs-9 mb-0">
+         <tbody>
+            {% for key, scopedHrs in phase.get_all_total_scoped_by_type.items %}
+            {% if scopedHrs.hrs > 0 %}
+            <tr>
+               <td class="ps-3">{{ scopedHrs.type }}</td>
+               <td class="text-end pe-3">{{ scopedHrs.days }} days <small class="text-body-tertiary">({{ scopedHrs.hrs }}h)</small></td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+         </tbody>
+         <tfoot>
+            <tr class="fw-bold border-top">
+               <td class="ps-3">Total</td>
+               <td class="text-end pe-3">{{ phase.get_total_scoped_days }} days <small class="text-body-tertiary">({{ phase.get_total_scoped_hours }}h)</small></td>
+            </tr>
+         </tfoot>
+      </table>
+      {% else %}
+      <div class="p-3 text-muted">
+         No hours scoped yet.{% if can_edit_phase_fields %}
+         Use <strong>Edit</strong> to set them, or apply them from the
+         <a href="{% url 'phase_detail' phase.job.slug phase.slug %}#scoping">Scoping</a> tab.{% endif %}
+      </div>
+      {% endif %}
+   </div>
+</div>

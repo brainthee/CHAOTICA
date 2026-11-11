@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block pageTitle %}Scoping Macros{% endblock %}
+{% block head_title %}Scoping Macros{% endblock %}
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item"><a class="opacity-50 text-body-emphasis" href="{% url 'scoping_template_list' %}">Scoping Templates</a></li>
+  <li class="breadcrumb-item text-body-emphasis active" aria-current="page">Macros</li>
+{% endblock %}
+{% block content %}
+<div class="row mb-4 mt-2 align-items-center">
+  <div class="col">
+    <h2 class="mb-0">Scoping Macros</h2>
+    <p class="text-muted mb-0">Reusable named formulas (e.g. a reporting-days rule)</p>
+  </div>
+  <div class="col-auto">
+    <a class="btn btn-phoenix-primary px-4" href="{% url 'scoping_macro_create' %}"><i class="fa-solid fa-plus me-2"></i>New macro</a>
+  </div>
+</div>
+{% if macros %}
+<div class="card"><div class="card-body p-0">
+  <table class="table table-hover fs-9 mb-0">
+    <thead><tr><th class="ps-4">Name</th><th>Expression</th><th class="text-end pe-4">Actions</th></tr></thead>
+    <tbody>
+      {% for m in macros %}
+      <tr>
+        <td class="ps-4"><a class="fw-semibold" href="{% url 'scoping_macro_edit' m.slug %}">{{ m.name }}</a>
+          {% if m.description %}<div class="fs-10 text-muted">{{ m.description }}</div>{% endif %}</td>
+        <td><code class="fs-10">{{ m.expression }}</code></td>
+        <td class="text-end pe-4">
+          <a class="btn btn-sm btn-phoenix-secondary" href="{% url 'scoping_macro_edit' m.slug %}"><i class="fa-solid fa-pen"></i></a>
+          <a class="btn btn-sm btn-phoenix-danger" href="{% url 'scoping_macro_delete' m.slug %}"><i class="fa-solid fa-trash"></i></a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% else %}
+<div class="card"><div class="card-body text-center py-6">
+  <h5>No macros yet</h5>
+  <p class="text-muted">Macros let shared formulas (like a reporting-days rule) live in one editable place.</p>
+  <a class="btn btn-phoenix-primary" href="{% url 'scoping_macro_create' %}"><i class="fa-solid fa-plus me-2"></i>New macro</a>
+</div></div>
+{% endif %}
+{% endblock %}

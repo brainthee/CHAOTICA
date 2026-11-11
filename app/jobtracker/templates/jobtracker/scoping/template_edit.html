@@ -1,0 +1,256 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+{% load crispy_forms_tags %}
+
+{% block pageTitle %}Scoping Template{% endblock %}
+{% block head_title %}Scoping Template{% endblock %}
+
+{% block breadcrumbItem %}
+  <li class="breadcrumb-item">
+    <a class="opacity-50 text-body-emphasis" href="{% url 'scoping_template_list' %}">Scoping Templates</a>
+  </li>
+  <li class="breadcrumb-item text-body-emphasis active" aria-current="page">
+    {% if template %}{{ template.name }}{% else %}New template{% endif %}
+  </li>
+{% endblock %}
+
+{% block content %}
+<form method="post">
+  {% csrf_token %}
+  {{ form.media }}
+
+  <div class="row g-3 flex-between-end mb-4">
+    <div class="col-auto">
+      <h2 class="mb-0">{% if template %}Edit scoping template{% else %}New scoping template{% endif %}</h2>
+    </div>
+    <div class="col-auto">
+      {% if template %}
+        <a class="btn btn-phoenix-secondary mb-2 mb-sm-0" href="{% url 'scoping_template_export' template.slug %}"><i class="fa-solid fa-file-export me-2"></i>Export</a>
+      {% endif %}
+      <a onclick="history.back()" class="btn btn-phoenix-secondary me-2 mb-2 mb-sm-0" type="button">Discard</a>
+      <button class="btn btn-outline-success mb-2 mb-sm-0" type="submit">Save</button>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Left: template settings -->
+    <div class="col-12 col-xl-4">
+      <div class="card mb-4">
+        <div class="card-body">
+          <h5 class="mb-3">Template</h5>
+          {{ form.name|as_crispy_field }}
+          {{ form.description|as_crispy_field }}
+          {{ form.is_active|as_crispy_field }}
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <h5 class="mb-3">Calculation</h5>
+          {{ form.calc_mode|as_crispy_field }}
+          {{ form.sizing_combine|as_crispy_field }}
+          {{ form.testing_expression|as_crispy_field }}
+          {{ form.reporting_macro|as_crispy_field }}
+          {{ form.reporting_expression|as_crispy_field }}
+          <p class="fs-10 text-muted mb-0">
+            Expression helpers: <code>ceil, floor, round, round_half_up, max, min, abs, bucket(value, thresholds, values)</code>.
+            Reference fields by slug. The reporting step also receives <code>testing_days</code>.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: field builder -->
+    <div class="col-12 col-xl-8">
+      <div class="card">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">Questions</h5>
+            <button type="button" class="btn btn-sm btn-phoenix-primary" id="add-field"><i class="fa-solid fa-plus me-1"></i>Add question</button>
+          </div>
+
+          {{ formset.management_form }}
+          {% if formset.non_form_errors %}
+            <div class="alert alert-danger">{{ formset.non_form_errors }}</div>
+          {% endif %}
+
+          <div class="table-responsive">
+            <table class="table fs-9 align-middle" id="field-table">
+              <thead>
+                <tr>
+                  <th style="width:4rem">#</th>
+                  <th>Label</th>
+                  <th>Slug</th>
+                  <th>Type</th>
+                  <th>Role</th>
+                  <th>Rate</th>
+                  <th>Weight</th>
+                  <th>Req.</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="field-rows">
+                {% for f in formset %}
+                  <tr class="field-row">
+                    {{ f.id }}
+                    {% for hidden in f.hidden_fields %}{{ hidden }}{% endfor %}
+                    <td>{{ f.order|add_class:"form-control form-control-sm" }}</td>
+                    <td>{{ f.label|add_class:"form-control form-control-sm" }}
+                        {% if f.label.errors %}<div class="text-danger fs-10">{{ f.label.errors|striptags }}</div>{% endif %}</td>
+                    <td>{{ f.slug|add_class:"form-control form-control-sm font-monospace" }}</td>
+                    <td>{{ f.field_type|add_class:"form-select form-select-sm" }}</td>
+                    <td>{{ f.calc_role|add_class:"form-select form-select-sm" }}</td>
+                    <td>{{ f.rate|add_class:"form-control form-control-sm" }}</td>
+                    <td>{{ f.weight|add_class:"form-control form-control-sm" }}</td>
+                    <td class="text-center">{{ f.required }}</td>
+                    <td class="text-center">
+                      {% if formset.can_delete %}{{ f.DELETE }}{% endif %}
+                    </td>
+                  </tr>
+                  <tr class="field-extra">
+                    <td></td>
+                    <td colspan="4">{{ f.help_text|add_class:"form-control form-control-sm"|attr:"placeholder:Help text" }}</td>
+                    <td colspan="4">{{ f.options|add_class:"form-control form-control-sm font-monospace"|attr:"placeholder:Options JSON (SELECT fields)" }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Empty form template for cloning -->
+          <template id="empty-field-form">
+            <tr class="field-row">
+              {{ formset.empty_form.id }}
+              <td>{{ formset.empty_form.order|add_class:"form-control form-control-sm" }}</td>
+              <td>{{ formset.empty_form.label|add_class:"form-control form-control-sm" }}</td>
+              <td>{{ formset.empty_form.slug|add_class:"form-control form-control-sm font-monospace" }}</td>
+              <td>{{ formset.empty_form.field_type|add_class:"form-select form-select-sm" }}</td>
+              <td>{{ formset.empty_form.calc_role|add_class:"form-select form-select-sm" }}</td>
+              <td>{{ formset.empty_form.rate|add_class:"form-control form-control-sm" }}</td>
+              <td>{{ formset.empty_form.weight|add_class:"form-control form-control-sm" }}</td>
+              <td class="text-center">{{ formset.empty_form.required }}</td>
+              <td class="text-center">{{ formset.empty_form.DELETE }}</td>
+            </tr>
+            <tr class="field-extra">
+              <td></td>
+              <td colspan="4">{{ formset.empty_form.help_text|add_class:"form-control form-control-sm"|attr:"placeholder:Help text" }}</td>
+              <td colspan="4">{{ formset.empty_form.options|add_class:"form-control form-control-sm font-monospace"|attr:"placeholder:Options JSON (SELECT fields)" }}</td>
+            </tr>
+          </template>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
+
+{% if template %}
+<!-- Test panel -->
+<div class="card mt-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="mb-0"><i class="fa-solid fa-flask me-2"></i>Test this template</h5>
+      <small class="text-muted">Uses the last <strong>saved</strong> version</small>
+    </div>
+    <div class="row g-4">
+      <div class="col-12 col-lg-6">
+        <div id="test-inputs">
+          {% for f in template.fields.all %}
+          <div class="mb-3">
+            <label class="form-label fs-9 mb-1">{{ f.label }}{% if f.required %} <span class="text-danger">*</span>{% endif %}</label>
+            {% if f.field_type == 1 %}
+              <div class="form-check"><input type="checkbox" class="form-check-input scope-answer" data-slug="{{ f.slug }}" data-type="1"></div>
+            {% elif f.field_type == 2 %}
+              <select class="form-select form-select-sm scope-answer" data-slug="{{ f.slug }}" data-type="2">
+                <option value="">—</option>
+                {% for opt in f.options %}<option value="{{ opt.value }}">{{ opt.label }}</option>{% endfor %}
+              </select>
+            {% else %}
+              <input type="{% if f.field_type == 0 %}number{% else %}text{% endif %}" step="any" class="form-control form-control-sm scope-answer" data-slug="{{ f.slug }}" data-type="{{ f.field_type }}" value="{{ f.default }}">
+            {% endif %}
+            {% if f.help_text %}<div class="fs-10 text-muted">{{ f.help_text }}</div>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        <button type="button" class="btn btn-phoenix-primary" id="run-test"><i class="fa-solid fa-play me-2"></i>Calculate</button>
+      </div>
+      <div class="col-12 col-lg-6">
+        <div id="test-results" class="d-none">
+          <div class="row g-2 mb-3">
+            <div class="col-6 col-xl-3"><div class="card bg-body-emphasis"><div class="card-body text-center py-2"><h4 class="mb-0" id="r-testing-days">–</h4><p class="fs-10 mb-0 text-muted">Testing days</p></div></div></div>
+            <div class="col-6 col-xl-3"><div class="card bg-body-emphasis"><div class="card-body text-center py-2"><h4 class="mb-0" id="r-reporting-days">–</h4><p class="fs-10 mb-0 text-muted">Reporting days</p></div></div></div>
+            <div class="col-6 col-xl-3"><div class="card bg-body-emphasis"><div class="card-body text-center py-2"><h4 class="mb-0" id="r-delivery-hours">–</h4><p class="fs-10 mb-0 text-muted">Delivery hrs</p></div></div></div>
+            <div class="col-6 col-xl-3"><div class="card bg-body-emphasis"><div class="card-body text-center py-2"><h4 class="mb-0" id="r-reporting-hours">–</h4><p class="fs-10 mb-0 text-muted">Reporting hrs</p></div></div></div>
+          </div>
+          <div id="r-errors" class="alert alert-danger d-none"></div>
+          <h6 class="mb-2">Based on</h6>
+          <ul class="fs-9 mb-0" id="r-justification"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<script>
+(function () {
+  function getCookie(name) {
+    const m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+    return m ? m.pop() : '';
+  }
+
+  // --- dynamic formset rows ---
+  const addBtn = document.getElementById('add-field');
+  const totalForms = document.querySelector('#id_fields-TOTAL_FORMS');
+  const rows = document.getElementById('field-rows');
+  const tmpl = document.getElementById('empty-field-form');
+  if (addBtn && totalForms && tmpl) {
+    addBtn.addEventListener('click', function () {
+      const idx = parseInt(totalForms.value, 10);
+      const html = tmpl.innerHTML.replace(/__prefix__/g, idx);
+      const wrap = document.createElement('tbody');
+      wrap.innerHTML = html;
+      while (wrap.firstChild) { rows.appendChild(wrap.firstChild); }
+      totalForms.value = idx + 1;
+    });
+  }
+
+  // --- live test ---
+  const runBtn = document.getElementById('run-test');
+  if (runBtn) {
+    runBtn.addEventListener('click', function () {
+      const answers = {};
+      document.querySelectorAll('.scope-answer').forEach(function (el) {
+        const slug = el.dataset.slug;
+        if (el.dataset.type === '1') { answers[slug] = el.checked; }
+        else { answers[slug] = el.value; }
+      });
+      fetch("{% if template %}{% url 'scoping_template_calc' template.slug %}{% endif %}", {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken')},
+        body: JSON.stringify({answers: answers})
+      })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        document.getElementById('test-results').classList.remove('d-none');
+        document.getElementById('r-testing-days').textContent = d.testing_days;
+        document.getElementById('r-reporting-days').textContent = d.reporting_days;
+        document.getElementById('r-delivery-hours').textContent = d.delivery_hours;
+        document.getElementById('r-reporting-hours').textContent = d.reporting_hours;
+        const errBox = document.getElementById('r-errors');
+        if (d.errors && d.errors.length) {
+          errBox.classList.remove('d-none');
+          errBox.innerHTML = d.errors.join('<br>');
+        } else { errBox.classList.add('d-none'); }
+        const ul = document.getElementById('r-justification');
+        ul.innerHTML = '';
+        (d.justification || []).forEach(function (line) {
+          const li = document.createElement('li');
+          li.textContent = line;
+          ul.appendChild(li);
+        });
+      });
+    });
+  }
+})();
+</script>
+{% endblock %}

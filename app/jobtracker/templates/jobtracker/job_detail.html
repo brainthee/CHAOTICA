@@ -81,11 +81,7 @@
         <div class="tab-pane fade active show" id="general" role="tabpanel" aria-labelledby="general-tab">
           {% include 'partials/job/widgets/contacts.html' %}
           <div id="scope-info">
-            {% if job.inScoping %}
-              {% include 'partials/job/forms/scope.html' %}
-            {% else %}
-              {% include 'partials/job/widgets/scope.html' %}
-            {% endif %}
+            {% include 'partials/job/widgets/scope.html' %}
           </div>
         </div>
         <div class="tab-pane fade" id="phases" role="tabpanel" aria-labelledby="phases-tab">
@@ -205,12 +201,6 @@
 
 
 {% block extra_js %}
-<script>
-
-$("#scopeForm").dirty({preventLeaving: true});
-
-</script>
-
 <script src="{% static 'vendors/vis-timeline/vis-timeline-graph2d.min.js' %}"></script>
 <script>
   window.SCHEDULER_CONFIG = {
