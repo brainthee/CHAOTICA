@@ -2127,7 +2127,22 @@ class JobForm(forms.ModelForm):
         exclude = ["created_by"]
 
 
+def _service_select2():
+    """Searchable, full-width select2 for the Phase.service picker."""
+    return s2forms.Select2Widget(
+        attrs={
+            "class": "select2-widget",
+            "data-width": "100%",
+            "data-placeholder": "Choose a service…",
+        }
+    )
+
+
 class PhaseForm(forms.ModelForm):
+
+    service = forms.ModelChoiceField(
+        queryset=Service.objects.all(), widget=_service_select2()
+    )
 
     def __init__(self, *args, **kwargs):
         job = None
@@ -2720,6 +2735,10 @@ class JobContactsSectionForm(forms.ModelForm):
 
 class PhaseDetailsSectionForm(forms.ModelForm):
     """Phase 'Details' card: identity, service and scope-text fields."""
+
+    service = forms.ModelChoiceField(
+        queryset=Service.objects.all(), widget=_service_select2()
+    )
 
     def __init__(self, *args, **kwargs):
         kwargs.pop("job", None)
