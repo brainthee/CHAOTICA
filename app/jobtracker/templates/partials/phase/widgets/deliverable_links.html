@@ -8,8 +8,8 @@
          </div>
          <div class="col-lg-4 text-end">
             {% if can_edit_deliverables %}
-            <a href="#" data-url="{% url 'phase_edit_delivery' phase.job.slug phase.slug %}"
-               class="btn btn-phoenix-secondary btn-sm js-load-modal-form" title="Edit deliverables">
+            <a href="{% url 'phase_edit' phase.job.slug phase.slug %}?section=deliverables"
+               class="btn btn-phoenix-secondary btn-sm" title="Edit deliverables">
                <span class="fa fa-pen me-1"></span>Edit
             </a>
             {% endif %}

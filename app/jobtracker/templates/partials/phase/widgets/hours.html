@@ -7,8 +7,8 @@
          </div>
          <div class="col-lg-4 text-end">
             {% if can_edit_phase_fields %}
-            <a href="#" data-url="{% url 'phase_section_edit' phase.job.slug phase.slug 'hours' %}"
-               class="btn btn-phoenix-secondary btn-sm js-load-modal-form" title="Edit scoped hours">
+            <a href="{% url 'phase_edit' phase.job.slug phase.slug %}?section=hours"
+               class="btn btn-phoenix-secondary btn-sm" title="Edit scoped hours">
                <span class="fa fa-pen me-1"></span>Edit
             </a>
             {% endif %}

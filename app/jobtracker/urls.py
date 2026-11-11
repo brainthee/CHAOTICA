@@ -240,18 +240,7 @@ urlpatterns = [
     path("job/<str:slug>/team/", views.view_job_team, name="view_job_team"),
     path("job/<str:slug>/sales/", views.view_job_sales, name="view_job_sales"),
     path("job/<str:slug>/team/export/", views.job_team_export, name="job_team_export"),
-    path("job/<str:slug>/edit/scope", views.job_edit_scope, name="job_edit_scope"),
-    path(
-        "job/<str:slug>/edit/section/<str:section>/",
-        views.job_section_edit,
-        name="job_section_edit",
-    ),
-    path(
-        "job/<str:slug>/update/scope",
-        views.JobUpdateScopeView.as_view(),
-        name="job_update_scope",
-    ),
-    path("job/<str:slug>/update/", views.JobUpdateView.as_view(), name="job_update"),
+    path("job/<str:slug>/edit/", views.job_edit, name="job_edit"),
     path(
         "job/<str:slug>/support/add",
         views.job_support_team_add,
@@ -455,14 +444,9 @@ urlpatterns = [
         name="phases_bulk_qa_execute",
     ),
     path(
-        "job/<str:job_slug>/phase/<str:slug>/edit/delivery",
-        views.phase_edit_delivery,
-        name="phase_edit_delivery",
-    ),
-    path(
-        "job/<str:job_slug>/phase/<str:slug>/edit/section/<str:section>/",
-        views.phase_section_edit,
-        name="phase_section_edit",
+        "job/<str:job_slug>/phase/<str:slug>/edit/",
+        views.phase_edit,
+        name="phase_edit",
     ),
     path(
         "job/<str:job_slug>/phase/<str:slug>/scoping/",

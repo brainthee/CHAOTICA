@@ -3,177 +3,82 @@
 {% load widget_tweaks %}
 {% load crispy_forms_tags %}
 
-{% block pageTitle %}{% if form.instance.pk %}Edit {% else %}New{% endif %} Phase{% endblock pageTitle %}
-{% block head_title %}{% if form.instance.pk %}Edit {% else %}New{% endif %} Phase{% endblock head_title %}
-
+{% block pageTitle %}New Phase{% endblock pageTitle %}
+{% block head_title %}New Phase{% endblock head_title %}
 
 {% block breadcrumbItem %}
 <li class="breadcrumb-item"><a class="opacity-50 text-body-emphasis" href="{% url 'job_list' %}">Jobs</a></li>
 <li class="breadcrumb-item"><a class="opacity-50 text-body-emphasis" href="{{ job.client.get_absolute_url }}">{{ job.client }}</a></li>
 <li class="breadcrumb-item"><a class="opacity-50 text-body-emphasis" href="{{ job.get_absolute_url }}">{{ job.id }}:{{ job.title }}</a></li>
-{% if form.instance.pk %}
-<li class="breadcrumb-item" aria-current="page">
-    <a class="opacity-50 text-body-emphasis" href="{{ phase.get_absolute_url }}">{{ phase.phase_number }}:{{ phase.title }}</a>
-</li>
-<li class="breadcrumb-item text-body-emphasis active" aria-current="page">Edit</li>
-{% else %}
-<li class="breadcrumb-item text-body-emphasis active" aria-current="page">New</li>
-{% endif %}
+<li class="breadcrumb-item text-body-emphasis active" aria-current="page">New Phase</li>
 {% endblock breadcrumbItem %}
 
 {% block content %}
+{{ form.media }}
 {% if form.errors %}
-<div class="alert alert-phoenix-warning">
-  {{ form.errors }}
-</div>
+<div class="alert alert-phoenix-warning">{{ form.non_field_errors }}</div>
 {% endif %}
-<div class="mt-3">
-    <form method="post">
-        {% csrf_token %}
-        {{ form.media }}
-        <div class="row g-3 flex-between-end mb-5">
-            <div class="col-auto">
-                <h2 class="mb-2">{% if form.instance.pk %}Edit {% else %}New{% endif %} Phase</h2>
-            </div>
-            <div class="col-auto">
-                <button onclick="history.back()" class="btn btn-phoenix-secondary me-2 mb-2 mb-sm-0" type="button">Discard</button>
-                <button class="btn btn-outline-success mb-2 mb-sm-0" type="submit">Save</button>
-            </div>
+
+<form method="post">
+  {% csrf_token %}
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">New Phase</h2>
+    <div class="d-flex gap-2">
+      <a href="{{ job.get_absolute_url }}" class="btn btn-phoenix-secondary btn-sm">Cancel</a>
+      <button class="btn btn-phoenix-primary btn-sm" type="submit">Create Phase</button>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-12 col-xl-8">
+      <div class="card">
+        <div class="card-header"><h4 class="mb-0">Phase details</h4></div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-6 col-md-3">{{ form.phase_number|as_crispy_field }}</div>
+            <div class="col-6 col-md-9">{{ form.title|as_crispy_field }}</div>
+            <div class="col-12">{{ form.service|as_crispy_field }}</div>
+            <div class="col-12">{{ form.description|as_crispy_field }}</div>
+          </div>
+
+          <h5 class="mt-4 mb-3">Logistics</h5>
+          <div class="row g-3">
+            <div class="col-12 col-md-6">{{ form.is_testing_onsite|as_crispy_field }}</div>
+            <div class="col-12 col-md-6">{{ form.is_reporting_onsite|as_crispy_field }}</div>
+            <div class="col-12 col-md-6">{{ form.number_of_reports|as_crispy_field }}</div>
+            <div class="col-12 col-md-6">{{ form.report_to_be_left_on_client_site|as_crispy_field }}</div>
+            <div class="col-12">{{ form.location|as_crispy_field }}</div>
+          </div>
+
+          <h5 class="mt-4 mb-3">Requirements</h5>
+          <div class="row g-3">
+            <div class="col-12 col-md-6">{{ form.test_target|as_crispy_field }}</div>
+            <div class="col-12 col-md-6">{{ form.prerequisites|as_crispy_field }}</div>
+            <div class="col-12 col-md-6">{{ form.comm_reqs|as_crispy_field }}</div>
+            <div class="col-12 col-md-6">{{ form.scheduling_requirements|as_crispy_field }}</div>
+            <div class="col-12">{{ form.restrictions|as_crispy_field }}</div>
+          </div>
         </div>
+      </div>
+    </div>
 
-
-        <div class="row">
-            <div class="col-12 col-xl-8 gx-3">
-                <div class="row mb-6">
-                    <div class="col-12 col-xl-6">
-                        {{ form.phase_number|as_crispy_field }}
-                    </div>
-
-                    <div class="col-12 col-xl-6">
-                        {{ form.service|as_crispy_field }}
-                    </div>
-                </div>
-
-                <div class="mb-6">
-                    {{ form.title|as_crispy_field }}
-                </div>
-
-                <div class="mb-6">
-                    {{ form.description|as_crispy_field }}
-                </div>
-
-
-                <div class="row g-0">
-                    <div class="col-12">
-                        <h4 class="card-title m-3 mb-4">Logistics</h4>
-                        <div class="px-3">
-                            <div class="row">
-                                <div class="col-12 col-xl-6">
-                                    {{ form.is_testing_onsite|as_crispy_field }}
-                                </div>
-            
-                                <div class="col-12 col-xl-6">
-                                    {{ form.is_reporting_onsite|as_crispy_field }}
-                                </div>
-                            </div>     
-
-                            <div class="row">
-                                <div class="col-12 col-xl-6">
-                                    {{ form.number_of_reports|as_crispy_field }}
-                                </div>
-            
-                                <div class="col-12 col-xl-6">
-                                    {{ form.report_to_be_left_on_client_site|as_crispy_field }}
-                                </div>
-                            </div>  
-
-                            <div class="mb-6">
-                                {{ form.location|as_crispy_field }}
-                            </div>            
-                        </div>         
-                                
-                    </div> 
-                </div>
-                <div class="row g-0">
-                    <div class="col-12 g-2">
-                        <h4 class="card-title m-3 mb-4">Requirements</h4>
-                        <div class="px-3">
-                            <div class="row">
-                                <div class="col-12 col-xl-6">
-                                    {{ form.test_target|as_crispy_field }}
-                                </div>
-            
-                                <div class="col-12 col-xl-6">
-                                    {{ form.prerequisites|as_crispy_field }}
-                                </div>
-                            </div>  
-                            <div class="row">
-                                <div class="col-12 col-xl-6">
-                                    {{ form.comm_reqs|as_crispy_field }}
-                                </div>
-            
-                                <div class="col-12 col-xl-6">
-                                    {{ form.scheduling_requirements|as_crispy_field }}
-                                </div>
-                            </div>       
-                            <div class="row">            
-                                <div class="col-12 col-xl-6">
-                                    {{ form.restrictions|as_crispy_field }}
-                                </div>
-                            </div>       
-                        </div> 
-                    </div>
-
-                </div>
-                
-            </div>
-
-            <div class="col-12 col-xl-4">
-                <div class="row g-2">                
-
-                    <div class="col-12 col-xl-12">
-                        <div class="card mb-3">
-                           {% include 'partials/phase/forms/scoping_panel.html' %}
-                        </div>
-                    </div>
-
-
-                    <div class="col-12 col-xl-12">
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <h4 class="">Dates</h4>
-                            </div>
-                            <div class="card-body">
-                                <div class="row gx-3">
-                                    <div class="col-12 col-sm-6 col-xl-12">
-                                        <div class="mb-4">
-                                            {{ form.desired_start_date|as_crispy_field }}                                        
-                                        </div>
-                                    </div>
-                                    <div class="col-12 col-sm-6 col-xl-12">
-                                        <div class="mb-4">
-                                            {{ form.due_to_techqa_set|as_crispy_field }}                                        
-                                        </div>
-                                    </div>
-                                    <div class="col-12 col-sm-6 col-xl-12">
-                                        <div class="mb-4">
-                                            {{ form.due_to_presqa_set|as_crispy_field }}                                        
-                                        </div>
-                                    </div>
-                                    <div class="col-12 col-sm-6 col-xl-12">
-                                        <div class="mb-4">
-                                            {{ form.desired_delivery_date|as_crispy_field }}                                        
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
+    <div class="col-12 col-xl-4">
+      <div class="card mb-4">
+        {% include 'partials/phase/forms/scoping_panel.html' %}
+      </div>
+      <div class="card">
+        <div class="card-header"><h4 class="mb-0">Dates</h4></div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-12">{{ form.desired_start_date|as_crispy_field }}</div>
+            <div class="col-12">{{ form.due_to_techqa_set|as_crispy_field }}</div>
+            <div class="col-12">{{ form.due_to_presqa_set|as_crispy_field }}</div>
+            <div class="col-12">{{ form.desired_delivery_date|as_crispy_field }}</div>
+          </div>
         </div>
-
-    </form>
-</div>
+      </div>
+    </div>
+  </div>
+</form>
 {% endblock content %}

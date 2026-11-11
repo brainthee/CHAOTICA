@@ -6,6 +6,7 @@ from ..selectors.jobs import (
     phases_missing_billing_code,
 )
 from django.shortcuts import get_object_or_404, render
+from django.contrib import messages
 from django.urls import reverse
 from django.http import (
     HttpResponseRedirect,
@@ -23,7 +24,7 @@ from django.views import View
 from django.views.decorators.http import require_http_methods
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, UpdateView
+from django.views.generic.edit import CreateView
 from django.urls import reverse_lazy
 from django_select2.views import AutoResponseView
 from chaotica_utils.views import log_system_activity, ChaoticaBaseView
@@ -48,7 +49,6 @@ from ..forms import (
     JobDetailsSectionForm,
     JobContactsSectionForm,
     AssignUserField,
-    ScopeForm,
     AssignJobFramework,
     job_billingcode_formset,
     JobSupportTeamRoleForm,
@@ -205,75 +205,75 @@ def assign_job_scoped(request, slug):
     return _process_assign_user(request, job, "scoped_by", multiple=True)
 
 
-@job_permission_required_or_403("jobtracker.can_scope_jobs", (Job, "slug", "slug"))
-def job_edit_scope(request, slug):
-    """Edit a job's Scope & Risk in the shared #mainModal (js-load-modal-form)."""
-    job = get_object_or_404(Job, slug=slug)
-    data = {"form_is_valid": False}
-    if request.method == "POST":
-        form = ScopeInlineForm(request.POST, instance=job)
-        if form.is_valid():
-            job = form.save()
-            data["form_is_valid"] = True
-            if form.changed_data:
-                log_system_activity(
-                    job, "Scope edited (" + ", ".join(form.changed_data) + ")"
-                )
-    else:
-        form = ScopeInlineForm(instance=job)
-
-    context = {
-        "form": form,
-        "job": job,
-        "section_title": "Scope & Risk",
-    }
-    data["html_form"] = loader.render_to_string(
-        "partials/shared/section_form_modal.html", context, request=request
-    )
-    return JsonResponse(data)
-
-
-#: section key -> (form class, modal title, needs ``user`` kwarg)
-JOB_SECTION_FORMS = {
-    "details": (JobDetailsSectionForm, "Job Details", True),
-    "contacts": (JobContactsSectionForm, "Client & Contacts", True),
-}
+#: section key -> (label, form class, needs ``user`` kwarg, required perm)
+JOB_EDIT_SECTIONS = [
+    ("details", "Details", JobDetailsSectionForm, True, "jobtracker.can_update_job"),
+    ("contacts", "Client & Contacts", JobContactsSectionForm, True,
+     "jobtracker.can_update_job"),
+    ("scope", "Scope & Risk", ScopeInlineForm, False, "jobtracker.can_scope_jobs"),
+]
 
 
 @job_permission_required_or_403("jobtracker.can_update_job", (Job, "slug", "slug"))
-def job_section_edit(request, slug, section):
-    """Edit one section of a job in the shared #mainModal.
+def job_edit(request, slug):
+    """Focused, single-page job editor with a left section nav.
 
-    GET renders the section form; POST validates, saves, logs the changed fields
-    and returns ``{form_is_valid, html_form}`` for the core.js modal flow.
+    One surface for job editing (Details, Client & Contacts, Scope & Risk). Each
+    section is its own form saved independently via a hidden ``section`` field.
+    Replaces the old full-page JobUpdateView/JobUpdateScopeView and the per-card
+    edit modals.
     """
-    if section not in JOB_SECTION_FORMS:
-        return HttpResponseBadRequest("Unknown section.")
-    form_cls, title, needs_user = JOB_SECTION_FORMS[section]
-
     job = get_object_or_404(Job, slug=slug)
-    data = {"form_is_valid": False}
-    kwargs = {"instance": job}
-    if needs_user:
-        kwargs["user"] = request.user
+    posted = request.POST.get("section") if request.method == "POST" else None
+    active = request.GET.get("section") or posted or JOB_EDIT_SECTIONS[0][0]
 
-    if request.method == "POST":
-        form = form_cls(request.POST, **kwargs)
-        if form.is_valid():
-            form.save()
-            data["form_is_valid"] = True
-            if form.changed_data:
-                log_system_activity(
-                    job, "{} edited ({})".format(title, ", ".join(form.changed_data))
+    sections = []
+    for key, label, form_cls, needs_user, perm in JOB_EDIT_SECTIONS:
+        editable = request.user.has_perm(perm, job)
+        kwargs = {"instance": job}
+        if needs_user:
+            kwargs["user"] = request.user
+
+        if request.method == "POST" and key == posted:
+            if not editable:
+                return HttpResponseBadRequest("You can't edit this section.")
+            form = form_cls(request.POST, **kwargs)
+            if form.is_valid():
+                form.save()
+                if form.changed_data:
+                    log_system_activity(
+                        job, "{} edited ({})".format(label, ", ".join(form.changed_data))
+                    )
+                messages.success(request, "{} saved.".format(label))
+                return HttpResponseRedirect(
+                    reverse("job_edit", kwargs={"slug": slug}) + "?section={}".format(key)
                 )
-    else:
-        form = form_cls(**kwargs)
+            active = key
+        else:
+            form = form_cls(**kwargs)
+        sections.append(
+            {"key": key, "label": label, "form": form, "editable": editable}
+        )
 
-    context = {"form": form, "job": job, "section_title": title}
-    data["html_form"] = loader.render_to_string(
-        "partials/shared/section_form_modal.html", context, request=request
+    if active not in {s["key"] for s in sections}:
+        active = sections[0]["key"]
+
+    from django import forms as djforms
+
+    media = djforms.Media()
+    for s in sections:
+        media = media + s["form"].media
+
+    return render(
+        request,
+        "jobtracker/job_edit.html",
+        {
+            "job": job,
+            "sections": sections,
+            "active_section": active,
+            "form_media": media,
+        },
     )
-    return JsonResponse(data)
 
 
 @job_permission_required_or_403("jobtracker.can_schedule_job", (Job, "slug", "slug"))
@@ -1005,42 +1005,6 @@ def job_clone(request, slug):
             "jobtracker/modals/job_clone.html", context, request=request
         )
     return JsonResponse(data)
-
-
-class JobUpdateView(UnitPermissionRequiredMixin, JobBaseView, UpdateView):
-    permission_required = "jobtracker.can_update_job"
-    return_403 = True
-    template_name = "jobtracker/job_form.html"
-    form_class = JobForm
-    fields = None
-    """View to update a job"""
-
-    def get_form_kwargs(self):
-        kwargs = super(JobUpdateView, self).get_form_kwargs()
-        kwargs.update({"user": self.request.user})
-        return kwargs
-
-    def form_valid(self, form):
-        log_system_activity(form.instance, "Job Updated")
-        return super().form_valid(form)
-
-
-class JobUpdateScopeView(UnitPermissionRequiredMixin, JobBaseView, UpdateView):
-    permission_required = "jobtracker.can_scope_jobs"
-    return_403 = True
-    model = Job
-    template_name = "jobtracker/job_form_scope.html"
-    form_class = ScopeForm
-    fields = None
-
-    def get_form_kwargs(self):
-        # ScopeForm takes no ``user`` kwarg, and this must chain through this
-        # view's own MRO (previously mis-targeted JobUpdateView).
-        return super(JobUpdateScopeView, self).get_form_kwargs()
-
-    def form_valid(self, form):
-        log_system_activity(form.instance, "Scope Updated")
-        return super().form_valid(form)
 
 
 class JobScheduleView(UnitPermissionRequiredMixin, JobBaseView, DetailView):

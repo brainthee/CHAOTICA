@@ -160,6 +160,57 @@ class DetailPageRenderTests(PhaseScopingBase):
         resp = self.http.get(reverse("job_detail", kwargs={"slug": self.job.slug}))
         self.assertEqual(resp.status_code, 200)
 
+    def test_job_edit_page_renders(self):
+        resp = self.http.get(reverse("job_edit", kwargs={"slug": self.job.slug}))
+        self.assertEqual(resp.status_code, 200)
+        for section in ("Details", "Client &amp; Contacts", "Scope &amp; Risk"):
+            self.assertContains(resp, section)
+
+    def test_job_create_page_renders(self):
+        resp = self.http.get(reverse("job_create"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Create Job")
+
+    def test_phase_create_page_renders(self):
+        resp = self.http.get(
+            reverse("phase_create", kwargs={"job_slug": self.job.slug})
+        )
+        # Either renders the form (200) or is blocked by job stage (400); both
+        # exercise the view without a template error.
+        self.assertIn(resp.status_code, (200, 400))
+        if resp.status_code == 200:
+            self.assertContains(resp, "Create Phase")
+
+
+class JobContactsEditTests(PhaseScopingBase):
+    def test_additional_contacts_round_trip(self):
+        from jobtracker.models import Contact
+
+        c1 = Contact.objects.create(company=self.client_obj, first_name="Dar", last_name="H")
+        c2 = Contact.objects.create(company=self.client_obj, first_name="Sam", last_name="K")
+        resp = self.http.post(
+            reverse("job_edit", kwargs={"slug": self.job.slug}),
+            data={
+                "section": "contacts",
+                "client": self.client_obj.pk,
+                "account_manager": self.admin.pk,
+                "primary_client_poc": c1.pk,
+                "additional_contacts": [c1.pk, c2.pk],
+            },
+        )
+        self.assertEqual(resp.status_code, 302, resp.content)
+        self.job.refresh_from_db()
+        self.assertEqual(self.job.primary_client_poc_id, c1.pk)
+        self.assertEqual(
+            set(self.job.additional_contacts.values_list("pk", flat=True)),
+            {c1.pk, c2.pk},
+        )
+
+    def test_job_edit_requires_permission(self):
+        self.http.force_login(self.outsider)
+        resp = self.http.get(reverse("job_edit", kwargs={"slug": self.job.slug}))
+        self.assertEqual(resp.status_code, 403)
+
 
 class DeliverableUnlockTests(PhaseScopingBase):
     def test_form_editable_through_delivered(self):
@@ -184,8 +235,9 @@ class DeliverableUnlockTests(PhaseScopingBase):
 
     def test_report_metadata_round_trips(self):
         resp = self.http.post(
-            self._url("phase_edit_delivery"),
+            self._url("phase_edit"),
             data={
+                "section": "deliverables",
                 "linkDeliverable": "https://x/deliverable",
                 "linkTechData": "https://x/tech",
                 "linkReportData": "https://x/report",
@@ -194,8 +246,7 @@ class DeliverableUnlockTests(PhaseScopingBase):
                 "desired_delivery_date": "2026-12-01",
             },
         )
-        self.assertEqual(resp.status_code, 200, resp.content)
-        self.assertTrue(resp.json()["form_is_valid"])
+        self.assertEqual(resp.status_code, 302, resp.content)  # redirect on save
         self.phase.refresh_from_db()
         self.assertEqual(self.phase.number_of_reports, 3)
         self.assertTrue(self.phase.report_to_be_left_on_client_site)
@@ -205,43 +256,48 @@ class DeliverableUnlockTests(PhaseScopingBase):
         self.phase.status = PhaseStatuses.DRAFT
         self.phase.save()
         resp = self.http.post(
-            self._url("phase_edit_delivery"),
-            data={"number_of_reports": 9},
+            self._url("phase_edit"),
+            data={"section": "deliverables", "number_of_reports": 9},
         )
         self.assertEqual(resp.status_code, 400)
 
 
-class PhaseSectionEditTests(PhaseScopingBase):
-    def test_get_returns_html_form(self):
-        resp = self.http.get(
-            self._url("phase_section_edit", section="details"),
-            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
-        )
+class PhaseEditPageTests(PhaseScopingBase):
+    def test_get_renders_all_sections(self):
+        resp = self.http.get(self._url("phase_edit"))
         self.assertEqual(resp.status_code, 200, resp.content)
-        html = resp.json()["html_form"]
-        self.assertIn("<form", html)
-        # Exactly one form — crispy must not nest a second <form> in the modal.
-        self.assertEqual(html.count("<form"), 1)
+        for section in ("Details", "Scheduling", "Scoped Hours", "Deliverables"):
+            self.assertContains(resp, section)
 
-    def test_post_saves_and_reports_valid(self):
+    def test_get_honours_active_section(self):
+        resp = self.http.get(self._url("phase_edit") + "?section=hours")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'id="sec-hours"')
+
+    def test_post_saves_details_and_redirects(self):
         resp = self.http.post(
-            self._url("phase_section_edit", section="details"),
+            self._url("phase_edit"),
             data={
+                "section": "details",
                 "phase_number": self.phase.phase_number or 1,
                 "title": "Renamed phase",
                 "service": self.service.pk,
             },
         )
-        self.assertEqual(resp.status_code, 200, resp.content)
-        self.assertTrue(resp.json()["form_is_valid"])
+        self.assertEqual(resp.status_code, 302)
         self.phase.refresh_from_db()
         self.assertEqual(self.phase.title, "Renamed phase")
 
-    def test_unknown_section_bad_request(self):
-        resp = self.http.get(self._url("phase_section_edit", section="bogus"))
+    def test_locked_section_save_rejected(self):
+        self.phase.status = PhaseStatuses.PENDING_TQA  # fields locked
+        self.phase.save()
+        resp = self.http.post(
+            self._url("phase_edit"),
+            data={"section": "details", "title": "nope", "service": self.service.pk},
+        )
         self.assertEqual(resp.status_code, 400)
 
     def test_requires_permission(self):
         self.http.force_login(self.outsider)
-        resp = self.http.get(self._url("phase_section_edit", section="details"))
+        resp = self.http.get(self._url("phase_edit"))
         self.assertEqual(resp.status_code, 403)

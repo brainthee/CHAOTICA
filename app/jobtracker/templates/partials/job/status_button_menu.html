@@ -1,9 +1,6 @@
 <ul class="dropdown-menu dropdown-menu-end p-0" style="z-index: 9999;">
   <li>
-    <button data-url="{% url 'job_section_edit' job.slug 'details' %}" class="dropdown-item js-load-modal-form">Edit Details</button>
-  </li>
-  <li>
-    <button data-url="{% url 'job_section_edit' job.slug 'contacts' %}" class="dropdown-item js-load-modal-form">Edit Client &amp; Contacts</button>
+    <a href="{% url 'job_edit' job.slug %}" class="dropdown-item">Edit Job</a>
   </li>
   <li>
     <button data-url="{% url 'job_clone' job.slug %}" class="dropdown-item js-load-modal-form">Clone Job</button>
