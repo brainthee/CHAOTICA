@@ -43,6 +43,21 @@ urlpatterns = [
         name="view_team_qualifications",
     ),
     path(
+        "profile/skill-suggestions/",
+        views.OwnSkillSuggestionListView.as_view(),
+        name="view_own_skill_suggestions",
+    ),
+    path(
+        "profile/skill-suggestions/<int:pk>/accept",
+        views.accept_skill_suggestion,
+        name="accept_skill_suggestion",
+    ),
+    path(
+        "profile/skill-suggestions/<int:pk>/dismiss",
+        views.dismiss_skill_suggestion,
+        name="dismiss_skill_suggestion",
+    ),
+    path(
         "profile/qualifications/<int:pk>/verify",
         views.verify_qualification,
         name="verify_qualification",

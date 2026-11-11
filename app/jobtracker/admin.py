@@ -12,7 +12,9 @@ from .models import (
     Team, TeamMember,
     Skill,
     SkillCategory,
+    SkillRatingSuggestion,
     Service,
+    ServiceSkillRequirementGroup,
     TimeSlot,
     WorkflowTask,
     BillingCode,
@@ -22,6 +24,7 @@ from .models import (
     Contact,
     FrameworkAgreement,
     Qualification,
+    QualificationSkill,
     QualificationRecord,
     AwardingBody,
     OrganisationalUnitRole,
@@ -30,7 +33,8 @@ from .models import (
     TimeSlotComment,
     Project
 )
-from import_export import resources
+from import_export import resources, fields
+from import_export.widgets import ForeignKeyWidget, ManyToManyWidget
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from django.db.models import F, ExpressionWrapper, DurationField, Q
@@ -100,21 +104,98 @@ class SkillInline(admin.TabularInline):
 class SkillCategoryResource(resources.ModelResource):
     class Meta:
         model = SkillCategory
+        import_id_fields = ("name",)
+        fields = ("id", "name", "description", "slug")
+        export_order = fields
 class SkillCategoryAdmin(ImportExportModelAdmin):
     resource_classes = [SkillCategoryResource]
     inlines = [SkillInline]
+    search_fields = ("name",)
 admin.site.register(SkillCategory, SkillCategoryAdmin)
 
 
 admin.site.register(TimeSlotType)
 
 
+class ServiceSkillRequirementGroupInline(admin.TabularInline):
+    model = ServiceSkillRequirementGroup
+    extra = 0
+    filter_horizontal = ("skills",)
+
+
 class ServiceResource(resources.ModelResource):
+    """Round-trips services with skills/quals rendered as pipe-separated *names*
+    (not raw IDs), so the import spreadsheets stay human-editable."""
+
+    skillsRequired = fields.Field(
+        column_name="skillsRequired",
+        attribute="skillsRequired",
+        widget=ManyToManyWidget(Skill, field="name", separator="|"),
+    )
+    skillsDesired = fields.Field(
+        column_name="skillsDesired",
+        attribute="skillsDesired",
+        widget=ManyToManyWidget(Skill, field="name", separator="|"),
+    )
+    qualificationsRequired = fields.Field(
+        column_name="qualificationsRequired",
+        attribute="qualificationsRequired",
+        widget=ManyToManyWidget(Qualification, field="name", separator="|"),
+    )
+    qualificationsDesired = fields.Field(
+        column_name="qualificationsDesired",
+        attribute="qualificationsDesired",
+        widget=ManyToManyWidget(Qualification, field="name", separator="|"),
+    )
+
     class Meta:
         model = Service
+        import_id_fields = ("name",)
+        fields = (
+            "id",
+            "name",
+            "is_core",
+            "skillsRequired",
+            "skillsDesired",
+            "qualificationsRequired",
+            "qualificationsDesired",
+            "slug",
+        )
+        export_order = fields
+
+
 class ServiceAdmin(ImportExportModelAdmin):
     resource_classes = [ServiceResource]
+    inlines = [ServiceSkillRequirementGroupInline]
+    search_fields = ("name",)
 admin.site.register(Service, ServiceAdmin)
+
+
+class ServiceSkillRequirementGroupResource(resources.ModelResource):
+    service = fields.Field(
+        column_name="service",
+        attribute="service",
+        widget=ForeignKeyWidget(Service, field="name"),
+    )
+    skills = fields.Field(
+        column_name="skills",
+        attribute="skills",
+        widget=ManyToManyWidget(Skill, field="name", separator="|"),
+    )
+
+    class Meta:
+        model = ServiceSkillRequirementGroup
+        import_id_fields = ("service", "name")
+        fields = ("id", "service", "name", "skills")
+        export_order = fields
+
+
+@admin.register(ServiceSkillRequirementGroup)
+class ServiceSkillRequirementGroupAdmin(ImportExportModelAdmin):
+    resource_classes = [ServiceSkillRequirementGroupResource]
+    list_display = ("service", "name")
+    filter_horizontal = ("skills",)
+    search_fields = ("name", "service__name")
 
 
 
@@ -258,36 +339,138 @@ admin.site.register(OrganisationalUnitRole)
 class AwardingBodyResource(resources.ModelResource):
     class Meta:
         model = AwardingBody
+        import_id_fields = ("name",)
+        fields = ("id", "name", "description", "url", "slug")
+        export_order = fields
 class AwardingBodyAdmin(ImportExportModelAdmin):
     resource_classes = [AwardingBodyResource]
+    search_fields = ("name",)
 admin.site.register(AwardingBody, AwardingBodyAdmin)
 
+
+class QualificationSkillInline(admin.TabularInline):
+    model = QualificationSkill
+    extra = 1
+    autocomplete_fields = ("skill",)
+
+
 class QualificationResource(resources.ModelResource):
+    awarding_body = fields.Field(
+        column_name="awarding_body",
+        attribute="awarding_body",
+        widget=ForeignKeyWidget(AwardingBody, field="name"),
+    )
+
     class Meta:
         model = Qualification
+        import_id_fields = ("name",)
+        fields = (
+            "id",
+            "awarding_body",
+            "name",
+            "short_name",
+            "description",
+            "validity_period",
+            "verification_required",
+            "url",
+            "guidance_url",
+            "slug",
+        )
+        export_order = fields
+
+
+class QualificationSkillResource(resources.ModelResource):
+    """The qualification -> skill -> suggested-rating map (one row per link)."""
+
+    qualification = fields.Field(
+        column_name="qualification",
+        attribute="qualification",
+        widget=ForeignKeyWidget(Qualification, field="name"),
+    )
+    skill = fields.Field(
+        column_name="skill",
+        attribute="skill",
+        widget=ForeignKeyWidget(Skill, field="name"),
+    )
+
+    class Meta:
+        model = QualificationSkill
+        import_id_fields = ("qualification", "skill")
+        fields = ("id", "qualification", "skill", "suggested_rating")
+        export_order = fields
+
+
 class QualificationAdmin(ImportExportModelAdmin):
     resource_classes = [QualificationResource]
-admin.site.register(Qualification)
+    inlines = [QualificationSkillInline]
+    search_fields = ("name", "short_name")
+    list_display = ("name", "short_name", "awarding_body")
+admin.site.register(Qualification, QualificationAdmin)
+
+
+@admin.register(QualificationSkill)
+class QualificationSkillAdmin(ImportExportModelAdmin):
+    resource_classes = [QualificationSkillResource]
+    list_display = ("qualification", "skill", "suggested_rating")
+    list_filter = ("suggested_rating",)
+    search_fields = ("qualification__name", "skill__name")
+
 
 class QualificationRecordResource(resources.ModelResource):
     class Meta:
         model = QualificationRecord
 class QualificationRecordAdmin(ImportExportModelAdmin):
     resource_classes = [QualificationRecordResource]
-admin.site.register(QualificationRecord)
+admin.site.register(QualificationRecord, QualificationRecordAdmin)
 
 
 #### Skill
 class SkillResource(resources.ModelResource):
+    category = fields.Field(
+        column_name="category",
+        attribute="category",
+        widget=ForeignKeyWidget(SkillCategory, field="name"),
+    )
+
     class Meta:
         model = Skill
+        import_id_fields = ("name",)
+        fields = (
+            "id",
+            "category",
+            "name",
+            "description",
+            "rating_desc_support",
+            "rating_desc_independent",
+            "rating_desc_specialist",
+            "slug",
+        )
+        export_order = fields
 
 
 class SkillAdmin(ImportExportModelAdmin):
     resource_classes = [SkillResource]
+    search_fields = ("name",)
+    list_display = ("name", "category", "has_rating_descriptors")
+    list_filter = ("category",)
 
 
 admin.site.register(Skill, SkillAdmin)
+
+
+@admin.register(SkillRatingSuggestion)
+class SkillRatingSuggestionAdmin(admin.ModelAdmin):
+    list_display = (
+        "user",
+        "skill",
+        "suggested_rating",
+        "source",
+        "status",
+        "created_on",
+    )
+    list_filter = ("status", "source", "suggested_rating")
+    search_fields = ("user__email", "user__first_name", "user__last_name", "skill__name")
+    autocomplete_fields = ("skill",)
 
 
 #### Client

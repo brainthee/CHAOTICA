@@ -106,19 +106,40 @@ class Service(models.Model):
         from django.db.models import Count, Q
         required = self.skillsRequired.all()
         required_skills_count = required.count()
-        if not required_skills_count:
+        groups = list(self.skill_requirement_groups.prefetch_related("skills"))
+
+        if not required_skills_count and not groups:
+            # No constraint defined — callers treat this as 'nobody specifically
+            # qualified' (matches the historical empty-required behaviour).
             return User.objects.none()
 
-        return User.objects.filter(
-            skills__skill__in=required,
-            is_active=True,
-        ).annotate(
-            _met=Count(
-                "skills__skill",
-                distinct=True,
-                filter=Q(skills__skill__in=required, skills__rating__gte=min_rating),
+        qs = User.objects.filter(is_active=True)
+
+        # ALL plain required skills must be held at >= min_rating.
+        if required_skills_count:
+            qs = qs.filter(skills__skill__in=required).annotate(
+                _met=Count(
+                    "skills__skill",
+                    distinct=True,
+                    filter=Q(
+                        skills__skill__in=required, skills__rating__gte=min_rating
+                    ),
+                )
+            ).filter(_met=required_skills_count)
+
+        # Each 'one-of' group must be satisfied by ANY one of its skills at
+        # >= min_rating (e.g. iOS OR Android for a mobile service).
+        for group in groups:
+            group_skill_ids = list(group.skills.values_list("id", flat=True))
+            if not group_skill_ids:
+                continue  # empty group imposes no constraint
+            qs = qs.filter(
+                id__in=UserSkill.objects.filter(
+                    skill_id__in=group_skill_ids, rating__gte=min_rating
+                ).values_list("user_id", flat=True)
             )
-        ).filter(_met=required_skills_count).distinct()
+
+        return qs.distinct()
 
     def get_users_specialist(self):
         """Users who are specialists in ALL required skills."""
@@ -183,7 +204,7 @@ class Service(models.Model):
         from django.core.cache import cache
         from django.db.models import Count, Q
 
-        cache_key = f"service_readiness_{self.id}_{self.skillsRequired.count()}_{self.skillsDesired.count()}"
+        cache_key = f"service_readiness_{self.id}_{self.skillsRequired.count()}_{self.skillsDesired.count()}_{self.skill_requirement_groups.count()}"
         cached_result = cache.get(cache_key)
         if cached_result:
             return cached_result
@@ -393,7 +414,7 @@ class Service(models.Model):
         from django.core.cache import cache
         from django.db.models import Count, Q, Case, When, IntegerField
 
-        cache_key = f"skills_coverage_{self.id}_{self.skillsRequired.count()}_{self.skillsDesired.count()}"
+        cache_key = f"skills_coverage_{self.id}_{self.skillsRequired.count()}_{self.skillsDesired.count()}_{self.skill_requirement_groups.count()}"
         cached_result = cache.get(cache_key)
         if cached_result:
             return cached_result
@@ -654,11 +675,12 @@ class Service(models.Model):
         """Clear all cached data for this service"""
         from django.core.cache import cache
         # Clear service readiness cache
-        cache.delete(f"service_readiness_{self.id}_{self.skillsRequired.count()}_{self.skillsDesired.count()}")
+        groups_count = self.skill_requirement_groups.count()
+        cache.delete(f"service_readiness_{self.id}_{self.skillsRequired.count()}_{self.skillsDesired.count()}_{groups_count}")
         # Clear analytics + performance metrics caches (versioned)
         Service.clear_usage_cache(self.id)
         # Clear skills coverage cache
-        cache.delete(f"skills_coverage_{self.id}_{self.skillsRequired.count()}_{self.skillsDesired.count()}")
+        cache.delete(f"skills_coverage_{self.id}_{self.skillsRequired.count()}_{self.skillsDesired.count()}_{groups_count}")
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -667,3 +689,42 @@ class Service(models.Model):
         if self.pk:
             self.clear_cache()
         return super().save(*args, **kwargs)
+
+
+class ServiceSkillRequirementGroup(models.Model):
+    """An 'any one of' set of required skills for a service.
+
+    Plain ``Service.skillsRequired`` is an AND-list: a user must hold *every*
+    skill in it. A requirement group is an OR-set layered on top: the user must
+    hold *at least one* of its skills (at whichever rating tier is being
+    evaluated). Use it where the service needs *a* capability but not a specific
+    flavour of it — e.g. "a mobile platform" (iOS OR Android), or "a code-review
+    language" (one of several). This keeps the matrix honest: people aren't
+    forced to rate every platform just to show up as able to run the service.
+    """
+
+    service = models.ForeignKey(
+        Service, on_delete=models.CASCADE, related_name="skill_requirement_groups"
+    )
+    name = models.CharField(
+        max_length=200,
+        help_text="Label for the choice, e.g. 'Mobile platform' or 'Code-review language'.",
+    )
+    skills = models.ManyToManyField(
+        Skill,
+        related_name="service_requirement_groups",
+        help_text="Holding ANY one of these (at the required rating) satisfies the group.",
+    )
+
+    class Meta:
+        ordering = [Lower("name")]
+
+    def __str__(self):
+        return "%s: %s" % (self.service, self.name)
+
+    def save(self, *args, **kwargs):
+        result = super().save(*args, **kwargs)
+        # Keep the owning service's readiness caches honest.
+        if self.service_id:
+            self.service.clear_cache()
+        return result

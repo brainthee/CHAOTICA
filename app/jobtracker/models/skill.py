@@ -107,12 +107,35 @@ class SkillCategory(models.Model):
 class Skill(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField(
-        help_text="A short description of the skill", default=""
+        help_text="A short description of the skill, incl. scope / techniques it covers",
+        default="",
     )
     category = models.ForeignKey(
         SkillCategory, related_name="skills", on_delete=models.CASCADE
     )
     slug = models.SlugField(null=False, default="", unique=True)
+
+    # Per-level behavioural descriptors — what each rating *means* for this skill.
+    # These anchor self/manager ratings to concrete, observable behaviour instead
+    # of a bare number. Left blank, the UI falls back to the global rating labels.
+    rating_desc_support = models.TextField(
+        "'Require Support' descriptor",
+        blank=True,
+        default="",
+        help_text="What someone rated 'Require Support' (1) can do for this skill.",
+    )
+    rating_desc_independent = models.TextField(
+        "'Independent' descriptor",
+        blank=True,
+        default="",
+        help_text="What someone rated 'Independent' (2) can do for this skill.",
+    )
+    rating_desc_specialist = models.TextField(
+        "'Specialist' descriptor",
+        blank=True,
+        default="",
+        help_text="What someone rated 'Specialist' (3) can do for this skill.",
+    )
 
     # Skill hierarchy support
     prerequisites = models.ManyToManyField(
@@ -259,6 +282,27 @@ class Skill(models.Model):
         """Get skills that can be learned after mastering this one"""
         return self.dependent_skills.all()
 
+    def descriptor_for_rating(self, rating):
+        """Return the skill-specific behavioural descriptor for a rating value,
+        falling back to the global rating label when none is configured."""
+        mapping = {
+            UserSkillRatings.CAN_DO_WITH_SUPPORT: self.rating_desc_support,
+            UserSkillRatings.CAN_DO_ALONE: self.rating_desc_independent,
+            UserSkillRatings.SPECIALIST: self.rating_desc_specialist,
+        }
+        text = mapping.get(rating, "")
+        if text:
+            return text
+        return dict(UserSkillRatings.CHOICES).get(rating, "")
+
+    @property
+    def has_rating_descriptors(self):
+        return bool(
+            self.rating_desc_support
+            or self.rating_desc_independent
+            or self.rating_desc_specialist
+        )
+
 
 class UserSkill(models.Model):
     skill = models.ForeignKey(Skill, related_name="users", on_delete=models.CASCADE)
@@ -293,3 +337,117 @@ class UserSkill(models.Model):
                 "skill",
             ),
         )
+
+
+class SkillRatingSuggestion(models.Model):
+    """A non-destructive, proposed skill rating for a user.
+
+    Suggestions are generated automatically (e.g. when a qualification that
+    evidences a skill is awarded) and never change a :class:`UserSkill` on their
+    own. The user (or a manager) accepts or dismisses each one. Accepting only
+    ever *raises* a rating — it never lowers an existing self-assessment.
+    """
+
+    PENDING = 0
+    ACCEPTED = 1
+    DISMISSED = 2
+    STATUS_CHOICES = (
+        (PENDING, "Pending"),
+        (ACCEPTED, "Accepted"),
+        (DISMISSED, "Dismissed"),
+    )
+
+    SOURCE_QUALIFICATION = "qualification"
+    SOURCE_MANUAL = "manual"
+    SOURCE_IMPORT = "import"
+    SOURCE_CHOICES = (
+        (SOURCE_QUALIFICATION, "Qualification awarded"),
+        (SOURCE_MANUAL, "Manually suggested"),
+        (SOURCE_IMPORT, "Imported"),
+    )
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="skill_suggestions",
+    )
+    skill = models.ForeignKey(
+        Skill, on_delete=models.CASCADE, related_name="rating_suggestions"
+    )
+    suggested_rating = models.IntegerField(choices=UserSkillRatings.CHOICES)
+    source = models.CharField(
+        max_length=20, choices=SOURCE_CHOICES, default=SOURCE_QUALIFICATION
+    )
+    source_qualification_record = models.ForeignKey(
+        "jobtracker.QualificationRecord",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="skill_suggestions",
+    )
+    status = models.IntegerField(choices=STATUS_CHOICES, default=PENDING)
+    message = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text="Human-readable reason for the suggestion.",
+    )
+    created_on = models.DateTimeField(auto_now_add=True)
+    resolved_on = models.DateTimeField(null=True, blank=True)
+    resolved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="skill_suggestions_resolved",
+    )
+
+    class Meta:
+        ordering = ["-created_on"]
+        indexes = [
+            models.Index(fields=["user", "status"]),
+        ]
+
+    def __str__(self):
+        return "%s: %s → %s (%s)" % (
+            self.user,
+            self.skill,
+            self.get_suggested_rating_display(),
+            self.get_status_display(),
+        )
+
+    def accept(self, resolved_by=None):
+        """Apply the suggestion: raise the user's rating to at least the
+        suggested value (never lowering it), then mark the suggestion accepted.
+
+        Returns the :class:`UserSkill` touched, or ``None`` if the suggestion
+        was already superseded by a higher existing rating.
+        """
+        from django.utils import timezone
+
+        user_skill, _created = UserSkill.objects.get_or_create(
+            user=self.user,
+            skill=self.skill,
+            defaults={"rating": self.suggested_rating},
+        )
+        touched = user_skill
+        if user_skill.rating < self.suggested_rating:
+            user_skill.rating = self.suggested_rating
+            user_skill.save(update_fields=["rating", "last_updated_on"])
+        elif not _created:
+            # Existing rating already meets/exceeds the suggestion — nothing to do.
+            touched = None
+
+        self.status = self.ACCEPTED
+        self.resolved_on = timezone.now()
+        self.resolved_by = resolved_by or self.user
+        self.save(update_fields=["status", "resolved_on", "resolved_by"])
+        return touched
+
+    def dismiss(self, resolved_by=None):
+        from django.utils import timezone
+
+        self.status = self.DISMISSED
+        self.resolved_on = timezone.now()
+        self.resolved_by = resolved_by or self.user
+        self.save(update_fields=["status", "resolved_on", "resolved_by"])

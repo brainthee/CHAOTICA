@@ -2,16 +2,17 @@ from django.views.generic.list import ListView
 from django.db.models import Q
 from chaotica_utils.views import ChaoticaBaseView
 from chaotica_utils.models import User
-from ..models import QualificationRecord
+from ..models import QualificationRecord, SkillRatingSuggestion
 from ..enums import QualificationStatus
 from ..forms import OwnQualificationRecordForm
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
 from django.utils import timezone
 from datetime import timedelta
 import logging
 from django.template import loader
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_http_methods
 
 
@@ -78,6 +79,10 @@ class OwnQualificationRecordListView(OwnQualificationRecordBaseView, ListView):
             self.request.user.users_managed.exists()
             or self.request.user.users_acting_managed.exists()
         )
+
+        context["pending_skill_suggestions"] = SkillRatingSuggestion.objects.filter(
+            user=self.request.user, status=SkillRatingSuggestion.PENDING
+        ).count()
 
         return context
 
@@ -191,6 +196,66 @@ def transition_own_qualification(request, pk, action):
         record.verified_on = None
     record.save()
     return JsonResponse({"success": True, "new_status": record.get_status_display()})
+
+
+# --- Skill rating suggestions ---
+
+
+class OwnSkillSuggestionListView(ChaoticaBaseView, ListView):
+    """A user's pending skill-rating suggestions (e.g. from awarded quals)."""
+
+    model = SkillRatingSuggestion
+    template_name = "jobtracker/skillsuggestion_list.html"
+    context_object_name = "suggestions"
+
+    def get_queryset(self):
+        return (
+            SkillRatingSuggestion.objects.filter(
+                user=self.request.user, status=SkillRatingSuggestion.PENDING
+            )
+            .select_related("skill", "skill__category", "source_qualification_record__qualification")
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["resolved_recent"] = (
+            SkillRatingSuggestion.objects.filter(user=self.request.user)
+            .exclude(status=SkillRatingSuggestion.PENDING)
+            .select_related("skill")[:20]
+        )
+        return context
+
+
+@login_required
+@require_http_methods(["POST"])
+def accept_skill_suggestion(request, pk):
+    suggestion = get_object_or_404(
+        SkillRatingSuggestion,
+        pk=pk,
+        user=request.user,
+        status=SkillRatingSuggestion.PENDING,
+    )
+    suggestion.accept(resolved_by=request.user)
+    messages.success(
+        request,
+        "Added '%s' at %s to your skills."
+        % (suggestion.skill, suggestion.get_suggested_rating_display()),
+    )
+    return redirect("view_own_skill_suggestions")
+
+
+@login_required
+@require_http_methods(["POST"])
+def dismiss_skill_suggestion(request, pk):
+    suggestion = get_object_or_404(
+        SkillRatingSuggestion,
+        pk=pk,
+        user=request.user,
+        status=SkillRatingSuggestion.PENDING,
+    )
+    suggestion.dismiss(resolved_by=request.user)
+    messages.info(request, "Suggestion dismissed.")
+    return redirect("view_own_skill_suggestions")
 
 
 # --- Manager / Team views ---

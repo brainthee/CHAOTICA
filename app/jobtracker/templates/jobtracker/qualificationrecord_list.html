@@ -17,6 +17,15 @@
     <h2 class="mb-0">My Qualifications</h2>
   </div>
   <div class="col-auto d-flex justify-content-end gap-2">
+    <a href="{% url 'view_own_skill_suggestions' %}" class="btn btn-phoenix-secondary px-4 position-relative">
+      <i class="fa-solid fa-lightbulb me-2"></i>
+      Skill Suggestions
+      {% if pending_skill_suggestions %}
+      <span class="badge badge-phoenix badge-phoenix-warning position-absolute top-0 start-100 translate-middle">
+        {{ pending_skill_suggestions }}
+      </span>
+      {% endif %}
+    </a>
     {% if has_direct_reports %}
     <a href="{% url 'view_team_qualifications' %}" class="btn btn-phoenix-secondary px-4">
       <i class="fa-solid fa-users me-2"></i>
