@@ -16,6 +16,7 @@ from chaotica_utils.mixins import SecurePermissionRequiredMixin as PermissionReq
 from chaotica_utils.views import ChaoticaBaseView
 from chaotica_utils.decorators import permission_required_or_403
 
+from .models import Service
 from .models.scoping import ScopingTemplate, ScopingMacro
 from .forms_scoping import (
     ScopingTemplateForm,
@@ -214,6 +215,45 @@ def scoping_template_edit(request, slug=None):
         "jobtracker/scoping/template_edit.html",
         {"form": form, "formset": formset, "template": template},
     )
+
+
+# ---------------------------------------------------------------------------
+# Per-service scoping (from the Service detail page)
+# ---------------------------------------------------------------------------
+
+@require_POST
+@login_required
+@permission_required_or_403(MANAGE_PERM, accept_global_perms=True)
+def service_scoping_update(request, slug):
+    """Attach / change / create / detach the scoping template for a service."""
+    service = get_object_or_404(Service, slug=slug)
+    action = request.POST.get("action", "attach")
+
+    if action == "detach":
+        service.scoping_template = None
+        service.save(update_fields=["scoping_template"])
+        messages.success(request, "Scoping template detached from this service.")
+
+    elif action == "create":
+        name = "{} Scoping".format(service.name)[:200]
+        base, i = name, 2
+        while ScopingTemplate.objects.filter(name=name).exists():
+            name = "{} {}".format(base, i)
+            i += 1
+        template = ScopingTemplate.objects.create(name=name)
+        service.scoping_template = template
+        service.save(update_fields=["scoping_template"])
+        messages.success(request, "Created a scoping template for this service — add your questions.")
+        return redirect("scoping_template_edit", slug=template.slug)
+
+    else:  # attach / change
+        template_id = request.POST.get("template")
+        template = get_object_or_404(ScopingTemplate, pk=template_id) if template_id else None
+        service.scoping_template = template
+        service.save(update_fields=["scoping_template"])
+        messages.success(request, "Scoping template updated for this service.")
+
+    return redirect("service_detail", slug=service.slug)
 
 
 # ---------------------------------------------------------------------------

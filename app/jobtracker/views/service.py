@@ -98,6 +98,12 @@ class ServiceDetailView(
             phases=visible_phases,
             cache_scope=cache_scope,
         )
+        # Scoping: templates available to attach, and whether the user can manage.
+        from ..models import ScopingTemplate
+        context["scoping_templates"] = ScopingTemplate.objects.filter(is_active=True)
+        context["can_manage_scoping"] = self.request.user.has_perm(
+            "jobtracker.manage_scoping"
+        )
         return context
 
 

@@ -717,6 +717,12 @@ urlpatterns = [
         views.ServiceDeleteView.as_view(),
         name="service_delete",
     ),
+    # Per-service scoping (from the service detail page)
+    path(
+        "ops/service/<str:slug>/scoping/",
+        views_scoping.service_scoping_update,
+        name="service_scoping_update",
+    ),
     # Scoping templates (dynamic Service scoping)
     path(
         "ops/scoping/",

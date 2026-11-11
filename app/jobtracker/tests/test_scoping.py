@@ -255,6 +255,63 @@ class ScopingViewTests(TestCase):
         self.assertEqual(c.get(reverse("scoping_template_list")).status_code, 403)
 
 
+class ServiceScopingDetailTests(TestCase):
+    """Per-service scoping from the Service detail page."""
+
+    def setUp(self):
+        self.client = Client(HTTP_HOST="localhost")
+        self.admin = User.objects.create_superuser(
+            email="admin@test.com", password="testpass123"
+        )
+        self.client.force_login(self.admin)
+        self.service = Service.objects.create(name="Internal Infrastructure")
+        self.template = ScopingTemplate.objects.create(name="Infra Template")
+
+    def test_detail_shows_scoping_tab(self):
+        resp = self.client.get(reverse("service_detail", args=[self.service.slug]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Scoping")
+        self.assertContains(resp, "No scoping template is attached")
+
+    def test_attach_template(self):
+        self.client.post(
+            reverse("service_scoping_update", args=[self.service.slug]),
+            {"action": "attach", "template": self.template.pk},
+        )
+        self.service.refresh_from_db()
+        self.assertEqual(self.service.scoping_template, self.template)
+
+    def test_detach_template(self):
+        self.service.scoping_template = self.template
+        self.service.save()
+        self.client.post(
+            reverse("service_scoping_update", args=[self.service.slug]),
+            {"action": "detach"},
+        )
+        self.service.refresh_from_db()
+        self.assertIsNone(self.service.scoping_template)
+
+    def test_create_template_for_service(self):
+        resp = self.client.post(
+            reverse("service_scoping_update", args=[self.service.slug]),
+            {"action": "create"},
+        )
+        self.service.refresh_from_db()
+        self.assertIsNotNone(self.service.scoping_template)
+        self.assertIn("Internal Infrastructure", self.service.scoping_template.name)
+        self.assertEqual(resp.status_code, 302)  # redirects to builder
+
+    def test_update_requires_permission(self):
+        plain = User.objects.create_user(email="plain@test.com", password="x")
+        c = Client(HTTP_HOST="localhost")
+        c.force_login(plain)
+        resp = c.post(
+            reverse("service_scoping_update", args=[self.service.slug]),
+            {"action": "detach"},
+        )
+        self.assertEqual(resp.status_code, 403)
+
+
 class ServiceScopingLinkTests(TestCase):
     def test_service_template_fk(self):
         t = ScopingTemplate.objects.create(name="Linked")
