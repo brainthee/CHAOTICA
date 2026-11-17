@@ -117,7 +117,17 @@ class ScheduleAction(models.Model):
         """Whether ``user`` currently holds ``can_schedule_job`` on the unit(s)
         this action touches: the job's unit for job/phase-scoped actions, or each
         affected user's unit(s) for user-owned (project/internal/comment) actions.
-        Permits when no unit can be resolved, matching ``_verify_slot_unit_access``."""
+
+        When no governing unit can be resolved (a unit-less job, or an affected
+        user with no current unit memberships), revert still requires the user to
+        hold ``can_schedule_job`` on *some* unit — being the action's own actor is
+        not, on its own, enough. Only genuine schedulers may revert a change; an
+        ordinary user with no scheduling rights never can. (The live-edit paths
+        reach the same bar via the ``can_schedule_job`` decorator on every
+        mutating endpoint; revert has no such decorator, so the floor is enforced
+        here.)"""
+        from ..utils import user_has_unit_perms
+
         perm = "jobtracker.can_schedule_job"
         job = None
         if self.job_id:
@@ -125,16 +135,23 @@ class ScheduleAction(models.Model):
         elif self.phase_id:
             job = self.phase.job
         if job is not None:
-            if not job.unit:
-                return True
-            return user.has_perm(perm, job.unit)
+            if job.unit:
+                return user.has_perm(perm, job.unit)
+            # Unit-less job: fall back to needing scheduling rights somewhere.
+            return user_has_unit_perms(user, perm)
         # User-owned action — check each affected user's units.
         from chaotica_utils.models import User
 
+        resolved_a_unit = False
         for resource in User.objects.filter(pk__in=self._affected_user_ids()):
             units = [
                 m.unit for m in resource.unit_memberships.select_related("unit").all()
             ]
-            if units and not any(user.has_perm(perm, u) for u in units):
-                return False
-        return True
+            if units:
+                resolved_a_unit = True
+                if not any(user.has_perm(perm, u) for u in units):
+                    return False
+        if resolved_a_unit:
+            return True
+        # No governing unit anywhere: require scheduling rights somewhere.
+        return user_has_unit_perms(user, perm)

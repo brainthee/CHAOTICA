@@ -36,6 +36,13 @@ class ScheduleHistoryBase(TestCase):
             account_manager=self.actor,
         )
         self.phase = Phase.objects.create(job=self.job, title="Phase 1")
+        # The actor is a genuine scheduler: every scheduler mutation endpoint is
+        # gated on ``can_schedule_job``, so in practice an action's actor always
+        # holds it. Revert requires it too (you can't undo a change you couldn't
+        # make), so the fixtures grant it rather than lean on a permit-by-default.
+        self.unit.members.create(member=self.actor)
+        assign_perm("jobtracker.can_schedule_job", self.actor, self.unit)
+        self.actor = User.objects.get(pk=self.actor.pk)  # reset perm cache
         self.delivery_type = TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.DELIVERY)
         self.internal_type = TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.UNASSIGNED)
         self.start = timezone.now().replace(microsecond=0)
@@ -185,6 +192,27 @@ class RevertTests(ScheduleHistoryBase):
         self.other.user_permissions.add(perm)
         self.other = User.objects.get(pk=self.other.pk)  # reset perm cache
         self.assertTrue(action.can_revert(self.other))
+
+    def test_actor_without_scheduling_perm_cannot_revert_own_internal_slot(self):
+        # The hole: a user-owned (internal/global) action used to be revertable by
+        # its actor even with no scheduling rights, because no governing unit could
+        # be resolved. Only genuine schedulers may revert now. ``self.other`` has
+        # no membership and no ``can_schedule_job`` anywhere.
+        slot = self._internal_slot(user=self.other)
+        action = schedule_history.record_creates(self.other, [slot])
+        self.assertIsNone(action.job_id)  # user-owned / global scope
+        self.assertFalse(action.can_revert(self.other))
+        with self.assertRaises(PermissionDenied):
+            schedule_history.revert(action, self.other)
+
+    def test_scheduler_member_can_revert_own_internal_slot(self):
+        # Positive counterpart: a user-owned action's actor who holds
+        # ``can_schedule_job`` on a unit they belong to may revert it.
+        slot = self._internal_slot(user=self.actor)
+        action = schedule_history.record_creates(self.actor, [slot])
+        self.assertTrue(action.can_revert(self.actor))
+        schedule_history.revert(action, self.actor)
+        self.assertFalse(TimeSlot.objects.filter(pk=slot.pk).exists())
 
     def test_revert_delivery_recalcs_phase_status(self):
         # Booking a slot moves the phase to tentative; reverting the create should
