@@ -1,6 +1,10 @@
 # Schedule History tab — redesign plan
 
-**Status:** Plan for review (branch `feature/schedule-history-redesign`)
+**Status:** ✅ Implemented on branch `feature/schedule-history-redesign` (see §4).
+The tab now reads the user-scoped `schedule/actions/` feed and renders the
+ScheduleAction card UI; date-range server filtering (§4.1 perf note) remains a
+possible follow-up — the feed returns the newest 100 and the tab filters by
+action type client-side.
 **Purpose:** Rebuild the "Schedule History" tab on a user's profile on top of the
 `ScheduleAction` version-control log, replacing the stale django-simple-history
 timeline, so the profile, scheduler, and job/phase panels all read one source of truth.

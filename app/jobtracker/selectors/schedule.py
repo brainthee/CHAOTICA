@@ -339,11 +339,13 @@ def availability_runs(users, start, end, holidays):
 
 
 def schedule_history(
-    user, job_id=None, phase_id=None, limit=100, scan=1000, since=None
+    user, job_id=None, phase_id=None, user_id=None, limit=100, scan=1000, since=None
 ):
     """The scheduler's change log for a scope, newest first.
 
     A job/phase scope requires ``view_job_schedule`` on the job (else empty).
+    A ``user_id`` scope lists changes touching that person's schedule, but only
+    if the viewer may see that person's schedule (same rule as the global log).
     The global log only lists actions touching someone whose schedule the
     viewer may see (it used to list everyone's)."""
     from ..models import Job, Phase, ScheduleAction
@@ -366,6 +368,17 @@ def schedule_history(
         if not job or not can_view_job_schedule(user, job):
             return []
         out = list(qs.filter(job_id=job_id)[:limit])
+    elif user_id:
+        # ScheduleAction has no user FK — affected users live in the JSON
+        # payload — so match in Python over a bounded scan, like the global log.
+        if user_id not in viewable_schedule_user_pks(user):
+            return []
+        out = []
+        for action in qs[:scan]:
+            if user_id in action._affected_user_ids():
+                out.append(action)
+                if len(out) >= limit:
+                    break
     else:
         viewable = viewable_schedule_user_pks(user)
         out = []

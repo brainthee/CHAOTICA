@@ -187,6 +187,25 @@ class HistoryTests(ScheduleBase):
         self.assertEqual(rows[0]["items"][0]["change"], "added")
         self.assertEqual(rows[0]["actor"]["id"], self.superuser.pk)
 
+    def test_user_history_scope(self):
+        # The crew member's schedule history: actions touching them, that the
+        # viewer may see. ``self.visible`` books ``self.crew``; ``self.hidden``
+        # touches the stranger, so it must not appear here.
+        rows = self.api.get(
+            "/api/v1/schedule/actions/", {"user": self.crew.pk}
+        ).json()
+        ids = {a["id"] for a in rows}
+        self.assertIn(self.visible.pk, ids)
+        self.assertNotIn(self.hidden.pk, ids)
+
+    def test_user_history_denied_when_not_viewable(self):
+        # The viewer can't see the stranger's schedule, so their user-scoped
+        # history is empty (not a leak of the stranger's changes).
+        rows = self.api.get(
+            "/api/v1/schedule/actions/", {"user": self.stranger.pk}
+        ).json()
+        self.assertEqual(rows, [])
+
     def test_deltas(self):
         self.assertEqual(self.api.get("/api/v1/schedule/deltas/").status_code, 400)
         since = (timezone.now() - timedelta(minutes=5)).isoformat()

@@ -98,8 +98,6 @@ class UserDetailView(UserBaseView, DetailView):
             raise Http404()
 
     def get_context_data(self, **kwargs):
-        from jobtracker.models import TimeSlot
-
         context = super(UserDetailView, self).get_context_data(**kwargs)
 
         # ?dateRange=YYYY-MM-DD to YYYY-MM-DD, or ?start_date= / ?end_date=;
@@ -139,9 +137,9 @@ class UserDetailView(UserBaseView, DetailView):
             context["stats"], indent=4, sort_keys=True, default=str
         )
 
-        context["schedule_history"] = TimeSlot.history.filter(
-            user=self.get_object()
-        ).prefetch_related("history_user")
+        # Schedule History tab now reads the ScheduleAction change log via the
+        # /api/v1/ actions feed (user-scoped), the same source as the scheduler's
+        # own history panel — see partials/users/user_schedule_history.html.
 
         # Effective permissions panel - admin-only (sensitive), read-only.
         prefix = django_settings.GLOBAL_GROUP_PREFIX

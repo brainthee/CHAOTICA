@@ -308,10 +308,18 @@ class ScheduleViewSet(ApiV1Mixin, viewsets.ViewSet):
         summary="Schedule change history",
         description=(
             "Newest first (max 100). With ``job``/``phase`` the history of that "
-            "schedule; without, recent changes touching people whose schedule "
-            "you can see."
+            "schedule; with ``user`` the changes touching that person's schedule "
+            "(if you may see it); without any, recent changes touching people "
+            "whose schedule you can see."
         ),
-        parameters=SCOPE_PARAMS,
+        parameters=SCOPE_PARAMS
+        + [
+            OpenApiParameter(
+                "user",
+                int,
+                description="Limit to a person's schedule (if you may view it).",
+            )
+        ],
         responses=ScheduleActionSerializer(many=True),
     )
     @action(detail=False, methods=["get"])
@@ -320,6 +328,7 @@ class ScheduleViewSet(ApiV1Mixin, viewsets.ViewSet):
             request.user,
             job_id=parse_int_param(request, "job"),
             phase_id=parse_int_param(request, "phase"),
+            user_id=parse_int_param(request, "user"),
         )
         return Response(
             ScheduleActionSerializer(
