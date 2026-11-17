@@ -8,7 +8,7 @@ from .scoping import (
     SizingCombine,
     CalcMode,
 )
-from .service import Service
+from .service import Service, ServiceSkillRequirementGroup
 from .financial import BillingCode, BillingCodeAssignment
 from .client import Client, ClientOnboarding, Contact, Address, FrameworkAgreement
 
@@ -18,10 +18,11 @@ from .phase import Phase
 from .project import Project
 from .team import Team, TeamMember
 
-from .skill import Skill, SkillCategory, UserSkill
+from .skill import Skill, SkillCategory, UserSkill, SkillRatingSuggestion
 from .qualification import (
     QualificationTag,
     Qualification,
+    QualificationSkill,
     QualificationRecord,
     AwardingBody,
 )

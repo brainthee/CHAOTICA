@@ -185,9 +185,29 @@
               {% endif %}
             </div>
           </div>
-  
+
         </div>
       </div>
+
+      {% if skill.has_rating_descriptors %}
+      <div class="card mt-3">
+        <div class="card-body">
+          <h3 class="fw-bolder mb-3">What the ratings mean</h3>
+          <div class="d-flex mb-3">
+            <span class="badge badge-phoenix badge-phoenix-warning me-3" style="height:fit-content;">Require Support</span>
+            <div class="flex-1">{{ skill.rating_desc_support|default:"—" }}</div>
+          </div>
+          <div class="d-flex mb-3">
+            <span class="badge badge-phoenix badge-phoenix-info me-3" style="height:fit-content;">Independent</span>
+            <div class="flex-1">{{ skill.rating_desc_independent|default:"—" }}</div>
+          </div>
+          <div class="d-flex">
+            <span class="badge badge-phoenix badge-phoenix-success me-3" style="height:fit-content;">Specialist</span>
+            <div class="flex-1">{{ skill.rating_desc_specialist|default:"—" }}</div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
     </div>
 
     <div class="col-4">

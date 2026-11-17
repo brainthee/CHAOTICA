@@ -1,5 +1,5 @@
 from django.db import models
-from ..enums import QualificationStatus
+from ..enums import QualificationStatus, UserSkillRatings
 from django.conf import settings
 from chaotica_utils.utils import unique_slug_generator
 from django.utils import timezone
@@ -61,6 +61,7 @@ class Qualification(models.Model):
     tags = models.ManyToManyField(QualificationTag, verbose_name="Tags", blank=True)
     demonstrated_skills = models.ManyToManyField(
         "Skill",
+        through="QualificationSkill",
         blank=True,
         related_name="qualifications",
         verbose_name="Skills Demonstrated",
@@ -148,6 +149,39 @@ class Qualification(models.Model):
         ordering = [Lower("awarding_body"), Lower("name")]
         unique_together = (("name"), ("slug"))
         permissions = (("view_users_qualifications", "View Users with Qualification"),)
+
+
+class QualificationSkill(models.Model):
+    """Through-model linking a Qualification to a Skill it evidences, together
+    with the rating holding that qualification suggests for the skill.
+
+    When a :class:`QualificationRecord` is awarded, one
+    :class:`~jobtracker.models.skill.SkillRatingSuggestion` is raised per row
+    here (non-destructively), proposing ``suggested_rating`` for the holder.
+    """
+
+    qualification = models.ForeignKey(
+        Qualification, on_delete=models.CASCADE, related_name="skill_links"
+    )
+    skill = models.ForeignKey(
+        "Skill", on_delete=models.CASCADE, related_name="qualification_links"
+    )
+    suggested_rating = models.IntegerField(
+        choices=UserSkillRatings.CHOICES,
+        default=UserSkillRatings.CAN_DO_WITH_SUPPORT,
+        help_text="Rating this qualification suggests the holder has for the skill.",
+    )
+
+    class Meta:
+        unique_together = (("qualification", "skill"),)
+        ordering = ["qualification", "skill"]
+
+    def __str__(self):
+        return "%s → %s (%s)" % (
+            self.qualification,
+            self.skill,
+            self.get_suggested_rating_display(),
+        )
 
 
 class QualificationRecord(models.Model):

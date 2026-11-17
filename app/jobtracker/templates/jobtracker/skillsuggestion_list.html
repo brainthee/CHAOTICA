@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% load menu %}{% load static %}
+
+{% block pageTitle %}Skill Suggestions{% endblock pageTitle %}
+{% block head_title %}Skill Suggestions{% endblock head_title %}
+
+{% block headerBlock_css %}mb-6{% endblock headerBlock_css %}
+
+{% block breadcrumbItem %}
+<li class="breadcrumb-item"><a href="{% url 'view_own_qualifications' %}">My Qualifications</a></li>
+<li class="breadcrumb-item active" aria-current="page">Skill Suggestions</li>
+{% endblock breadcrumbItem %}
+
+{% block content %}
+
+<div class="row mb-4 gx-6 gy-3 mt-0 align-items-center">
+  <div class="col">
+    <h2 class="mb-0">Suggested skills</h2>
+    <p class="text-body-tertiary mb-0">
+      These come from qualifications you've been awarded. Accepting one adds the
+      skill to your matrix at the suggested level &mdash; it never lowers a rating
+      you've already set. Nothing is changed until you accept.
+    </p>
+  </div>
+</div>
+
+{% if suggestions %}
+<div class="card mb-4">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover mb-0">
+        <thead>
+          <tr>
+            <th scope="col">Skill</th>
+            <th scope="col">Category</th>
+            <th scope="col">Suggested level</th>
+            <th scope="col">Because</th>
+            <th scope="col" class="text-end">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for s in suggestions %}
+          <tr>
+            <td class="align-middle"><strong>{{ s.skill.name }}</strong></td>
+            <td class="align-middle text-body-tertiary">{{ s.skill.category.name }}</td>
+            <td class="align-middle">
+              <span class="badge badge-phoenix badge-phoenix-info">{{ s.get_suggested_rating_display }}</span>
+            </td>
+            <td class="align-middle text-body-tertiary">
+              {% if s.source_qualification_record %}
+                {{ s.source_qualification_record.qualification }}
+              {% else %}
+                {{ s.message }}
+              {% endif %}
+            </td>
+            <td class="align-middle text-end text-nowrap">
+              <form method="post" action="{% url 'accept_skill_suggestion' s.pk %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-phoenix-success px-3">
+                  <i class="fa-solid fa-check me-1"></i>Accept
+                </button>
+              </form>
+              <form method="post" action="{% url 'dismiss_skill_suggestion' s.pk %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-phoenix-secondary px-3">
+                  <i class="fa-solid fa-xmark me-1"></i>Dismiss
+                </button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="alert alert-phoenix-info d-flex align-items-center" role="alert">
+  <span class="fa-solid fa-circle-info me-3 fs-7"></span>
+  <div>You have no pending skill suggestions. New ones appear here when a qualification you hold is awarded.</div>
+</div>
+{% endif %}
+
+{% if resolved_recent %}
+<h5 class="mt-4 mb-2 text-body-tertiary">Recently resolved</h5>
+<div class="table-responsive">
+  <table class="table table-sm mb-0">
+    <tbody>
+    {% for s in resolved_recent %}
+      <tr>
+        <td class="text-body-tertiary">{{ s.skill.name }}</td>
+        <td class="text-body-tertiary">{{ s.get_suggested_rating_display }}</td>
+        <td class="text-body-tertiary">
+          <span class="badge badge-phoenix {% if s.status == 1 %}badge-phoenix-success{% else %}badge-phoenix-secondary{% endif %}">
+            {{ s.get_status_display }}
+          </span>
+        </td>
+        <td class="text-body-tertiary">{{ s.resolved_on|date:"d M Y" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% endblock content %}
