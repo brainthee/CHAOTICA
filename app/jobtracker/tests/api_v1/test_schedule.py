@@ -187,6 +187,51 @@ class HistoryTests(ScheduleBase):
         self.assertEqual(rows[0]["items"][0]["change"], "added")
         self.assertEqual(rows[0]["actor"]["id"], self.superuser.pk)
 
+    def test_user_history_scope(self):
+        # The crew member's schedule history: actions touching them, that the
+        # viewer may see. ``self.visible`` books ``self.crew``; ``self.hidden``
+        # touches the stranger, so it must not appear here.
+        rows = self.api.get(
+            "/api/v1/schedule/actions/", {"user": self.crew.pk}
+        ).json()
+        ids = {a["id"] for a in rows}
+        self.assertIn(self.visible.pk, ids)
+        self.assertNotIn(self.hidden.pk, ids)
+        # Each row carries the human-readable field-level detail lines.
+        self.assertIn("details", rows[0])
+
+    def test_user_history_date_range(self):
+        # Backdate the (crew-touching) action to 100 days ago.
+        old = timezone.now() - timedelta(days=100)
+        ScheduleAction.objects.filter(pk=self.visible.pk).update(created=old)
+
+        def ids(params):
+            params["user"] = self.crew.pk
+            return {a["id"] for a in self.api.get(
+                "/api/v1/schedule/actions/", params).json()}
+
+        # A recent window excludes it.
+        recent = (timezone.now() - timedelta(days=10)).date().isoformat()
+        self.assertNotIn(self.visible.pk, ids({"from": recent}))
+        # A window that reaches back past it includes it (also past the scan cap).
+        wide = (timezone.now() - timedelta(days=120)).date().isoformat()
+        to = timezone.now().date().isoformat()
+        self.assertIn(self.visible.pk, ids({"from": wide, "to": to}))
+
+    def test_history_bad_date_is_400(self):
+        self.assertEqual(
+            self.api.get("/api/v1/schedule/actions/", {"from": "nope"}).status_code,
+            400,
+        )
+
+    def test_user_history_denied_when_not_viewable(self):
+        # The viewer can't see the stranger's schedule, so their user-scoped
+        # history is empty (not a leak of the stranger's changes).
+        rows = self.api.get(
+            "/api/v1/schedule/actions/", {"user": self.stranger.pk}
+        ).json()
+        self.assertEqual(rows, [])
+
     def test_deltas(self):
         self.assertEqual(self.api.get("/api/v1/schedule/deltas/").status_code, 400)
         since = (timezone.now() - timedelta(minutes=5)).isoformat()

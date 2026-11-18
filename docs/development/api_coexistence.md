@@ -13,7 +13,7 @@ listed here, so each one can be closed in the UI or accepted deliberately.
 | Site search, people | Lists every active user to every signed-in user | Same people, as identity-only refs. `/users/` requires `view_user`, which no default role holds |
 | Job Sales tab | Staff cost and profit shown to anyone who can view the job | Only with `can_view_loaded_costs` |
 | Support-team money | Hidden by the template only | Removed on the server |
-| User profile page | Open to any global role; the Schedule History tab is ungated | Skills and qualifications only for self, manager, or `view_users_skill` / `view_users_qualifications`; schedule history not exposed |
+| User profile page | Open to any global role; the Schedule History tab now follows the same rule as the API (shown only to people who may view that person's schedule) | Skills and qualifications only for self, manager, or `view_users_skill` / `view_users_qualifications`; schedule history is the user-scoped `schedule/actions/` feed, gated on being able to view that person's schedule |
 | Skill page user table, skill matrix | Every holder's rating shown to anyone with `view_skill` | Follows the `/user-skills/` rule |
 | Service coverage | Names people by competency to `view_service` holders | Counts only; names require `view_users_skill` |
 | Client page | Contacts and frameworks shown to anyone who can view the client | Require `view_contact` / `view_frameworkagreement` |

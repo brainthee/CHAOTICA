@@ -55,7 +55,10 @@ nothing is changed.
   permission (`can_schedule_job`) on the affected job/phase — reverting recreates
   or removes the same slots, so it needs the same permission as a live edit. If
   you've since been removed from that unit or job, your old changes become
-  read-only.
+  read-only. Scheduling permission is **always required**: being the person who
+  made the change is never on its own enough. For changes not tied to a job
+  (internal time, project bookings, comments) you must hold `can_schedule_job`
+  on a unit you currently belong to.
 - Reverting **someone else's** change requires the site‑level permission
   **_Can revert any schedule change_** (`jobtracker.revert_any_scheduleaction`), which
   administrators hold by default. Without it, other people's changes show as read‑only

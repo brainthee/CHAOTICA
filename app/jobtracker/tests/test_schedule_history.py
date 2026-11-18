@@ -36,6 +36,13 @@ class ScheduleHistoryBase(TestCase):
             account_manager=self.actor,
         )
         self.phase = Phase.objects.create(job=self.job, title="Phase 1")
+        # The actor is a genuine scheduler: every scheduler mutation endpoint is
+        # gated on ``can_schedule_job``, so in practice an action's actor always
+        # holds it. Revert requires it too (you can't undo a change you couldn't
+        # make), so the fixtures grant it rather than lean on a permit-by-default.
+        self.unit.members.create(member=self.actor)
+        assign_perm("jobtracker.can_schedule_job", self.actor, self.unit)
+        self.actor = User.objects.get(pk=self.actor.pk)  # reset perm cache
         self.delivery_type = TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.DELIVERY)
         self.internal_type = TimeSlotType.get_builtin_object(DefaultTimeSlotTypes.UNASSIGNED)
         self.start = timezone.now().replace(microsecond=0)
@@ -186,6 +193,27 @@ class RevertTests(ScheduleHistoryBase):
         self.other = User.objects.get(pk=self.other.pk)  # reset perm cache
         self.assertTrue(action.can_revert(self.other))
 
+    def test_actor_without_scheduling_perm_cannot_revert_own_internal_slot(self):
+        # The hole: a user-owned (internal/global) action used to be revertable by
+        # its actor even with no scheduling rights, because no governing unit could
+        # be resolved. Only genuine schedulers may revert now. ``self.other`` has
+        # no membership and no ``can_schedule_job`` anywhere.
+        slot = self._internal_slot(user=self.other)
+        action = schedule_history.record_creates(self.other, [slot])
+        self.assertIsNone(action.job_id)  # user-owned / global scope
+        self.assertFalse(action.can_revert(self.other))
+        with self.assertRaises(PermissionDenied):
+            schedule_history.revert(action, self.other)
+
+    def test_scheduler_member_can_revert_own_internal_slot(self):
+        # Positive counterpart: a user-owned action's actor who holds
+        # ``can_schedule_job`` on a unit they belong to may revert it.
+        slot = self._internal_slot(user=self.actor)
+        action = schedule_history.record_creates(self.actor, [slot])
+        self.assertTrue(action.can_revert(self.actor))
+        schedule_history.revert(action, self.actor)
+        self.assertFalse(TimeSlot.objects.filter(pk=slot.pk).exists())
+
     def test_revert_delivery_recalcs_phase_status(self):
         # Booking a slot moves the phase to tentative; reverting the create should
         # drop it back to pending scheduling (TimeSlot.delete side effect fires).
@@ -201,3 +229,47 @@ class RevertTests(ScheduleHistoryBase):
         schedule_history.revert(action, self.actor)
         self.phase.refresh_from_db()
         self.assertEqual(self.phase.status, PhaseStatuses.PENDING_SCHED)
+
+
+class DetailLineTests(ScheduleHistoryBase):
+    """The field-level change lines that tell you *what* changed, not just that
+    a slot was 'updated'."""
+
+    def _labels(self, action):
+        refs = schedule_history.collect_payload_refs([action])
+        return schedule_history.build_label_maps(refs)
+
+    def test_update_reports_time_change(self):
+        slot = self._delivery_slot()
+        before = schedule_history.snapshot(slot)
+        slot.end = self.end + timedelta(hours=3)
+        slot.save()
+        action = schedule_history.record(
+            self.actor, ScheduleActionType.UPDATE,
+            [before], [schedule_history.snapshot(slot)],
+        )
+        details = schedule_history.describe_action_details(action, self._labels(action))
+        when = next(d for d in details if d["label"] == "When")
+        self.assertTrue(when["from"] and when["to"])
+        self.assertNotEqual(when["from"], when["to"])
+
+    def test_update_reports_reassignment(self):
+        slot = self._delivery_slot(user=self.actor)
+        before = schedule_history.snapshot(slot)
+        slot.user = self.other
+        slot.save()
+        action = schedule_history.record(
+            self.actor, ScheduleActionType.UPDATE,
+            [before], [schedule_history.snapshot(slot)],
+        )
+        details = schedule_history.describe_action_details(action, self._labels(action))
+        assignee = next(d for d in details if d["label"] == "Assignee")
+        self.assertEqual(assignee["from"], str(self.actor))
+        self.assertEqual(assignee["to"], str(self.other))
+
+    def test_create_reports_booked_summary(self):
+        slot = self._delivery_slot()
+        action = schedule_history.record_creates(self.actor, [slot])
+        details = schedule_history.describe_action_details(action, self._labels(action))
+        self.assertEqual(details[0]["label"], "Booked")
+        self.assertIn(str(self.start.year), details[0]["to"])

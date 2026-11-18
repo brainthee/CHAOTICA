@@ -1,9 +1,11 @@
 """Timeslots, schedule windows, scheduler rows, change history and deltas."""
 
+from datetime import datetime, time, timedelta
 from types import SimpleNamespace
 
 from django.core.exceptions import SuspiciousOperation
 from django.utils import timezone
+from django.utils.dateparse import parse_date
 from drf_spectacular.openapi import AutoSchema
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -17,6 +19,7 @@ from chaotica_utils.utils import clean_datetime
 
 from ....forms import SchedulerFilter
 from ....models import TimeSlot, TimeSlotComment, TimeSlotType
+from ....schedule_history import build_label_maps, collect_payload_refs
 from ....selectors.schedule import schedule_history
 from ....utils import (
     SchedulerFocus,
@@ -63,6 +66,17 @@ SCOPE_PARAMS = [
         "phase", int, description="Limit to a phase (needs view_job_schedule)."
     ),
 ]
+
+
+def _parse_day_start(raw):
+    """A ``YYYY-MM-DD`` query param as an aware datetime at local midnight, or
+    None if absent. Raises ``ValidationError`` (→ 400) on a malformed value."""
+    if raw in (None, ""):
+        return None
+    day = parse_date(raw)
+    if day is None:
+        raise ValidationError({"date": ["Expected a YYYY-MM-DD date."]})
+    return timezone.make_aware(datetime.combine(day, time.min))
 
 
 class TimeSlotTypeViewSet(BaseReadOnlyAPIViewSet):
@@ -308,22 +322,52 @@ class ScheduleViewSet(ApiV1Mixin, viewsets.ViewSet):
         summary="Schedule change history",
         description=(
             "Newest first (max 100). With ``job``/``phase`` the history of that "
-            "schedule; without, recent changes touching people whose schedule "
-            "you can see."
+            "schedule; with ``user`` the changes touching that person's schedule "
+            "(if you may see it); without any, recent changes touching people "
+            "whose schedule you can see."
         ),
-        parameters=SCOPE_PARAMS,
+        parameters=SCOPE_PARAMS
+        + [
+            OpenApiParameter(
+                "user",
+                int,
+                description="Limit to a person's schedule (if you may view it).",
+            ),
+            OpenApiParameter(
+                "from",
+                OpenApiTypes.DATE,
+                description="Only changes made on/after this date (YYYY-MM-DD).",
+            ),
+            OpenApiParameter(
+                "to",
+                OpenApiTypes.DATE,
+                description="Only changes made on/before this date (YYYY-MM-DD).",
+            ),
+        ],
         responses=ScheduleActionSerializer(many=True),
     )
     @action(detail=False, methods=["get"])
     def actions(self, request):
+        created_from = _parse_day_start(request.query_params.get("from"))
+        # Inclusive of the whole "to" day: bound is the start of the next day.
+        to_day = _parse_day_start(request.query_params.get("to"))
+        created_to = (to_day + timedelta(days=1)) if to_day else None
         history = schedule_history(
             request.user,
             job_id=parse_int_param(request, "job"),
             phase_id=parse_int_param(request, "phase"),
+            user_id=parse_int_param(request, "user"),
+            created_from=created_from,
+            created_to=created_to,
         )
+        # Resolve all referenced ids to labels in one batch so the serializer's
+        # per-action detail lines don't run a query each.
+        labels = build_label_maps(collect_payload_refs(history))
         return Response(
             ScheduleActionSerializer(
-                history, many=True, context={"request": request}
+                history,
+                many=True,
+                context={"request": request, "schedule_labels": labels},
             ).data
         )
 

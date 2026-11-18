@@ -1,51 +1,335 @@
-<div class="alert alert-phoenix-warning" role="alert">This page is somewhat experimental and should only be used as a rough guide for now.</div>
+{% comment %}
+Schedule History tab (user profile). Reads the ScheduleAction change log via the
+/api/v1/ actions feed, user-scoped — the same source of truth as the scheduler's
+own history panel. Lazy-loaded when the tab is first shown.
+{% endcomment %}
+<div id="schedule-history-root"
+     data-actions-url="{% url 'api_v1:schedule-actions' %}"
+     data-user-pk="{{ user.pk }}"
+     data-revert-url="{% url 'schedule_action_revert' %}"
+     data-csrf="{{ csrf_token }}">
 
-
-<div class="col-xl-7 scrollbar">
+  <div class="d-flex flex-wrap align-items-end gap-3 mb-3">
     <div>
-        {% regroup schedule_history by history_date.date as grouped_history %}
-
-        {% for his_date in grouped_history %}
-            <h4 class="py-3 border-y mb-5 ms-8">{{ his_date.grouper }}</h4>
-            <div class="timeline-basic mb-9">
-
-            {% for his in his_date.list %}
-                <div class="timeline-item">
-                    <div class="row g-3">
-                        <div class="col-auto">
-                            <div class="timeline-item-bar position-relative">
-                                <div class="icon-item icon-item-md rounded-7 border border-translucent">
-                                    <span class="fa-solid fa-{% if his.history_type == "+" %}plus{% elif his.history_type == "~" %}pen{% else %}minus{% endif %} text-{% if his.history_type == "+" %}success{% elif his.history_type == "~" %}info{% else %}danger{% endif %} fs-9"></span>
-                                </div>
-                                <span class="timeline-bar border-end border-dashed"></span>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="d-flex justify-content-between">
-                                <div class="d-flex mb-2">
-                                <h6 class="lh-sm mb-0 me-2 text-body-secondary timeline-item-title">
-                                    {{ his.name }}
-                                </h6>
-                                </div>
-                                <p class="text-body-quaternary fs-9 mb-0 text-nowrap timeline-time">
-                                    <span class="fa-regular fa-clock me-1"></span>
-                                    {{ his.history_date.time }}
-                                </p>
-                            </div>
-                            <h6 class="fs-10 fw-normal mb-3">
-                                by 
-                                <a class="fw-semibold" href="#!">{{ his.history_user }}</a>
-                            </h6>
-                            <p class="fs-9 text-body-secondary w-sm-60 mb-5">
-                                {{ his }}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
-            </div>
-        {% endfor %}
-
+      <label class="fs-10 text-body-tertiary d-block mb-1">Period</label>
+      <div class="btn-group btn-group-sm" role="group" id="sch-hist-presets">
+        <button type="button" class="btn btn-phoenix-secondary js-sch-hist-preset" data-days="30">30 days</button>
+        <button type="button" class="btn btn-phoenix-secondary js-sch-hist-preset" data-days="90">90 days</button>
+        <button type="button" class="btn btn-phoenix-secondary js-sch-hist-preset" data-days="365">1 year</button>
+        <button type="button" class="btn btn-phoenix-secondary js-sch-hist-preset" data-days="0">All</button>
+      </div>
     </div>
+    <div>
+      <label class="fs-10 text-body-tertiary d-block mb-1" for="sch-hist-from">From</label>
+      <input type="date" id="sch-hist-from" class="form-control form-control-sm" style="width: 10rem;">
+    </div>
+    <div>
+      <label class="fs-10 text-body-tertiary d-block mb-1" for="sch-hist-to">To</label>
+      <input type="date" id="sch-hist-to" class="form-control form-control-sm" style="width: 10rem;">
+    </div>
+  </div>
+
+  <div class="row g-2 mb-4" id="sch-hist-kpis"></div>
+
+  <div class="d-flex flex-wrap align-items-center gap-2 mb-3" id="sch-hist-filters"></div>
+
+  <div id="sch-hist-list" class="border border-translucent rounded-3 bg-body-emphasis overflow-auto" style="max-height: 70vh;">
+    <p class="text-body-secondary fs-9 p-3 mb-0">
+      <span class="fas fa-spinner fa-spin me-1"></span> Loading change history…
+    </p>
+  </div>
 </div>
-<hr>
+
+<script>
+(function () {
+  var root = document.getElementById('schedule-history-root');
+  if (!root || root.dataset.wired) { return; }
+  root.dataset.wired = '1';
+
+  var $root     = $(root);
+  var actionsUrl = root.dataset.actionsUrl;
+  var userPk     = root.dataset.userPk;
+  var revertUrl  = root.dataset.revertUrl;
+  var csrf       = root.dataset.csrf;
+
+  var TYPES = {
+    CREATE: { label: 'Created', icon: 'fa-plus',               cls: 'success'   },
+    UPDATE: { label: 'Updated', icon: 'fa-pen',                cls: 'info'      },
+    MOVE:   { label: 'Moved',   icon: 'fa-arrows-left-right',  cls: 'info'      },
+    CLEAR:  { label: 'Cleared', icon: 'fa-eraser',             cls: 'danger'    },
+    DELETE: { label: 'Deleted', icon: 'fa-trash',              cls: 'danger'    },
+    BATCH:  { label: 'Batch',   icon: 'fa-layer-group',        cls: 'info'      },
+    REVERT: { label: 'Reverts', icon: 'fa-rotate-left',        cls: 'secondary' }
+  };
+
+  var all = [];          // all loaded actions
+  var active = null;      // active type filter (null = all)
+  var loaded = false;
+  var rangeFrom = null;   // 'YYYY-MM-DD' lower bound, or null
+  var rangeTo = null;     // 'YYYY-MM-DD' upper bound, or null
+  var presetDays = 90;    // active preset in days (0 = All); null = custom range
+
+  function isoDay(d) {
+    var z = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+    return z.toISOString().slice(0, 10);
+  }
+
+  function syncRangeControls() {
+    $('#sch-hist-from').val(rangeFrom || '');
+    $('#sch-hist-to').val(rangeTo || '');
+    $('.js-sch-hist-preset').each(function () {
+      var on = presetDays != null && String($(this).data('days')) === String(presetDays);
+      $(this).toggleClass('btn-phoenix-primary', on)
+             .toggleClass('btn-phoenix-secondary', !on);
+    });
+  }
+
+  function applyPreset(days) {
+    presetDays = days;
+    if (!days) {
+      rangeFrom = null; rangeTo = null;    // "All" — count-capped, no date bound
+    } else {
+      var to = new Date();
+      var from = new Date();
+      from.setDate(from.getDate() - days);
+      rangeFrom = isoDay(from);
+      rangeTo = isoDay(to);
+    }
+    syncRangeControls();
+    load();
+  }
+
+  function escapeHtml(s) {
+    return $('<div>').text(s == null ? '' : String(s)).html();
+  }
+
+  function relTime(iso) {
+    var then = new Date(iso).getTime();
+    if (isNaN(then)) { return ''; }
+    var s = Math.round((Date.now() - then) / 1000);
+    if (s < 60) { return 'just now'; }
+    var m = Math.round(s / 60); if (m < 60) { return m + 'm ago'; }
+    var h = Math.round(m / 60); if (h < 24) { return h + 'h ago'; }
+    var d = Math.round(h / 24); if (d < 30) { return d + 'd ago'; }
+    var mo = Math.round(d / 30); if (mo < 12) { return mo + 'mo ago'; }
+    return Math.round(mo / 12) + 'y ago';
+  }
+
+  function dayKey(iso) {
+    var dt = new Date(iso);
+    return dt.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  function exactTime(iso) {
+    var dt = new Date(iso);
+    return dt.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+  }
+
+  function renderKpis() {
+    var counts = {};
+    var total = all.length;
+    all.forEach(function (a) { counts[a.action_type] = (counts[a.action_type] || 0) + 1; });
+
+    var totalLabel = (rangeFrom || rangeTo) ? 'Changes in period' : 'Total changes';
+    var tiles = ['<div class="col-6 col-sm-auto">' +
+      '<div class="px-3 py-2 rounded-3 border border-translucent bg-body h-100">' +
+        '<div class="fs-10 text-body-tertiary text-uppercase">' + totalLabel + '</div>' +
+        '<div class="fs-6 fw-bolder">' + total + '</div>' +
+      '</div></div>'];
+
+    Object.keys(TYPES).forEach(function (t) {
+      if (!counts[t]) { return; }
+      var meta = TYPES[t];
+      tiles.push('<div class="col-6 col-sm-auto">' +
+        '<div class="px-3 py-2 rounded-3 border border-translucent bg-body h-100">' +
+          '<div class="fs-10 text-body-tertiary text-uppercase">' +
+            '<span class="fas ' + meta.icon + ' text-' + meta.cls + ' me-1"></span>' + meta.label +
+          '</div>' +
+          '<div class="fs-6 fw-bolder">' + counts[t] + '</div>' +
+        '</div></div>');
+    });
+    $('#sch-hist-kpis').html(tiles.join(''));
+  }
+
+  function renderFilters() {
+    var present = {};
+    all.forEach(function (a) { present[a.action_type] = true; });
+    var chips = ['<span class="fs-10 text-body-tertiary me-1">Filter:</span>'];
+    chips.push(chip(null, 'All', active === null));
+    Object.keys(TYPES).forEach(function (t) {
+      if (present[t]) { chips.push(chip(t, TYPES[t].label, active === t)); }
+    });
+    $('#sch-hist-filters').html(chips.join(''));
+  }
+
+  function chip(type, label, on) {
+    return '<button type="button" class="btn btn-sm ' +
+      (on ? 'btn-phoenix-primary' : 'btn-phoenix-secondary') +
+      ' js-sch-hist-chip" data-type="' + (type || '') + '">' + escapeHtml(label) + '</button>';
+  }
+
+  function cardFor(a) {
+    var meta = TYPES[a.action_type] || { icon: 'fa-clock-rotate-left', cls: 'secondary' };
+    var scope = '';
+    if (a.phase) { scope = '<span class="badge badge-phoenix badge-phoenix-secondary ms-2">Phase ' + a.phase + '</span>'; }
+    else if (a.job) { scope = '<span class="badge badge-phoenix badge-phoenix-secondary ms-2">Job ' + a.job + '</span>'; }
+
+    var revert = '';
+    if (a.can_revert) {
+      revert = '<button class="btn btn-sm btn-phoenix-secondary js-sch-hist-revert" data-action-id="' + a.id + '" title="Revert this change">' +
+        '<span class="fas fa-rotate-left me-1"></span>Revert</button>';
+    } else if (a.reverted) {
+      revert = '<span class="badge badge-phoenix badge-phoenix-secondary">reverted</span>';
+    }
+
+    var reason = (a.forced && a.override_reason)
+      ? '<div class="fs-10 text-warning-emphasis text-wrap mt-1">Reason: ' + escapeHtml(a.override_reason) + '</div>'
+      : '';
+
+    var details = (a.details && a.details.length)
+      ? '<div class="mt-1 ps-2 border-start border-2 border-translucent">' +
+          a.details.map(function (d) {
+            var val;
+            if (d.from && d.to) {
+              val = '<span class="text-decoration-line-through text-body-quaternary">' + escapeHtml(d.from) + '</span>' +
+                    ' <span class="fas fa-arrow-right-long mx-1 text-body-quaternary"></span> ' +
+                    '<span class="text-body-emphasis">' + escapeHtml(d.to) + '</span>';
+            } else {
+              val = '<span class="text-body-emphasis">' + escapeHtml(d.to || d.from || '') + '</span>';
+            }
+            return '<div class="fs-10 text-body-secondary text-wrap">' +
+              '<span class="fw-semibold">' + escapeHtml(d.label) + ':</span> ' + val + '</div>';
+          }).join('') +
+        '</div>'
+      : '';
+
+    return '<div class="d-flex align-items-start gap-3 px-3 py-3 border-bottom border-translucent' +
+        (a.reverted ? ' opacity-50' : '') + '">' +
+        '<span class="fas ' + meta.icon + ' fs-8 text-' + meta.cls + ' mt-1"></span>' +
+        '<div class="flex-1 min-w-0">' +
+          '<div class="fw-semibold fs-9">' +
+            (a.forced ? '<span class="fas fa-triangle-exclamation text-warning me-1" title="Saved past a warning"></span>' : '') +
+            escapeHtml(a.summary) + scope +
+          '</div>' +
+          details +
+          reason +
+          '<div class="text-body-secondary fs-10 mt-1">' +
+            'by ' + (a.actorUrl
+              ? '<a class="fw-semibold" href="' + escapeHtml(a.actorUrl) + '">' + escapeHtml(a.actor) + '</a>'
+              : '<span class="fw-semibold">' + escapeHtml(a.actor) + '</span>') + ' · ' +
+            '<span title="' + escapeHtml(exactTime(a.created)) + '">' + relTime(a.created) + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="ms-auto flex-shrink-0">' + revert + '</div>' +
+      '</div>';
+  }
+
+  function renderList() {
+    var rows = active === null ? all : all.filter(function (a) { return a.action_type === active; });
+    var $list = $('#sch-hist-list');
+    if (!rows.length) {
+      var msg;
+      if (active) {
+        msg = 'No changes of this type in the selected period.';
+      } else if (rangeFrom || rangeTo) {
+        msg = 'No schedule changes in this period — try a wider period or <strong>All</strong>.';
+      } else {
+        msg = 'No schedule changes recorded yet.';
+      }
+      $list.html('<p class="text-body-secondary fs-9 p-3 mb-0">' + msg + '</p>');
+      return;
+    }
+    var html = [], curDay = null;
+    rows.forEach(function (a) {
+      var d = dayKey(a.created);
+      if (d !== curDay) {
+        curDay = d;
+        html.push('<div class="px-3 py-2 bg-body-tertiary border-bottom border-translucent ' +
+          'fs-10 fw-bold text-uppercase text-body-secondary sticky-top">' + escapeHtml(d) + '</div>');
+      }
+      html.push(cardFor(a));
+    });
+    $list.html(html.join(''));
+  }
+
+  function renderAll() { renderKpis(); renderFilters(); renderList(); }
+
+  function load() {
+    $('#sch-hist-list').html('<p class="text-body-secondary fs-9 p-3 mb-0">' +
+      '<span class="fas fa-spinner fa-spin me-1"></span> Loading change history…</p>');
+    var params = { user: userPk };
+    if (rangeFrom) { params.from = rangeFrom; }
+    if (rangeTo) { params.to = rangeTo; }
+    $.get(actionsUrl, params)
+      .done(function (data) {
+        all = (data || []).map(function (a) {
+          return $.extend({}, a, {
+            actor: (a.actor && a.actor.display) ? a.actor.display : 'System',
+            actorUrl: (a.actor && a.actor.web_url) ? a.actor.web_url : null
+          });
+        });
+        renderAll();
+      })
+      .fail(function () {
+        $('#sch-hist-list').html('<p class="text-danger fs-9 p-3 mb-0">' +
+          'Could not load schedule history. Please try again.</p>');
+      });
+  }
+
+  // Lazy: first show sets the default period (which loads); re-show refreshes
+  // the current period.
+  function ensureLoaded() {
+    if (!loaded) { loaded = true; applyPreset(presetDays); }
+    else { load(); }
+  }
+  $(document).on('shown.bs.tab', '#schedule_history-tab', ensureLoaded);
+  // If the tab is already active on page load (e.g. deep link), load now.
+  if ($('#schedule_history-tab').hasClass('active')) { ensureLoaded(); }
+
+  $(document).on('click', '.js-sch-hist-preset', function () {
+    applyPreset(Number($(this).data('days')));
+  });
+  $(document).on('change', '#sch-hist-from', function () {
+    rangeFrom = this.value || null; presetDays = null; syncRangeControls(); load();
+  });
+  $(document).on('change', '#sch-hist-to', function () {
+    rangeTo = this.value || null; presetDays = null; syncRangeControls(); load();
+  });
+
+  $(document).on('click', '.js-sch-hist-chip', function () {
+    var t = $(this).data('type');
+    active = (t === '' || t == null) ? null : String(t);
+    renderFilters();
+    renderList();
+  });
+
+  $(document).on('click', '.js-sch-hist-revert', function () {
+    var id = $(this).data('action-id');
+    var doRevert = function () {
+      $.ajax({
+        url: revertUrl, type: 'POST', dataType: 'json',
+        data: { pk: id, csrfmiddlewaretoken: csrf }
+      }).done(function (resp) {
+        if (resp && resp.ok) {
+          load();
+        } else if (typeof Swal !== 'undefined') {
+          Swal.fire('Cannot revert', (resp && resp.error) || 'The change could not be reverted.', 'warning');
+        }
+      }).fail(function () {
+        if (typeof Swal !== 'undefined') {
+          Swal.fire('Error', 'Something went wrong reverting the change.', 'error');
+        }
+      });
+    };
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        title: 'Revert this change?',
+        text: 'This applies the exact inverse of the change to the schedule.',
+        icon: 'warning', showCancelButton: true, confirmButtonText: 'Revert'
+      }).then(function (r) { if (r.isConfirmed) { doRevert(); } });
+    } else {
+      doRevert();
+    }
+  });
+})();
+</script>

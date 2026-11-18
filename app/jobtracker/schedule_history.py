@@ -139,6 +139,175 @@ def _describe_item(item):
     return "changed"
 
 
+# ---- Human-readable field-level diffs (for the history detail lines) ----------
+
+def collect_payload_refs(actions):
+    """Every user/slot-type/phase/project id referenced across these actions'
+    payloads, so labels can be resolved in one batch (no per-row queries)."""
+    refs = {"user": set(), "slot_type": set(), "phase": set(), "project": set()}
+    key = {
+        "user_id": "user",
+        "slot_type_id": "slot_type",
+        "phase_id": "phase",
+        "project_id": "project",
+    }
+    for action in actions:
+        for item in action.payload or []:
+            for side in ("before", "after"):
+                fields = item.get(side) or {}
+                for field, bucket in key.items():
+                    val = fields.get(field)
+                    if val:
+                        refs[bucket].add(val)
+    return refs
+
+
+def build_label_maps(refs):
+    """Resolve the ids from :func:`collect_payload_refs` to display labels."""
+    from chaotica_utils.models import User
+    from .models import Phase, Project, TimeSlotType
+
+    return {
+        "user": {u.pk: str(u) for u in User.objects.filter(pk__in=refs["user"])},
+        "slot_type": {
+            t.pk: t.name for t in TimeSlotType.objects.filter(pk__in=refs["slot_type"])
+        },
+        "phase": {
+            p.pk: str(p)
+            for p in Phase.objects.select_related("job__client").filter(
+                pk__in=refs["phase"]
+            )
+        },
+        "project": {
+            p.pk: str(p) for p in Project.objects.filter(pk__in=refs["project"])
+        },
+    }
+
+
+def _fmt_dt(iso):
+    from django.utils import timezone
+    from django.utils.dateparse import parse_datetime
+
+    if not iso:
+        return ""
+    dt = parse_datetime(iso)
+    if dt is None:
+        return str(iso)
+    if timezone.is_aware(dt):
+        dt = timezone.localtime(dt)
+    return dt.strftime("%-d %b %Y, %H:%M")
+
+
+def _fmt_range(start_iso, end_iso):
+    start, end = _fmt_dt(start_iso), _fmt_dt(end_iso)
+    if start and end:
+        return "{} – {}".format(start, end)
+    return start or end
+
+
+def describe_action_details(action, labels):
+    """Field-level change lines for an action, e.g.
+    ``[{"label": "When", "from": "...", "to": "..."}]``. ``labels`` is the
+    resolved map from :func:`build_label_maps`; missing ids degrade to blank."""
+    from .enums import TimeSlotDeliveryRole
+
+    roles = dict(TimeSlotDeliveryRole.CHOICES)
+    lines = []
+    for item in action.payload or []:
+        before, after = item.get("before"), item.get("after")
+        if before is None and after is None:
+            continue
+        if item.get("model") == "timeslotcomment":
+            lines.extend(_comment_lines(before, after))
+        else:
+            lines.extend(_timeslot_lines(before, after, labels, roles))
+    return lines
+
+
+def _slot_summary(fields, labels, roles):
+    """A compact one-line description of a slot's state."""
+    bits = [_fmt_range(fields.get("start"), fields.get("end"))]
+    type_label = labels["slot_type"].get(fields.get("slot_type_id"))
+    if type_label:
+        bits.append(type_label)
+    role = fields.get("deliveryRole")
+    if role:
+        bits.append(roles.get(role, str(role)))
+    if fields.get("is_onsite"):
+        bits.append("On-site")
+    return " · ".join(b for b in bits if b)
+
+
+def _timeslot_lines(before, after, labels, roles):
+    def loc(f):
+        return "On-site" if f.get("is_onsite") else "Remote"
+
+    def scope(f):
+        if f.get("phase_id"):
+            return labels["phase"].get(f["phase_id"], "")
+        if f.get("project_id"):
+            return labels["project"].get(f["project_id"], "")
+        return ""
+
+    if before is None:
+        return [{"label": "Booked", "to": _slot_summary(after, labels, roles)}]
+    if after is None:
+        return [{"label": "Was", "from": _slot_summary(before, labels, roles)}]
+
+    lines = []
+    if before.get("start") != after.get("start") or before.get("end") != after.get("end"):
+        lines.append({
+            "label": "When",
+            "from": _fmt_range(before.get("start"), before.get("end")),
+            "to": _fmt_range(after.get("start"), after.get("end")),
+        })
+    if before.get("user_id") != after.get("user_id"):
+        lines.append({
+            "label": "Assignee",
+            "from": labels["user"].get(before.get("user_id"), ""),
+            "to": labels["user"].get(after.get("user_id"), ""),
+        })
+    if before.get("slot_type_id") != after.get("slot_type_id"):
+        lines.append({
+            "label": "Type",
+            "from": labels["slot_type"].get(before.get("slot_type_id"), ""),
+            "to": labels["slot_type"].get(after.get("slot_type_id"), ""),
+        })
+    if before.get("deliveryRole") != after.get("deliveryRole"):
+        lines.append({
+            "label": "Role",
+            "from": roles.get(before.get("deliveryRole"), str(before.get("deliveryRole"))),
+            "to": roles.get(after.get("deliveryRole"), str(after.get("deliveryRole"))),
+        })
+    if bool(before.get("is_onsite")) != bool(after.get("is_onsite")):
+        lines.append({"label": "Location", "from": loc(before), "to": loc(after)})
+    if (before.get("phase_id") != after.get("phase_id")
+            or before.get("project_id") != after.get("project_id")):
+        lines.append({"label": "Work", "from": scope(before), "to": scope(after)})
+    return lines
+
+
+def _comment_lines(before, after):
+    if before is None:
+        return [{"label": "Comment", "to": (after or {}).get("comment", "")}]
+    if after is None:
+        return [{"label": "Comment removed", "from": before.get("comment", "")}]
+    lines = []
+    if before.get("comment") != after.get("comment"):
+        lines.append({
+            "label": "Comment",
+            "from": before.get("comment", ""),
+            "to": after.get("comment", ""),
+        })
+    if before.get("start") != after.get("start") or before.get("end") != after.get("end"):
+        lines.append({
+            "label": "When",
+            "from": _fmt_range(before.get("start"), before.get("end")),
+            "to": _fmt_range(after.get("start"), after.get("end")),
+        })
+    return lines
+
+
 def _summarise(action_type, payload):
     """Human-readable one-line summary for the history panel."""
     n = len(payload)
