@@ -339,7 +339,8 @@ def availability_runs(users, start, end, holidays):
 
 
 def schedule_history(
-    user, job_id=None, phase_id=None, user_id=None, limit=100, scan=1000, since=None
+    user, job_id=None, phase_id=None, user_id=None, limit=100, scan=1000, since=None,
+    created_from=None, created_to=None,
 ):
     """The scheduler's change log for a scope, newest first.
 
@@ -347,13 +348,21 @@ def schedule_history(
     A ``user_id`` scope lists changes touching that person's schedule, but only
     if the viewer may see that person's schedule (same rule as the global log).
     The global log only lists actions touching someone whose schedule the
-    viewer may see (it used to list everyone's)."""
+    viewer may see (it used to list everyone's).
+
+    ``created_from`` / ``created_to`` bound the window by *when the change was
+    made*. A bounded window also lets a user scope reach past the ``scan`` cap:
+    the scan runs over the window, not the newest actions site-wide."""
     from ..models import Job, Phase, ScheduleAction
     from ..utils import can_view_job_schedule, viewable_schedule_user_pks
 
     qs = ScheduleAction.objects.select_related("actor", "reverted_by").order_by(
         "-created"
     )
+    if created_from is not None:
+        qs = qs.filter(created__gte=created_from)
+    if created_to is not None:
+        qs = qs.filter(created__lt=created_to)
     if since is not None:
         # Changes after ``since`` are read oldest first, so a capped page
         # holds the earliest ones and the caller can resume from its last.

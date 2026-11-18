@@ -9,6 +9,26 @@ own history panel. Lazy-loaded when the tab is first shown.
      data-revert-url="{% url 'schedule_action_revert' %}"
      data-csrf="{{ csrf_token }}">
 
+  <div class="d-flex flex-wrap align-items-end gap-3 mb-3">
+    <div>
+      <label class="fs-10 text-body-tertiary d-block mb-1">Period</label>
+      <div class="btn-group btn-group-sm" role="group" id="sch-hist-presets">
+        <button type="button" class="btn btn-phoenix-secondary js-sch-hist-preset" data-days="30">30 days</button>
+        <button type="button" class="btn btn-phoenix-secondary js-sch-hist-preset" data-days="90">90 days</button>
+        <button type="button" class="btn btn-phoenix-secondary js-sch-hist-preset" data-days="365">1 year</button>
+        <button type="button" class="btn btn-phoenix-secondary js-sch-hist-preset" data-days="0">All</button>
+      </div>
+    </div>
+    <div>
+      <label class="fs-10 text-body-tertiary d-block mb-1" for="sch-hist-from">From</label>
+      <input type="date" id="sch-hist-from" class="form-control form-control-sm" style="width: 10rem;">
+    </div>
+    <div>
+      <label class="fs-10 text-body-tertiary d-block mb-1" for="sch-hist-to">To</label>
+      <input type="date" id="sch-hist-to" class="form-control form-control-sm" style="width: 10rem;">
+    </div>
+  </div>
+
   <div class="row g-2 mb-4" id="sch-hist-kpis"></div>
 
   <div class="d-flex flex-wrap align-items-center gap-2 mb-3" id="sch-hist-filters"></div>
@@ -45,6 +65,39 @@ own history panel. Lazy-loaded when the tab is first shown.
   var all = [];          // all loaded actions
   var active = null;      // active type filter (null = all)
   var loaded = false;
+  var rangeFrom = null;   // 'YYYY-MM-DD' lower bound, or null
+  var rangeTo = null;     // 'YYYY-MM-DD' upper bound, or null
+  var presetDays = 90;    // active preset in days (0 = All); null = custom range
+
+  function isoDay(d) {
+    var z = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+    return z.toISOString().slice(0, 10);
+  }
+
+  function syncRangeControls() {
+    $('#sch-hist-from').val(rangeFrom || '');
+    $('#sch-hist-to').val(rangeTo || '');
+    $('.js-sch-hist-preset').each(function () {
+      var on = presetDays != null && String($(this).data('days')) === String(presetDays);
+      $(this).toggleClass('btn-phoenix-primary', on)
+             .toggleClass('btn-phoenix-secondary', !on);
+    });
+  }
+
+  function applyPreset(days) {
+    presetDays = days;
+    if (!days) {
+      rangeFrom = null; rangeTo = null;    // "All" — count-capped, no date bound
+    } else {
+      var to = new Date();
+      var from = new Date();
+      from.setDate(from.getDate() - days);
+      rangeFrom = isoDay(from);
+      rangeTo = isoDay(to);
+    }
+    syncRangeControls();
+    load();
+  }
 
   function escapeHtml(s) {
     return $('<div>').text(s == null ? '' : String(s)).html();
@@ -77,9 +130,10 @@ own history panel. Lazy-loaded when the tab is first shown.
     var total = all.length;
     all.forEach(function (a) { counts[a.action_type] = (counts[a.action_type] || 0) + 1; });
 
+    var totalLabel = (rangeFrom || rangeTo) ? 'Changes in period' : 'Total changes';
     var tiles = ['<div class="col-6 col-sm-auto">' +
       '<div class="px-3 py-2 rounded-3 border border-translucent bg-body h-100">' +
-        '<div class="fs-10 text-body-tertiary text-uppercase">Total changes</div>' +
+        '<div class="fs-10 text-body-tertiary text-uppercase">' + totalLabel + '</div>' +
         '<div class="fs-6 fw-bolder">' + total + '</div>' +
       '</div></div>'];
 
@@ -174,8 +228,15 @@ own history panel. Lazy-loaded when the tab is first shown.
     var rows = active === null ? all : all.filter(function (a) { return a.action_type === active; });
     var $list = $('#sch-hist-list');
     if (!rows.length) {
-      $list.html('<p class="text-body-secondary fs-9 p-3 mb-0">No schedule changes recorded' +
-        (active ? ' for this filter.' : ' yet.') + '</p>');
+      var msg;
+      if (active) {
+        msg = 'No changes of this type in the selected period.';
+      } else if (rangeFrom || rangeTo) {
+        msg = 'No schedule changes in this period — try a wider period or <strong>All</strong>.';
+      } else {
+        msg = 'No schedule changes recorded yet.';
+      }
+      $list.html('<p class="text-body-secondary fs-9 p-3 mb-0">' + msg + '</p>');
       return;
     }
     var html = [], curDay = null;
@@ -196,7 +257,10 @@ own history panel. Lazy-loaded when the tab is first shown.
   function load() {
     $('#sch-hist-list').html('<p class="text-body-secondary fs-9 p-3 mb-0">' +
       '<span class="fas fa-spinner fa-spin me-1"></span> Loading change history…</p>');
-    $.get(actionsUrl, { user: userPk })
+    var params = { user: userPk };
+    if (rangeFrom) { params.from = rangeFrom; }
+    if (rangeTo) { params.to = rangeTo; }
+    $.get(actionsUrl, params)
       .done(function (data) {
         all = (data || []).map(function (a) {
           return $.extend({}, a, {
@@ -212,13 +276,25 @@ own history panel. Lazy-loaded when the tab is first shown.
       });
   }
 
-  // Lazy: load the first time the tab is shown; refresh on re-show.
-  $(document).on('shown.bs.tab', '#schedule_history-tab', function () {
-    if (!loaded) { loaded = true; }
-    load();
-  });
+  // Lazy: first show sets the default period (which loads); re-show refreshes
+  // the current period.
+  function ensureLoaded() {
+    if (!loaded) { loaded = true; applyPreset(presetDays); }
+    else { load(); }
+  }
+  $(document).on('shown.bs.tab', '#schedule_history-tab', ensureLoaded);
   // If the tab is already active on page load (e.g. deep link), load now.
-  if ($('#schedule_history-tab').hasClass('active')) { loaded = true; load(); }
+  if ($('#schedule_history-tab').hasClass('active')) { ensureLoaded(); }
+
+  $(document).on('click', '.js-sch-hist-preset', function () {
+    applyPreset(Number($(this).data('days')));
+  });
+  $(document).on('change', '#sch-hist-from', function () {
+    rangeFrom = this.value || null; presetDays = null; syncRangeControls(); load();
+  });
+  $(document).on('change', '#sch-hist-to', function () {
+    rangeTo = this.value || null; presetDays = null; syncRangeControls(); load();
+  });
 
   $(document).on('click', '.js-sch-hist-chip', function () {
     var t = $(this).data('type');
