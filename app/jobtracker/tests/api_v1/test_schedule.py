@@ -197,6 +197,8 @@ class HistoryTests(ScheduleBase):
         ids = {a["id"] for a in rows}
         self.assertIn(self.visible.pk, ids)
         self.assertNotIn(self.hidden.pk, ids)
+        # Each row carries the human-readable field-level detail lines.
+        self.assertIn("details", rows[0])
 
     def test_user_history_denied_when_not_viewable(self):
         # The viewer can't see the stranger's schedule, so their user-scoped

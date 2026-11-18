@@ -229,3 +229,47 @@ class RevertTests(ScheduleHistoryBase):
         schedule_history.revert(action, self.actor)
         self.phase.refresh_from_db()
         self.assertEqual(self.phase.status, PhaseStatuses.PENDING_SCHED)
+
+
+class DetailLineTests(ScheduleHistoryBase):
+    """The field-level change lines that tell you *what* changed, not just that
+    a slot was 'updated'."""
+
+    def _labels(self, action):
+        refs = schedule_history.collect_payload_refs([action])
+        return schedule_history.build_label_maps(refs)
+
+    def test_update_reports_time_change(self):
+        slot = self._delivery_slot()
+        before = schedule_history.snapshot(slot)
+        slot.end = self.end + timedelta(hours=3)
+        slot.save()
+        action = schedule_history.record(
+            self.actor, ScheduleActionType.UPDATE,
+            [before], [schedule_history.snapshot(slot)],
+        )
+        details = schedule_history.describe_action_details(action, self._labels(action))
+        when = next(d for d in details if d["label"] == "When")
+        self.assertTrue(when["from"] and when["to"])
+        self.assertNotEqual(when["from"], when["to"])
+
+    def test_update_reports_reassignment(self):
+        slot = self._delivery_slot(user=self.actor)
+        before = schedule_history.snapshot(slot)
+        slot.user = self.other
+        slot.save()
+        action = schedule_history.record(
+            self.actor, ScheduleActionType.UPDATE,
+            [before], [schedule_history.snapshot(slot)],
+        )
+        details = schedule_history.describe_action_details(action, self._labels(action))
+        assignee = next(d for d in details if d["label"] == "Assignee")
+        self.assertEqual(assignee["from"], str(self.actor))
+        self.assertEqual(assignee["to"], str(self.other))
+
+    def test_create_reports_booked_summary(self):
+        slot = self._delivery_slot()
+        action = schedule_history.record_creates(self.actor, [slot])
+        details = schedule_history.describe_action_details(action, self._labels(action))
+        self.assertEqual(details[0]["label"], "Booked")
+        self.assertIn(str(self.start.year), details[0]["to"])

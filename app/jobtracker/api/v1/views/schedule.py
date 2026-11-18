@@ -17,6 +17,7 @@ from chaotica_utils.utils import clean_datetime
 
 from ....forms import SchedulerFilter
 from ....models import TimeSlot, TimeSlotComment, TimeSlotType
+from ....schedule_history import build_label_maps, collect_payload_refs
 from ....selectors.schedule import schedule_history
 from ....utils import (
     SchedulerFocus,
@@ -330,9 +331,14 @@ class ScheduleViewSet(ApiV1Mixin, viewsets.ViewSet):
             phase_id=parse_int_param(request, "phase"),
             user_id=parse_int_param(request, "user"),
         )
+        # Resolve all referenced ids to labels in one batch so the serializer's
+        # per-action detail lines don't run a query each.
+        labels = build_label_maps(collect_payload_refs(history))
         return Response(
             ScheduleActionSerializer(
-                history, many=True, context={"request": request}
+                history,
+                many=True,
+                context={"request": request, "schedule_labels": labels},
             ).data
         )
 

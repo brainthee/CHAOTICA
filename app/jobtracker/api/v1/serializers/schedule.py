@@ -260,6 +260,7 @@ class ScheduleActionSerializer(serializers.Serializer):
     is_revert = serializers.SerializerMethodField()
     can_revert = serializers.SerializerMethodField()
     items = serializers.SerializerMethodField()
+    details = serializers.SerializerMethodField()
 
     def get_is_revert(self, action) -> bool:
         from ....models.schedule_action import ScheduleActionType
@@ -278,6 +279,17 @@ class ScheduleActionSerializer(serializers.Serializer):
             {"model": item["model"], "id": item["pk"], "change": _describe_item(item)}
             for item in action.payload or []
         ]
+
+    @extend_schema_field(serializers.ListField(child=serializers.DictField()))
+    def get_details(self, action):
+        """Human-readable field-level change lines, e.g.
+        ``[{"label": "When", "from": "...", "to": "..."}]``."""
+        from ....schedule_history import describe_action_details
+
+        labels = self.context.get("schedule_labels") or {
+            "user": {}, "slot_type": {}, "phase": {}, "project": {}
+        }
+        return describe_action_details(action, labels)
 
 
 class ScheduleDeltaSerializer(serializers.Serializer):

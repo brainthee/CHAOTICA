@@ -132,6 +132,23 @@ own history panel. Lazy-loaded when the tab is first shown.
       ? '<div class="fs-10 text-warning-emphasis text-wrap mt-1">Reason: ' + escapeHtml(a.override_reason) + '</div>'
       : '';
 
+    var details = (a.details && a.details.length)
+      ? '<div class="mt-1 ps-2 border-start border-2 border-translucent">' +
+          a.details.map(function (d) {
+            var val;
+            if (d.from && d.to) {
+              val = '<span class="text-decoration-line-through text-body-quaternary">' + escapeHtml(d.from) + '</span>' +
+                    ' <span class="fas fa-arrow-right-long mx-1 text-body-quaternary"></span> ' +
+                    '<span class="text-body-emphasis">' + escapeHtml(d.to) + '</span>';
+            } else {
+              val = '<span class="text-body-emphasis">' + escapeHtml(d.to || d.from || '') + '</span>';
+            }
+            return '<div class="fs-10 text-body-secondary text-wrap">' +
+              '<span class="fw-semibold">' + escapeHtml(d.label) + ':</span> ' + val + '</div>';
+          }).join('') +
+        '</div>'
+      : '';
+
     return '<div class="d-flex align-items-start gap-3 px-3 py-3 border-bottom border-translucent' +
         (a.reverted ? ' opacity-50' : '') + '">' +
         '<span class="fas ' + meta.icon + ' fs-8 text-' + meta.cls + ' mt-1"></span>' +
@@ -140,6 +157,7 @@ own history panel. Lazy-loaded when the tab is first shown.
             (a.forced ? '<span class="fas fa-triangle-exclamation text-warning me-1" title="Saved past a warning"></span>' : '') +
             escapeHtml(a.summary) + scope +
           '</div>' +
+          details +
           reason +
           '<div class="text-body-secondary fs-10 mt-1">' +
             'by ' + (a.actorUrl
